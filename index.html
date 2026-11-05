@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Gunnar Tynes: Recorded Work</title>
-<meta name="description" content="A chronological catalogue of recordings and screen work, 1997 to the present, with credits and sources.">
+<meta name="description" content="A chronological catalogue of recordings, screen, stage and radio work, 1997 to the present, with credits and sources.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="fonts/fonts.css">
@@ -549,7 +549,7 @@ function renderPanel(e){
   if(credit)rows.push(['Credit',esc(credit)]);
   if(e.film){
     const f=e.film;
-    rows.push(['Screen',esc(f.role)+(f.kind?` <span style="color:var(--faint)">(${esc(f.kind)})</span>`:'')]);
+    rows.push([f.label||'Screen',esc(f.role)+(f.kind?` <span style="color:var(--faint)">(${esc(f.kind)})</span>`:'')]);
     if(f.creditedAs)rows.push(['Credited as',esc(f.creditedAs)]);
     if(f.director&&f.director.length)rows.push(['Director',esc(f.director.join(', '))]);
     if(f.composer)rows.push(['Music by',esc(f.composer)]);
@@ -560,7 +560,7 @@ function renderPanel(e){
     if(f.nomination)rows.push(['Nominated',esc(f.nomination)]);
   }
   if(e.type)rows.push(['Type',esc(e.type)]);
-  if(e.date)rows.push(['Released',esc(e.date)]);
+  if(e.date)rows.push([e.film&&e.film.label?'Date':'Released',esc(e.date)]);
   if(e.labels&&e.labels.length)rows.push(['Label',esc(e.labels.join(', '))]);
   if(e.formats&&e.formats.length)rows.push(['Format',esc(e.formats.join(', '))]);
   if(e.styles&&e.styles.length)rows.push(['Style',esc(e.styles.join(', '))]);
@@ -570,7 +570,7 @@ function renderPanel(e){
   $('#pBody').innerHTML=`<div class="yr">${e.year}</div><h2>${esc(e.artist)}</h2><h3>${esc(e.title)}</h3>
     <div class="lamps">${e.roles.map(r=>`<span class="lamp" style="--c:${C[r]}">${esc(ROLE[r][0])}</span>`).join('')}${e.confirm&&!PUBLIC?'<span class="flag">role to confirm</span>':''}</div>
     <dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('')}</dl>
-    <div class="sec links"><h4>Sources</h4>${Object.keys(links).filter(k=>e.links&&e.links[k]).map(k=>`<a href="${esc(e.links[k])}" target="_blank" rel="noopener">${links[k]}</a>`).join('')}</div>`;
+    <div class="sec links"><h4>Sources</h4>${(e.film&&e.film.label&&!(e.refs||[]).length?(e.source||[]).map(esc).join(', '):'')}${Object.keys(links).filter(k=>e.links&&e.links[k]).map(k=>`<a href="${esc(e.links[k])}" target="_blank" rel="noopener">${links[k]}</a>`).join('')}${(e.refs||[]).map(r=>`<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.label)}</a>`).join('')}</div>`;
   renderBite(e);
 }
 function renderBite(e){
