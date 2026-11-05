@@ -16,7 +16,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #map.over{cursor:pointer}#map.drag{cursor:grabbing}
 #bar{position:fixed;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:14px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141bf2 60%,#11141b00);z-index:3}
 #bar h1{margin:0;font:400 20px/1 var(--serif);white-space:nowrap}
-#views{display:flex;gap:14px}#right{margin-left:auto;display:flex;gap:16px;align-items:center}
+#views{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}#right{margin-left:auto;display:flex;gap:16px;align-items:center}
 .quiet{font-size:13px;color:var(--dim);padding:3px 2px;border-bottom:1px solid transparent;text-decoration:none;transition:color .15s}
 .quiet:hover{color:var(--paper)}.quiet[aria-pressed=true],.quiet.on{color:var(--paper);border-color:var(--paper)}
 #tag{font:11px var(--mono);color:var(--p)}
@@ -44,10 +44,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #leg.caponly .frame{display:none}#leg.caponly.on .frame{pointer-events:none}
 #hint{position:fixed;left:50%;top:calc(var(--bar,60px) + 8px);transform:translateX(-50%);font:12px var(--mono);color:var(--dim);opacity:0;transition:opacity .7s;pointer-events:none;z-index:2;white-space:nowrap;text-shadow:0 1px 6px #000}#hint.on{opacity:1}
 #more{font:12px var(--mono);color:var(--dim);max-height:0;overflow:hidden;opacity:0;transition:opacity .8s,max-height .8s;white-space:nowrap;text-overflow:ellipsis}#more.on{opacity:1;max-height:1.6em}
-#leg{position:fixed;right:max(24px,env(safe-area-inset-right,0px));bottom:calc(var(--foot,120px) + 8px);width:min(34vw,420px);z-index:2;opacity:0;transition:opacity .9s;pointer-events:none}#leg.on{opacity:1}
+#leg{position:fixed;right:max(16px,env(safe-area-inset-right,0px));top:12px;width:min(30vw,380px);z-index:4;opacity:0;transition:opacity .9s;pointer-events:none}#leg.on{opacity:1}
 #leg .frame{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;background:#0b0d12;cursor:zoom-in;display:block;padding:0;border-radius:1px;box-shadow:0 10px 40px #000a}#leg.on .frame{pointer-events:auto}
 #leg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.4s ease}#leg img.show{opacity:.94}
-#legCap{font:11px var(--mono);color:var(--dim);margin-top:6px;min-height:1.4em;text-align:right;text-shadow:0 1px 6px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#legCap{font:11px var(--mono);color:var(--dim);margin-top:5px;min-height:1.4em;text-align:right;text-shadow:0 1px 6px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .years{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 14px}.years button{font:13px var(--mono);padding:4px 8px;border:1px solid var(--rule);border-radius:2px;color:var(--dim);position:relative}.years button:hover{border-color:#ffffff50;color:var(--paper)}.years button[aria-pressed=true]{background:var(--plate2);color:var(--paper);border-color:#ffffff40}.years sup{font-size:9px;color:var(--faint);margin-left:2px;vertical-align:4px;line-height:0}.years .ph::after{content:"";position:absolute;right:3px;top:3px;width:4px;height:4px;border-radius:50%;background:var(--p)}
 .ask{font:italic 20px var(--serif);color:var(--dim);margin:6px 0 0}
 .fromHere{font:12px var(--mono);color:var(--paper);border:1px solid #ffffff40;border-radius:2px;padding:3px 8px;margin-top:6px}.fromHere:hover{border-color:var(--paper)}
@@ -63,27 +63,28 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #vClose{position:absolute;top:10px;right:14px;font-size:26px;color:var(--paper);padding:6px 10px;z-index:1}
 @media(max-width:700px){
   #now{grid-template-columns:44px minmax(0,1fr)}#speed{grid-column:2;justify-self:start;margin-left:-7px}
-  #leg{left:16px;right:16px;width:auto}#leg .frame{aspect-ratio:16/10;max-height:30vh}#legCap{text-align:left}
+  #leg{top:calc(var(--bar,84px) + 4px);width:62vw;right:16px}#leg .frame{aspect-ratio:3/2}
   #view .nav{width:40px}#view em{font-size:17px}
   #panel{top:auto;left:0;right:0;width:auto;height:58%;transform:translateY(102%);box-shadow:0 -12px 40px #0006}
-  #bar{gap:6px 14px;padding-bottom:6px}#right{gap:12px}.pin{--pw:112px}#tag{display:none}
+  #bar{gap:6px 14px;padding-bottom:6px}#views{gap:6px 9px}#right{gap:12px}.pin{--pw:112px}#tag{display:none}
   #cap em{font-size:19px}#now{min-height:58px}#years{height:40px}
 }
 </style></head><body>
 <canvas id="map" aria-label="World map of concerts"></canvas>
 <header id="bar">
-  <h1>gunnar tynes</h1>
+  <h1><a href="https://gunnartynes.com/" style="color:inherit;text-decoration:none" title="Back to gunnartynes.com">gunnar tynes</a></h1>
   <nav id="views" aria-label="View">
     <a class="quiet" href="../?view=timeline&amp;layout=horizontal">Timeline</a>
     <a class="quiet" href="../?view=timeline&amp;layout=vertical">Vertical</a>
     <a class="quiet" href="../?view=record">Record</a>
     <span class="quiet on" aria-current="page">Live</span>
+    <button class="quiet" id="photoBtn" aria-haspopup="menu" aria-expanded="false" title="Show tour photos during play">Tour photos</button>
+    <button class="quiet" id="viewBtn" aria-haspopup="menu" aria-expanded="false" title="How the camera moves during play">View</button>
   </nav>
   <span id="tag" hidden>draft list, not published</span>
-  <div id="right">
+  <!-- Hidden for now, at Gunnar's request; World and Doubtful still work when shown. -->
+  <div id="right" hidden>
     <a class="quiet" href="https://gunnartynes.com/">Main site</a>
-    <button class="quiet" id="viewBtn" aria-haspopup="menu" aria-expanded="false" title="How the camera moves during play">View</button>
-    <button class="quiet" id="photoBtn" aria-haspopup="menu" aria-expanded="false" title="Show photos during play">Photos</button>
     <button class="quiet" id="fit" title="Show the whole world">World</button>
     <button class="quiet" id="doubt" hidden aria-pressed="false" title="Include entries marked doubtful">Doubtful</button>
   </div>
@@ -161,11 +162,11 @@ function fitBox(x0,x1,y0,y1,pad){
   const{top,bot}=chrome(),w=Math.max(8,x1-x0),h=Math.max(5,y1-y0);
   const panelOpen=$('#panel').classList.contains('open');
   const legOn=$('#leg').classList.contains('on')&&!$('#leg').classList.contains('caponly');
-  const pw=panelOpen&&W>700?400:(legOn&&W>700?Math.min(W*.34,420)+30:0);
+  const pw=panelOpen&&W>700?400:(legOn&&W>700?Math.min(W*.3,380)+24:0);
   const extra=legOn&&W<=700?$('#leg').offsetHeight+10:0;
   /* Max guards a window that has no size yet, such as a background tab: a zero or negative zoom would blank the map for good. */
   const z=clamp(Math.min((W-pw-pad*2)/w,(H-top-bot-extra-pad*2)/h),Math.max(.3,Math.min(W/345,(H-top-bot)/150)),W>700?26:18);
-  const off=(top-bot-extra)/2/z;
+  const off=(top+extra-bot)/2/z;
   cam.tx=(x0+x1)/2+pw/2/z;cam.ty=(y0+y1)/2-off;cam.tz=z;
 }
 function fitWorld(){cam.manual=false;fitBox(-128,152,py(66),py(-40),W>700?26:8);dirty=true}
@@ -198,8 +199,8 @@ function aim(){const n=Math.floor(P.pos);if(S[n]&&!atEnd()&&P.view==='overview')
 const defaultZoom=()=>clamp(W/95,7,16);
 function viewOffset(z){
   const{top,bot}=chrome(),panel=$('#panel').classList.contains('open'),legOn=$('#leg').classList.contains('on')&&!$('#leg').classList.contains('caponly');
-  const pw=panel&&W>700?400:(legOn&&W>700?Math.min(W*.34,420)+30:0),extra=legOn&&W<=700?$('#leg').offsetHeight+10:0;
-  return{x:pw/2/z,y:-(top-bot-extra)/2/z};
+  const pw=panel&&W>700?400:(legOn&&W>700?Math.min(W*.3,380)+24:0),extra=legOn&&W<=700?$('#leg').offsetHeight+10:0;
+  return{x:pw/2/z,y:-(top+extra-bot)/2/z};
 }
 function headPoint(){
   const n=Math.floor(P.pos),f=P.pos-n,a=S[n];if(!a)return{x:cam.x,y:cam.y};if(!legFrom(n)||f<=0)return a;
@@ -510,14 +511,14 @@ function openCity(c,year){
 function closeCity(){selCity=null;selYear=null;P.hi=-1;$('#panel').classList.remove('open');dirty=true}
 const MENUS={
   viewBtn:{key:'view',store:'gt.live.view',items:[['follow','Follow','The camera stays on the dot, at your zoom'],['overview','Overview','Frames the next few stops'],['free','Free','Stays where you put it']]},
-  photoBtn:{key:'photos',store:'gt.live.photos',items:[['off','Off','Photos only when you slow down'],['map','On the map','Small prints pinned to their cities'],['side','Beside the map','One photo at a time at the side'],['behind','Behind the map','A faint photo behind the road']]}
+  photoBtn:{key:'photos',store:'gt.live.photos',items:[['off','Off','Photos only when you slow down'],['map','On the map','Small prints pinned to their cities'],['side','In the corner','One photo at a time, top right'],['behind','Behind the map','A faint photo behind the road']]}
 };
 function closeMenu(){$('#pop').hidden=true;['viewBtn','photoBtn'].forEach(i=>$('#'+i).setAttribute('aria-expanded',false))}
 function openMenu(id){
   const m=MENUS[id],btn=$('#'+id),pop=$('#pop'),was=!pop.hidden&&pop.dataset.for===id;closeMenu();if(was)return;
   pop.dataset.for=id;pop.innerHTML=m.items.map(([v,l,d])=>`<button type="button" role="menuitemradio" aria-checked="${P[m.key]===v&&!(m.key==='view'&&cam.manual&&v==='follow')}" data-v="${v}"><b>${l}</b><small>${d}</small></button>`).join('');
   pop.hidden=false;btn.setAttribute('aria-expanded',true);
-  const r=btn.getBoundingClientRect(),w=pop.offsetWidth;pop.style.left=clamp(r.right-w,8,W-w-8)+'px';pop.style.top=(r.bottom+6)+'px';
+  const r=btn.getBoundingClientRect(),w=pop.offsetWidth;pop.style.left=clamp(r.left,8,W-w-8)+'px';pop.style.top=(r.bottom+6)+'px';
 }
 Object.keys(MENUS).forEach(id=>{$('#'+id).onclick=ev=>{ev.stopPropagation();openMenu(id)}});
 $('#pop').addEventListener('click',ev=>{
