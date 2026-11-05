@@ -26,6 +26,8 @@ input,select,textarea{width:100%;min-width:0;background:var(--ground);border:1px
 #saveBar{display:flex;gap:10px;align-items:center;margin-top:20px;max-width:760px;flex-wrap:wrap}.back{display:none;margin-bottom:12px}
 #status{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--plate2);padding:9px 14px;border-radius:3px;font-size:14px;display:none;z-index:9;max-width:90vw}#status.show{display:block}#status.ok{color:var(--ok)}#status.bad{color:var(--bad)}
 #hist li{padding:9px 0;border-bottom:1px solid var(--rule);display:flex;gap:10px;align-items:center;justify-content:space-between}#hist ol{list-style:none;padding:0;margin:0;max-width:760px}#hist small{color:var(--dim);display:block}
+.phs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.ph{width:128px;font-size:12px;color:var(--dim)}.ph img{width:128px;height:88px;object-fit:cover;display:block;background:var(--plate2)}.ph button{padding:2px 7px;font-size:12px;margin-top:4px}.ph.out{opacity:.4}
+.drop{border:1px dashed #ffffff40;padding:14px;text-align:center;color:var(--dim);cursor:pointer;display:block;font-size:14px;border-radius:3px;margin-top:10px}.drop.over{border-color:var(--paper);color:var(--paper)}
 .src{font:12px var(--mono);color:var(--faint);margin-top:14px;max-width:760px}.src a{color:var(--dim)}
 @media(max-width:760px){#app{grid-template-columns:1fr;height:auto}body.open #side{display:none}body:not(.open) #main{display:none}#side{height:100dvh}.back{display:inline-block}}
 </style></head><body>
@@ -55,15 +57,18 @@ const repo=p=>`/repos/${REPO}${p}`;
 function parse(text){const m=text.match(/window\.SHOWS\s*=\s*([\s\S]*?);\s*$/);if(!m)throw new Error('The concert file could not be read.');return JSON.parse(m[1])}
 function serialize(d){d.shows.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);return '// Edited through /admin. Each saved version is in the repository history.\nwindow.SHOWS='+JSON.stringify(d)+';\n'}
 /* One save is one commit. The file is re-read first, so edits made on another device are never overwritten. */
-async function commit(change,message,attempt=0){
+async function commit(change,message,attempt=0,files=[]){
   const ref=await gh(repo(`/git/ref/heads/${BRANCH}`)),base=ref.object.sha,baseCommit=await gh(repo(`/git/commits/${base}`));
   const text=await gh(repo(`/contents/${FILE}?ref=${base}`),{raw:true});
   const out=typeof change==='string'?change:serialize(change(parse(text)));
+  const tree=[];
+  for(const f of files){const fb=await gh(repo('/git/blobs'),{method:'POST',body:{content:f.b64,encoding:'base64'}});tree.push({path:f.path,mode:'100644',type:'blob',sha:fb.sha})}
   const b=await gh(repo('/git/blobs'),{method:'POST',body:{content:out,encoding:'utf-8'}});
-  const t=await gh(repo('/git/trees'),{method:'POST',body:{base_tree:baseCommit.tree.sha,tree:[{path:FILE,mode:'100644',type:'blob',sha:b.sha}]}});
+  tree.push({path:FILE,mode:'100644',type:'blob',sha:b.sha});
+  const t=await gh(repo('/git/trees'),{method:'POST',body:{base_tree:baseCommit.tree.sha,tree}});
   const c=await gh(repo('/git/commits'),{method:'POST',body:{message,tree:t.sha,parents:[base]}});
   try{await gh(repo(`/git/refs/heads/${BRANCH}`),{method:'PATCH',body:{sha:c.sha}})}
-  catch(e){if(attempt<2&&(e.status===422||e.status===409))return commit(change,message,attempt+1);throw e}
+  catch(e){if(attempt<2&&(e.status===422||e.status===409))return commit(change,message,attempt+1,files);throw e}
   return{text:out,data:parse(out)};
 }
 function friendly(e){
@@ -86,7 +91,7 @@ function renderYears(){const ys=[...new Set(data.shows.map(s=>s.d.slice(0,4)))].
 function visible(){const q=$('#q').value.trim().toLowerCase(),y=$('#year').value;return data.shows.filter(s=>(!y||s.d.startsWith(y))&&(!q||[s.d,s.c,s.k,s.v,s.n,s.w].join(' ').toLowerCase().includes(q)))}
 function renderList(){
   $('#counts').textContent=`${data.shows.length} concerts · ${new Set(data.shows.map(s=>s.c+s.k)).size} cities`;
-  $('#list').innerHTML=visible().slice().reverse().map(s=>`<li><button type="button" data-id="${esc(s.id)}" class="${s.id===openId?'on':''}"><time>${esc(s.d)}</time><strong>${esc(name(s))}</strong><span>${esc([s.c,s.k].filter(Boolean).join(', '))}</span></button></li>`).join('');
+  $('#list').innerHTML=visible().slice().reverse().map(s=>`<li><button type="button" data-id="${esc(s.id)}" class="${s.id===openId?'on':''}"><time>${esc(s.d)}</time><strong>${esc(name(s))}</strong><span>${esc([s.c,s.k].filter(Boolean).join(', '))}${s.photos&&s.photos.length?' · '+s.photos.length+' photos':''}${s.s==='doubtful'?' · hidden, marked doubtful':''}</span></button></li>`).join('');
 }
 $('#q').oninput=renderList;$('#year').onchange=renderList;
 $('#list').addEventListener('click',ev=>{const b=ev.target.closest('[data-id]');if(b)openEditor(b.dataset.id)});
@@ -109,15 +114,40 @@ function openEditor(id){
     <div class="full"><div class="bar"><button type="button" id="find">Find on the map</button><select id="places" hidden aria-label="Choose the place" style="flex:1"></select></div>
     <p class="help" id="geoMsg">${s.lat!=null?`On the map at ${esc(s.lat)}, ${esc(s.lon)}.`:'Fill in the city and country, then find it on the map. Only those words are sent to the place lookup.'}</p></div>
     ${fld('Latitude','lat',s.lat==null?'':s.lat,{req:1,mode:'decimal'})}${fld('Longitude','lon',s.lon==null?'':s.lon,{req:1,mode:'decimal'})}
+    <div class="full"><label style="margin-bottom:0">Photos</label><div class="phs" id="phs"></div>
+      <label class="drop" id="phDrop">Drop photos here, or tap to choose<input type="file" id="phIn" accept="image/*" multiple hidden></label>
+      <div class="grid" style="margin-top:10px">${fld('Caption for the new photos','ph_cap','')}${fld('Photographer','ph_by','')}</div>
+      <p class="help">Photos are made smaller in your browser before they are uploaded. Use only photos you have the right to show.</p></div>
   </div>
   ${links.length?`<div class="src">Sources: ${links.map(([l,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(l)}</a>`).join(' · ')}</div>`:''}
   <div id="saveBar"><button type="submit" class="solid" id="saveBtn">Save and publish</button><span class="spacer"></span>${isNew?'':'<button type="button" class="danger" id="delBtn">Delete concert</button>'}</div>`;
   $('#back').onclick=closeEditor;
   $('#find').onclick=findPlace;
+  pending=[];dropped=new Set();current=s;renderPhotos();
+  const pi=$('#phIn');pi.onchange=()=>{addPhotos(pi.files);pi.value=''};
+  const pd=$('#phDrop');['dragenter','dragover'].forEach(n=>pd.addEventListener(n,e=>{e.preventDefault();pd.classList.add('over')}));['dragleave','drop'].forEach(n=>pd.addEventListener(n,e=>{e.preventDefault();pd.classList.remove('over')}));pd.addEventListener('drop',e=>addPhotos(e.dataTransfer.files));
   const before=(s.c||'')+'|'+(s.k||'');
   f.dataset.place=before;
   const del=$('#delBtn');if(del)del.onclick=()=>confirmDelete(s);
   renderList();$('#main').scrollTop=0;
+}
+let pending=[],dropped=new Set(),current=null;
+function renderPhotos(){
+  const box=$('#phs');if(!box)return;
+  const have=(current&&current.photos)||[];
+  box.innerHTML=have.map((p,i)=>`<div class="ph${dropped.has(i)?' out':''}"><img src="../live/${esc(p.src)}" alt=""><button type="button" data-rm="${i}">${dropped.has(i)?'Keep':'Remove'}</button></div>`).join('')+pending.map((p,i)=>`<div class="ph"><img src="${p.url}" alt=""><button type="button" data-rmnew="${i}">Remove</button></div>`).join('');
+  box.onclick=ev=>{const a=ev.target.closest('[data-rm]'),b=ev.target.closest('[data-rmnew]');if(a){const i=+a.dataset.rm;dropped.has(i)?dropped.delete(i):dropped.add(i);renderPhotos()}if(b){pending.splice(+b.dataset.rmnew,1);renderPhotos()}};
+}
+async function addPhotos(files){
+  for(const file of files){
+    if(!file.type.startsWith('image/'))continue;
+    try{
+      const bmp=await createImageBitmap(file),k=Math.min(1,1400/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);
+      const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(bmp,0,0,c.width,c.height);
+      const url=c.toDataURL('image/jpeg',.82);pending.push({url,b64:url.split(',')[1]});
+    }catch(e){status('That image could not be read.','bad')}
+  }
+  renderPhotos();
 }
 async function findPlace(){
   const f=$('#form'),city=f.elements.c.value.trim(),country=f.elements.k.value.trim().toLowerCase(),msg=$('#geoMsg'),sel=$('#places');
@@ -146,13 +176,18 @@ $('#form').addEventListener('submit',async ev=>{
   if(!isNew&&moved&&$('#places').hidden&&lat===data.shows.find(x=>x.id===openId).lat){status('You changed the place. Use Find on the map, so the dot moves too.','bad');return}
   const id=isNew?`added|${v('d')}|${v('c').toLowerCase()}|${Date.now().toString(36)}`:openId;
   const fields={d:v('d'),e:v('e')||undefined,c:v('c'),k:v('k'),v:v('v')||undefined,n:v('n')||undefined,w:v('w')||undefined,note:v('note')||undefined,absent:f.elements.absent.checked||undefined,lat,lon,s:'confirmed by Gunnar'};
+  const slug=(fields.d+'-'+fields.c).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');
+  const stamp=Date.now().toString(36);
+  const uploads=pending.map((p,i)=>({path:`live/photos/${slug}-${stamp}-${i}.jpg`,src:`photos/${slug}-${stamp}-${i}.jpg`,b64:p.b64}));
+  const cap=v('ph_cap'),by=v('ph_by'),gone=new Set(dropped);
+  const merged=x=>{const kept=(x.photos||[]).filter((_,i)=>!gone.has(i)),next=[...kept,...uploads.map(u=>({src:u.src,cap:cap||undefined,by:by||undefined}))];return next.length?next:undefined};
   saving=true;$('#saveBtn').disabled=true;status('Saving…','',true);
   try{
     const r=await commit(d=>{
-      if(isNew)d.shows.push({id,src:'Gunnar',...fields});
-      else{const i=d.shows.findIndex(x=>x.id===id);if(i<0)throw new Error('That concert is no longer in the list. Reload the page.');d.shows[i]={...d.shows[i],...fields}}
+      if(isNew)d.shows.push({id,src:'Gunnar',...fields,photos:merged({})});
+      else{const i=d.shows.findIndex(x=>x.id===id);if(i<0)throw new Error('That concert is no longer in the list. Reload the page.');d.shows[i]={...d.shows[i],...fields,photos:merged(d.shows[i])}}
       return d;
-    },`${isNew?'Add':'Edit'} concert: ${fields.d} ${fields.c}`);
+    },`${isNew?'Add':'Edit'} concert: ${fields.d} ${fields.c}`,0,uploads.map(u=>({path:u.path,b64:u.b64})));
     data=r.data;isNew=false;openId=id;renderYears();openEditor(id);watchLive(r.text);
   }catch(e){status(friendly(e),'bad')}
   finally{saving=false;const b=$('#saveBtn');if(b)b.disabled=false}

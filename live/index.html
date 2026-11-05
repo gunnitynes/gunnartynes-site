@@ -2,7 +2,6 @@
 <html lang="en"><head><meta charset="utf-8">
 <title>Gunnar Tynes: Live</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="robots" content="noindex">
 <meta name="description" content="Concerts on a world map, in the order they were played.">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <style>
@@ -38,7 +37,17 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #panel ol{list-style:none;margin:0;padding:0}#panel li{padding:10px 0;border-top:1px solid var(--rule)}
 #panel li time{font:12px var(--mono);color:var(--dim);display:block}#panel li strong{font-weight:500;display:block}
 #panel li small{color:var(--dim);display:block;font-size:12px}#panel li .flag{color:var(--p)}#panel li .faint{color:var(--faint);font:11px var(--mono)}
+#cam{pointer-events:auto;display:inline-block;margin-left:10px;font:12px var(--mono);color:var(--paper);border:1px solid #ffffff40;border-radius:2px;padding:1px 7px;vertical-align:1px;background:#11141bcc}
+#cam:hover{border-color:var(--paper)}
+.thumbs{display:flex;flex-wrap:wrap;gap:4px;margin:7px 0 3px}.thumbs button{position:relative;width:62px;height:46px;overflow:hidden;background:var(--plate2);border-radius:1px}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}.thumbs .more{position:absolute;inset:0;background:#11141bb0;display:grid;place-items:center;font:12px var(--mono)}
+#view{position:fixed;inset:0;background:#0b0d12f7;z-index:8;display:grid;grid-template-rows:1fr auto;touch-action:pan-y}
+#view figure{margin:0;min-height:0;display:grid;place-items:center;padding:16px 16px 6px}#view img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+#view .meta{padding:6px 18px max(16px,env(safe-area-inset-bottom,0px));text-align:center}#view em{font:italic 20px/1.25 var(--serif);display:block}#view small{font:12px var(--mono);color:var(--dim);display:block;margin-top:3px}#view small a{color:var(--dim)}
+#view .nav{position:absolute;top:50%;transform:translateY(-50%);width:50px;height:70px;font-size:30px;color:var(--paper);opacity:.8}#view .nav:hover{opacity:1}#vPrev{left:4px}#vNext{right:4px}
+#vClose{position:absolute;top:10px;right:14px;font-size:26px;color:var(--paper);padding:6px 10px;z-index:1}
 @media(max-width:700px){
+  #view .nav{width:40px}#view em{font-size:17px}
   #panel{top:auto;left:0;right:0;width:auto;height:58%;transform:translateY(102%);box-shadow:0 -12px 40px #0006}
   #bar{gap:6px 14px;padding-bottom:6px}#tag{display:none}
   #cap em{font-size:19px}#now{min-height:58px}#years{height:40px}
@@ -69,8 +78,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
   <canvas id="years" aria-label="Scrub through the years"></canvas>
 </footer>
 <div id="tip"></div>
+<div id="view" hidden role="dialog" aria-label="Photos"><button id="vClose" aria-label="Close photos">×</button><figure><img id="vImg" alt=""></figure><button class="nav" id="vPrev" aria-label="Previous photo">‹</button><button class="nav" id="vNext" aria-label="Next photo">›</button><div class="meta"><em id="vCap"></em><small id="vBy"></small></div></div>
 <aside id="panel" aria-label="Shows in this city"><button id="close" aria-label="Close">×</button><div id="pBody"></div></aside>
 <script src="map.js"></script>
+<script>if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname))document.write('<script src="blog-photos.js" onerror="void 0"><\/script>')</script>
 <script src="shows.js"></script>
 <script src="../catalogue.js"></script>
 <script>
@@ -87,6 +98,8 @@ if(SHOWS.draft){$('#tag').hidden=false;$('#doubt').hidden=false}
 const LAND=[];for(const[lat,row]of LIVE.land)for(const lon of row)LAND.push(px(lon),py(lat));
 const COAST=new Path2D();for(const ring of LIVE.outline){ring.forEach((q,i)=>{if(!i||Math.abs(q[0]-ring[i-1][0])>180)COAST.moveTo(px(q[0]),py(q[1]));else COAST.lineTo(px(q[0]),py(q[1]))});COAST.closePath()}
 
+const OVERLAY=window.BLOGPHOTOS||{};
+const photosOf=s=>[...(s.photos||[]),...(OVERLAY[s.id]||[])];
 /* ---------- data: shows in order, grouped into tours by the gaps between them ---------- */
 let S=[],CITIES=[],TOURS=[];
 const day=s=>Date.parse(s+'T00:00:00Z')/864e5;
@@ -99,12 +112,25 @@ function build(){
     if(!i||s.t-S[i-1].t>TOUR_GAP)TOURS.push({a:i,b:i,col:COL.tour[TOURS.length%4]});
     const T=TOURS[TOURS.length-1];T.b=i;s.tour=TOURS.length-1;
     const key=s.c+'|'+s.k;let c=map.get(key);if(!c){c={key,name:s.c,k:s.k,x:s.x,y:s.y,shows:[],first:i};map.set(key,c)}
-    c.shows.push(s);s.city=c;
+    c.shows.push(s);s.city=c;if(photosOf(s).length)c.hasPhotos=true;
   });
   CITIES=[...map.values()];
   TOURS.forEach(T=>{let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(let i=T.a;i<=T.b;i++){const s=S[i];x0=Math.min(x0,s.x);x1=Math.max(x1,s.x);y0=Math.min(y0,s.y);y1=Math.max(y1,s.y)}T.box=[x0,x1,y0,y1]});
 }
 build();
+
+/* ---------- photos ---------- */
+const V={list:[],i:0,x:null};
+function viewShow(){
+  const p=V.list[V.i];if(!p)return;const img=$('#vImg');img.src=p.src;img.alt=p.cap||'';
+  $('#vCap').textContent=p.cap||'';
+  $('#vBy').innerHTML=[p.show?esc(p.show):'',p.by?'Photo: '+esc(p.by):'',p.lic?(p.url?`<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.lic)}</a>`:esc(p.lic)):'',V.list.length>1?`${V.i+1} of ${V.list.length}`:''].filter(Boolean).join(' · ');
+  $('#vPrev').hidden=$('#vNext').hidden=V.list.length<2;
+  const nx=V.list[(V.i+1)%V.list.length];if(nx){const pre=new Image();pre.src=nx.src}
+}
+function openPhotos(s,i=0){if(P.playing)play(false);V.list=photosOf(s).map(p=>({...p,show:`${fmt(s.d)}, ${s.c}`}));V.i=i;$('#view').hidden=false;$('#tip').style.display='none';viewShow();$('#vClose').focus()}
+function closePhotos(){$('#view').hidden=true;$('#vImg').removeAttribute('src')}
+function stepPhoto(d){V.i=(V.i+d+V.list.length)%V.list.length;viewShow()}
 
 /* ---------- camera ---------- */
 const cam={x:0,y:-40,z:3,tx:0,ty:-40,tz:3,manual:false};
@@ -157,6 +183,8 @@ function showCaption(){
   em.textContent=s.v&&!/unknown/i.test(s.v)?s.v:(s.n||s.c);
   b.textContent=`${s.c}, ${s.k}`;
   sp.textContent=[fmt(s.d,s.e),s.w?'with '+s.w:'',s.v&&s.n&&s.n!==s.v?s.n:''].filter(Boolean).join(' · ');
+  const n=photosOf(s).length;
+  if(n){const c=document.createElement('button');c.id='cam';c.type='button';c.textContent=n===1?'1 photo':n+' photos';c.onclick=()=>openPhotos(s);b.appendChild(c)}
 }
 
 /* ---------- sound: múm's release of the period, from the catalogue ---------- */
@@ -218,6 +246,7 @@ function drawMap(now){
     g.globalAlpha=inTour?1:(atEnd()?.92:.55);
     g.fillStyle=inTour?TOURS[curTour].col:COL.paper;
     g.beginPath();g.arc(x,y,r,0,7);g.fill();
+    if(c.hasPhotos){g.globalAlpha=.75;g.strokeStyle=COL.tour[0];g.lineWidth=1;g.beginPath();g.arc(x,y,r+2.2,0,7);g.stroke();g.globalAlpha=inTour?1:(atEnd()?.92:.55)}
     if(selCity===c||hoverCity===c){g.globalAlpha=1;g.strokeStyle=COL.paper;g.lineWidth=1.5;g.beginPath();g.arc(x,y,r+3,0,7);g.stroke()}
     if(recent)labelled.push(c);
   }
@@ -306,19 +335,23 @@ yc.addEventListener('pointerup',()=>yc._on=false);yc.addEventListener('pointerca
 /* a city's shows */
 function openCity(c){
   selCity=c;$('#tip').style.display='none';
-  $('#pBody').innerHTML=`<h2>${esc(c.name)}</h2><div class="sub">${esc(c.k)} · ${c.shows.length} ${c.shows.length===1?'show':'shows'}</div><ol>${c.shows.map(s=>`<li><time>${esc(fmt(s.d,s.e))}</time><strong>${esc(s.v&&!/unknown/i.test(s.v)?s.v:(s.n||'Venue not known'))}</strong>${s.n&&s.v&&s.n!==s.v?`<small>${esc(s.n)}</small>`:''}${s.w?`<small>with ${esc(s.w)}</small>`:''}${s.absent?'<small>Without Gunnar</small>':''}${s.note?`<small class="${SHOWS.draft?'flag':''}">${esc(s.note)}</small>`:''}<small class="faint">${SHOWS.draft?esc(s.s)+' · ':''}${esc(s.src)}${s.ca?` · <a href="${esc(s.ca)}" target="_blank" rel="noopener">listing</a>`:''}${(s.press||[]).map((u,i)=>` · <a href="${esc(u)}" target="_blank" rel="noopener">newspaper ${i+1}</a>`).join('')}</small></li>`).join('')}</ol>`;
+  $('#pBody').innerHTML=`<h2>${esc(c.name)}</h2><div class="sub">${esc(c.k)} · ${c.shows.length} ${c.shows.length===1?'show':'shows'}</div><ol>${c.shows.map(s=>`<li><time>${esc(fmt(s.d,s.e))}</time><strong>${esc(s.v&&!/unknown/i.test(s.v)?s.v:(s.n||'Venue not known'))}</strong>${s.n&&s.v&&s.n!==s.v?`<small>${esc(s.n)}</small>`:''}${s.w?`<small>with ${esc(s.w)}</small>`:''}${(()=>{const ph=photosOf(s);if(!ph.length)return '';const show=ph.slice(0,5);return `<div class="thumbs">${show.map((p,i)=>`<button type="button" data-show="${s.i}" data-ph="${i}" aria-label="Open photo ${i+1} of ${ph.length}"><img loading="lazy" src="${esc(p.src)}" alt="">${i===4&&ph.length>5?`<span class="more">+${ph.length-4}</span>`:''}</button>`).join('')}</div>`})()}${s.absent?'<small>Without Gunnar</small>':''}${s.note?`<small class="${SHOWS.draft?'flag':''}">${esc(s.note)}</small>`:''}<small class="faint">${SHOWS.draft?esc(s.s)+' · ':''}${esc(s.src)}${s.ca?` · <a href="${esc(s.ca)}" target="_blank" rel="noopener">listing</a>`:''}${(s.press||[]).map((u,i)=>` · <a href="${esc(u)}" target="_blank" rel="noopener">newspaper ${i+1}</a>`).join('')}</small></li>`).join('')}</ol>`;
   $('#panel').classList.add('open');dirty=true;
 }
 function closeCity(){selCity=null;$('#panel').classList.remove('open');dirty=true}
 $('#close').onclick=closeCity;
+$('#pBody').addEventListener('click',ev=>{const b=ev.target.closest('[data-ph]');if(b)openPhotos(S[+b.dataset.show],+b.dataset.ph)});
+$('#vClose').onclick=closePhotos;$('#vPrev').onclick=()=>stepPhoto(-1);$('#vNext').onclick=()=>stepPhoto(1);
+$('#view').addEventListener('click',ev=>{if(ev.target.id==='view'||ev.target.tagName==='FIGURE')closePhotos()});
+$('#view').addEventListener('pointerdown',ev=>{V.x=ev.clientX});$('#view').addEventListener('pointerup',ev=>{if(V.x!=null&&Math.abs(ev.clientX-V.x)>50&&V.list.length>1)stepPhoto(ev.clientX<V.x?1:-1);V.x=null});
 $('#play').onclick=()=>play(!P.playing);
 $('#fit').onclick=()=>{cam.manual=true;fitBox(-128,152,py(66),py(-40),W>700?26:8);dirty=true};
 $('#snd').onclick=ev=>{soundOn=!soundOn;ev.currentTarget.setAttribute('aria-pressed',soundOn);if(!soundOn)stopSong();else if(P.playing)songFor(S[Math.floor(P.pos)],true)};
 $('#doubt').onclick=ev=>{showDoubt=!showDoubt;ev.currentTarget.setAttribute('aria-pressed',showDoubt);play(false);closeCity();build();P.pos=LAST();P.scrubbed=false;CITIES.forEach(c=>c.sx=null);fitWorld();showCaption();dirty=true};
-addEventListener('keydown',ev=>{if(ev.key===' '&&ev.target.tagName!=='BUTTON'){ev.preventDefault();play(!P.playing)}else if(ev.key==='Escape')closeCity();else if(ev.key==='ArrowRight'){P.scrubbed=true;setPos(Math.floor(P.pos)+1,true)}else if(ev.key==='ArrowLeft'){P.scrubbed=true;setPos(Math.floor(P.pos)-1,true)}});
+addEventListener('keydown',ev=>{if(!$('#view').hidden){if(ev.key==='Escape')closePhotos();else if(ev.key==='ArrowRight')stepPhoto(1);else if(ev.key==='ArrowLeft')stepPhoto(-1);return}if(ev.key===' '&&ev.target.tagName!=='BUTTON'){ev.preventDefault();play(!P.playing)}else if(ev.key==='Escape')closeCity();else if(ev.key==='ArrowRight'){P.scrubbed=true;setPos(Math.floor(P.pos)+1,true)}else if(ev.key==='ArrowLeft'){P.scrubbed=true;setPos(Math.floor(P.pos)-1,true)}});
 function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;if(atEnd()&&!cam.manual&&!P.scrubbed)fitWorld();else aim();dirty=true}
 addEventListener('resize',resize);
-window.__live={P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,au,play,setPos,openCity,SX,SY};
+window.__live={openPhotos,photosOf,P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,au,play,setPos,openCity,SX,SY};
 resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
 requestAnimationFrame(frame);
