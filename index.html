@@ -53,6 +53,11 @@ button{background:none;border:0;cursor:pointer;padding:0}
 #now span{font:12px var(--mono);color:var(--dim)}
 #now small{display:block;font:11.5px var(--mono);color:var(--faint);margin-top:4px;transition:opacity .4s}
 #now small.off{opacity:0}
+#discPlay{position:fixed;z-index:4;width:44px;height:44px;margin:-22px 0 0 -22px;padding:0;border:0;border-radius:50%;background:var(--paper);color:var(--ground);display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 14px #000a;transition:transform .15s}
+#discPlay:hover{transform:scale(1.1)}#discPlay:active{transform:scale(.94)}
+#discPlay svg{width:24px;height:24px;fill:currentColor;display:block}
+#discPlay .i-pause{display:none}#discPlay.on .i-pause{display:block}#discPlay.on .i-play{display:none}
+body.talk #discPlay{display:none}
 body.disc #now,body.vert #now{display:block}
 #now.dock{left:0!important;width:100%!important;top:auto!important;bottom:0;padding:34px 16px 12px;background:linear-gradient(#11141b00,#11141bf5 42%)}
 body.vert #years{display:none}
@@ -171,7 +176,8 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 </header>
 <nav id="years" aria-label="Years"></nav>
 <div id="tip"></div>
-<div id="now" aria-live="polite"><em></em><b></b><span></span><small id="hint">Spin the record, or drag the arm</small></div>
+<button id="discPlay" type="button" aria-label="Play" hidden><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
+<div id="now" aria-live="polite"><em></em><b></b><span></span><small id="hint">Press play, then spin the record to scratch</small></div>
 
 <aside id="panel" aria-label="Release details">
   <button id="close" aria-label="Close">×</button>
@@ -668,7 +674,13 @@ function hoverSound(e){
   preload(e);
   soundTimer=setTimeout(()=>playBite(e,.18,.3),170);
 }
-$('#soundBtn').onclick=ev=>{soundOn=!soundOn;ev.currentTarget.setAttribute('aria-pressed',soundOn);if(!soundOn){clearTimeout(soundTimer);if(!sel)stopAudio(.3)}};
+function setSound(on){
+  soundOn=on;$('#soundBtn').setAttribute('aria-pressed',on);
+  if(!on){clearTimeout(soundTimer);if(!sel)stopAudio(.3)}
+  syncPlay2();
+}
+function syncPlay2(){const b=$('#discPlay');b.classList.toggle('on',soundOn);b.setAttribute('aria-label',soundOn?'Pause':'Play')}
+$('#soundBtn').onclick=()=>{setSound(!soundOn);disc.paused=false;if(soundOn&&view.name==='disc'&&!sel)playBite(items[disc.cur],.1,.2)};
 $('#moreBtn').onclick=ev=>{showApp=!showApp;ev.currentTarget.setAttribute('aria-pressed',showApp);layout();select(null);syncFilter();fitAll()};
 $('#close').onclick=()=>{select(null);fitAll()};
 $('#play').onclick=()=>{if(!sel)return;if(audio.id===sel.id)stopAudio(.2);else playBite(sel)};
@@ -832,7 +844,7 @@ addEventListener('keydown',ev=>{
     return;
   }
   if(view.name==='disc'&&(ev.key==='ArrowRight'||ev.key==='ArrowLeft')){ev.preventDefault();discStep(ev.key==='ArrowRight'?1:-1);return}
-  if(view.name==='disc'&&ev.key===' '&&!sel){ev.preventDefault();const c=items[disc.cur];if(audio.id===c.id)stopAudio(.3);else playBite(c,.1,.2);return}
+  if(view.name==='disc'&&ev.key===' '&&!sel){ev.preventDefault();if(ev.target.id!=='discPlay')discToggle();return}
   if(ev.key==='ArrowRight'||ev.key==='ArrowLeft'){ev.preventDefault();const list=items.filter(matches);if(!list.length)return;let i=sel?list.indexOf(sel):-1;i=ev.key==='ArrowRight'?i+1:(i<0?list.length-1:i-1);select(list[clamp(i,0,list.length-1)])}
   else if(ev.key==='Escape'){select(null);fitAll()}
   else if(ev.key===' '&&sel){ev.preventDefault();$('#play').click()}
@@ -846,7 +858,7 @@ $('#pin').closest('label').hidden=!TALK;
 /* ---------- the record: every release along one spiral groove, 1997 at the rim, the newest at the label ---------- */
 const view={name:'line',mix:0,to:0};
 const disc={s:0,target:null,vel:0,touched:-1e9,wheelAt:0,cur:0,prev:-1,labelT:1,stops:[],years:[],tile:.1,pitch:.02,R0:1,R:100,cx:0,cy:0,cxLive:null,drag:false,arm:false,dist:0,lastA:0,lastT:0,vinyl:null,vinylR:0,seen:false};
-const AUTOPLAY_SECONDS=20;
+const AUTOPLAY_SECONDS=20,SILENT_SECONDS=3;
 const RIN=.27,PIVOT=1.35,BETA=-Math.PI/4,ARM=1.18;
 function discLayout(){
   /* A slot before each new year works like the gap between tracks. Solve the tile size so the groove ends at the label. */
@@ -869,6 +881,14 @@ function discAlpha(r){const c=clamp((r*r+PIVOT*PIVOT-ARM*ARM)/(2*r*PIVOT),-1,1);
 function discPhi(){return discAlpha(discR(disc.s))+disc.s}
 function discPos(e,phi){const th=phi-e._da,r=e._dr*disc.R;return{x:disc.cx+r*Math.cos(th),y:disc.cy+r*Math.sin(th),rot:th+Math.PI/2,s:disc.tile*disc.R}}
 function discNearest(a){let b=0,d=1e9;disc.stops.forEach((v,i)=>{const k=Math.abs(v-a);if(k<d){d=k;b=i}});return b}
+/* The play button: sound and turning together. Paused, the record stays put until spun or played again. */
+function discToggle(){
+  discTouch();
+  if(soundOn){setSound(false);disc.paused=true;return}
+  setSound(true);disc.paused=false;disc.vel=0;disc.target=null;disc.touched=-1e9;
+  if(sel)select(null);
+  playBite(items[disc.cur],.1,.2);
+}
 function discTouch(){disc.touched=performance.now();if(!disc.seen){disc.seen=true;$('#hint').classList.add('off')}}
 function discMetrics(dt){
   const head=$('#bar').offsetHeight,capH=W<=700?78:92,pw=sel&&W>700?400:0;
@@ -877,6 +897,7 @@ function discMetrics(dt){
   const tx=(W-pw)/2;
   disc.cxLive=disc.cxLive==null||!dt?tx:disc.cxLive+(tx-disc.cxLive)*(1-Math.exp(-dt/.16));
   disc.cx=disc.cxLive;disc.cy=head+Math.max(0,H-head-D-capH-12)*.3+D/2+2;
+  const pb=$('#discPlay');pb.style.left=disc.cx+'px';pb.style.top=disc.cy+'px';pb.hidden=view.mix<1;
   const n=$('#now');n.style.width=Math.min(D,560)+'px';n.style.left=(disc.cx-Math.min(D,560)/2)+'px';n.style.top=(disc.cy+disc.R+5)+'px';
 }
 function tickDisc(dt,now){
@@ -897,9 +918,11 @@ function tickDisc(dt,now){
     if(Math.abs(disc.vel)<=.05){disc.vel=0;disc.target=disc.stops[discNearest(disc.s)]}
   }else if(disc.wheelAt&&now-disc.wheelAt>170){
     disc.wheelAt=0;disc.target=disc.stops[discNearest(disc.s)];busy=true;
-  }else if(!sel&&!hover&&!REDUCED&&view.mix===1&&now-disc.touched>3500){
+  }else if(!sel&&!disc.paused&&(!hover||soundOn)&&!REDUCED&&view.mix===1&&now-disc.touched>3500){
     /* Left alone it plays, one release every AUTOPLAY_SECONDS, then the arm returns to the start. */
-    disc.s+=(disc.tile*1.08/AUTOPLAY_SECONDS)/Math.max(.1,discR(disc.s))*dt;busy=true;
+    /* While playing, a release with no audio passes quickly instead of sitting silent. */
+    const secs=soundOn&&!biteOf(items[disc.cur])?SILENT_SECONDS:AUTOPLAY_SECONDS;
+    disc.s+=(disc.tile*1.08/secs)/Math.max(.1,discR(disc.s))*dt;busy=true;
     if(disc.s>=lastS){disc.s=lastS;disc.target=first;disc.touched=now}
   }
   const c=discNearest(disc.s);
@@ -907,7 +930,7 @@ function tickDisc(dt,now){
     disc.prev=disc.cur===c?-1:disc.cur;disc.fresh=false;disc.cur=c;disc.labelT=0;busy=true;
     const e=items[c],n=$('#now');
     n.querySelector('em').textContent=e.title;n.querySelector('b').textContent=e.artist;n.querySelector('span').textContent=e.year;
-    preload(items[c+1]);preload(items[c-1]);
+    preload(e);preload(items[c+1]);preload(items[c-1]);
     if(!disc.drag)hoverSound(e);
   }
   if(disc.labelT<1){disc.labelT=Math.min(1,disc.labelT+dt/.28);busy=true}
@@ -1062,13 +1085,14 @@ function setView(name){
   $('#vLine').setAttribute('aria-pressed',name==='line');$('#vDisc').setAttribute('aria-pressed',name==='disc');
   cv.classList.remove('over');
   if(name==='disc'){disc.cxLive=null;disc.prev=-1;disc.fresh=true;discMetrics(0);discTouch();disc.seen=false;$('#hint').classList.remove('off')}
-  store.set('gt.view',name);syncLayout();dirty=true;
+  disc.paused=false;store.set('gt.view',name);syncLayout();dirty=true;
 }
 function syncLayout(){
   const vert=view.name==='line'&&orient==='v',n=$('#now'),o=$('#vOrient');
   document.body.classList.toggle('vert',vert);
   n.classList.toggle('dock',vert);
-  $('#hint').textContent=vert?'':'Spin the record, or drag the arm';
+  $('#hint').textContent=vert?'':'Press play, then spin the record to scratch';
+  $('#discPlay').hidden=view.name!=='disc'||view.mix<1;
   o.hidden=view.name!=='line';
   o.setAttribute('aria-pressed',orient==='v');
   if(vert){n.style.left=n.style.top=n.style.width=''}
@@ -1086,8 +1110,9 @@ function setOrient(o){
 $('#vOrient').onclick=()=>setOrient(orient==='v'?'h':'v');
 $('#vLine').onclick=()=>setView('line');
 $('#vDisc').onclick=()=>setView('disc');
+$('#discPlay').onclick=discToggle;
 
-window.__cat={view,disc,setView,talk,cam,audio,items:()=>items,select,startTalk,next,plan,cfg,state:()=>({mode,finished,sel:sel&&sel.id})};
+window.__cat={sound:()=>soundOn,view,disc,setView,talk,cam,audio,items:()=>items,select,startTalk,next,plan,cfg,state:()=>({mode,finished,sel:sel&&sel.id})};
 layout();
 addEventListener('resize',resize);resize();fitAll(true);
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
@@ -1101,7 +1126,8 @@ if(!REDUCED&&!startDisc){
   tick();setTimeout(go,1100);
 }
 syncLayout();
-if(startDisc){setTimeout(()=>{setView('disc')},REDUCED?0:500)}
+/* Opening on the record always starts at the beginning of the career. */
+if(startDisc){setTimeout(()=>{focus=null;setView('disc')},REDUCED?0:500)}
 requestAnimationFrame(frame);
 </script>
 </body>
