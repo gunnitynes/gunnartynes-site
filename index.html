@@ -632,22 +632,23 @@ cv.addEventListener('pointermove',ev=>{
     cam.tx-=dx/cam.tz;cam.ty-=dy/cam.tz;clampCam();cam.x=cam.tx;cam.y=cam.ty;dirty=true;return}
   if(ev.pointerType==='mouse'){lens.x=ev.clientX;lens.y=ev.clientY;lens.on=true}
   const h=hit(ev.clientX,ev.clientY);
-  if(h!==hover){hover=h;dirty=true;cv.classList.toggle('over',!!h);if(orient!=='v')hoverSound(h)}
+  if(h!==hover){hover=h;dirty=true;cv.classList.toggle('over',!!h);hoverSound(h,ev.pointerType==='mouse')}
   const tip=$('#tip');
   if(h&&!sel){tip.style.display='block';tip.innerHTML=`<em>${esc(h.title)}</em><br><b>${esc(h.artist)}</b><span>${h.year}</span>`;tip.style.left=Math.min(W-330,ev.clientX+14)+'px';tip.style.top=Math.min(H-90,ev.clientY+14)+'px'}else tip.style.display='none';
 });
-/* On the timelines an album plays when it is clicked. This waits for the click itself, which every browser accepts as permission to play. */
-let tapped=null;
+/* On the timelines a click or tap plays the album. This waits for the click itself, which every browser accepts as permission to play. */
+let tapped=null,tappedMouse=false;
 cv.addEventListener('click',()=>{
   const e=tapped;tapped=null;
   if(!e||sel!==e||view.name!=='line'||mode!=='browse')return;
-  if(audio.id===e.id||!soundOn){stopAudio(.2);return}
+  if(!soundOn){stopAudio(.2);return}
+  if(audio.id===e.id){if(!tappedMouse)stopAudio(.2);return}   /* a mouse click keeps what hovering already started; a second tap stops it */
   playBite(e,.05,.15);
 });
-cv.addEventListener('pointerup',ev=>{pts.delete(ev.pointerId);pinch=0;cv.classList.remove('drag');if(mode==='talk'){if(finished)leaveTalk(hit(ev.clientX,ev.clientY));return}if(view.name==='disc'){discUp(ev);return}if(moved<6&&pts.size===0){flick.x=flick.y=0;const h=hit(ev.clientX,ev.clientY);tapped=h;select(h);if(!h)fitAll()}
+cv.addEventListener('pointerup',ev=>{pts.delete(ev.pointerId);pinch=0;cv.classList.remove('drag');if(mode==='talk'){if(finished)leaveTalk(hit(ev.clientX,ev.clientY));return}if(view.name==='disc'){discUp(ev);return}if(moved<6&&pts.size===0){flick.x=flick.y=0;const h=hit(ev.clientX,ev.clientY);tapped=h;tappedMouse=ev.pointerType==='mouse';select(h);if(!h)fitAll()}
   if(performance.now()-dragT>90){flick.x=flick.y=0}
   drag=null});
-cv.addEventListener('pointerleave',()=>{if(hover){hover=null;dirty=true;hoverSound(null)}lens.on=false;dirty=true;$('#tip').style.display='none'});
+cv.addEventListener('pointerleave',ev=>{if(hover){hover=null;dirty=true;hoverSound(null,ev.pointerType==='mouse')}lens.on=false;dirty=true;$('#tip').style.display='none'});
 function zoomAt(mx,my,f){if(orient==='v')return;const zmin=fitBox(70,64).z*.8,zmax=H/T*1.1;const nz=clamp(cam.tz*f,zmin,zmax);const wxx=(mx-W/2)/cam.tz+cam.tx,wyy=(my-H/2)/cam.tz+cam.ty;cam.tz=nz;cam.tx=wxx-(mx-W/2)/nz;cam.ty=wyy-(my-H/2)/nz;cam.tau=.08;dirty=true}
 cv.addEventListener('wheel',ev=>{
   ev.preventDefault();if(mode==='talk')return;
@@ -679,9 +680,9 @@ $('#filterBtn').onclick=()=>{const f=$('#filters');f.hidden=!f.hidden;$('#filter
 function syncFilter(){const on=active.size<Object.keys(ROLE).length||showApp;$('#filterBtn').classList.toggle('on',on);$('#filterBtn').textContent=on?'Filter on':'Filter'}
 /* Sound starts on. Browsers keep a page silent until the visitor's first click, tap or key, so soundLive says whether it can really be heard yet. */
 let soundOn=store.get('gt.sound',true),soundLive=false,soundTimer=0;
-function hoverSound(e){
+function hoverSound(e,byMouse){
+  if(view.name!=='disc'&&!byMouse)return;   /* on the timelines a mouse plays what it rests on; a finger plays what it taps */
   clearTimeout(soundTimer);
-  if(view.name!=='disc')return;   /* the timelines play only what is clicked */
   if(!soundOn||sel||mode!=='browse')return;
   if(!e){stopAudio(.45);return}
   preload(e);
