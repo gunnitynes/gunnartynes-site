@@ -81,7 +81,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 <div id="view" hidden role="dialog" aria-label="Photos"><button id="vClose" aria-label="Close photos">×</button><figure><img id="vImg" alt=""></figure><button class="nav" id="vPrev" aria-label="Previous photo">‹</button><button class="nav" id="vNext" aria-label="Next photo">›</button><div class="meta"><em id="vCap"></em><small id="vBy"></small></div></div>
 <aside id="panel" aria-label="Shows in this city"><button id="close" aria-label="Close">×</button><div id="pBody"></div></aside>
 <script src="map.js"></script>
-<script>if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname))document.write('<script src="blog-photos.js" onerror="void 0"><\/script>')</script>
 <script src="shows.js"></script>
 <script src="../catalogue.js"></script>
 <script>
@@ -98,8 +97,7 @@ if(SHOWS.draft){$('#tag').hidden=false;$('#doubt').hidden=false}
 const LAND=[];for(const[lat,row]of LIVE.land)for(const lon of row)LAND.push(px(lon),py(lat));
 const COAST=new Path2D();for(const ring of LIVE.outline){ring.forEach((q,i)=>{if(!i||Math.abs(q[0]-ring[i-1][0])>180)COAST.moveTo(px(q[0]),py(q[1]));else COAST.lineTo(px(q[0]),py(q[1]))});COAST.closePath()}
 
-const OVERLAY=window.BLOGPHOTOS||{};
-const photosOf=s=>[...(s.photos||[]),...(OVERLAY[s.id]||[])];
+const photosOf=s=>s.photos||[];
 /* ---------- data: shows in order, grouped into tours by the gaps between them ---------- */
 let S=[],CITIES=[],TOURS=[];
 const day=s=>Date.parse(s+'T00:00:00Z')/864e5;
