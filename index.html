@@ -846,6 +846,7 @@ $('#pin').closest('label').hidden=!TALK;
 /* ---------- the record: every release along one spiral groove, 1997 at the rim, the newest at the label ---------- */
 const view={name:'line',mix:0,to:0};
 const disc={s:0,target:null,vel:0,touched:-1e9,wheelAt:0,cur:0,prev:-1,labelT:1,stops:[],years:[],tile:.1,pitch:.02,R0:1,R:100,cx:0,cy:0,cxLive:null,drag:false,arm:false,dist:0,lastA:0,lastT:0,vinyl:null,vinylR:0,seen:false};
+const AUTOPLAY_SECONDS=20;
 const RIN=.27,PIVOT=1.35,BETA=-Math.PI/4,ARM=1.18;
 function discLayout(){
   /* A slot before each new year works like the gap between tracks. Solve the tile size so the groove ends at the label. */
@@ -897,8 +898,8 @@ function tickDisc(dt,now){
   }else if(disc.wheelAt&&now-disc.wheelAt>170){
     disc.wheelAt=0;disc.target=disc.stops[discNearest(disc.s)];busy=true;
   }else if(!sel&&!hover&&!REDUCED&&view.mix===1&&now-disc.touched>3500){
-    /* Left alone it plays: one release about every three seconds, then the arm returns to the start. */
-    disc.s+=(disc.tile*1.08/3.1)/Math.max(.1,discR(disc.s))*dt;busy=true;
+    /* Left alone it plays, one release every AUTOPLAY_SECONDS, then the arm returns to the start. */
+    disc.s+=(disc.tile*1.08/AUTOPLAY_SECONDS)/Math.max(.1,discR(disc.s))*dt;busy=true;
     if(disc.s>=lastS){disc.s=lastS;disc.target=first;disc.touched=now}
   }
   const c=discNearest(disc.s);
