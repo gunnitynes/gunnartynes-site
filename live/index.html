@@ -38,6 +38,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #panel ol{list-style:none;margin:0;padding:0}#panel li{padding:10px 0;border-top:1px solid var(--rule)}
 #panel li time{font:12px var(--mono);color:var(--dim);display:block}#panel li strong{font-weight:500;display:block}
 #panel li small{color:var(--dim);display:block;font-size:12px}#panel li .flag{color:var(--p)}#panel li .faint{color:var(--faint);font:11px var(--mono)}
+#pop{position:fixed;z-index:4;background:var(--plate2);border-radius:2px;box-shadow:0 8px 30px #0008;min-width:230px;padding:4px}#pop button{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:2px}#pop button:hover{background:#ffffff0d}#pop b{font-weight:500;font-size:13px;display:block}#pop small{color:var(--dim);font-size:11.5px;display:block}#pop button[aria-checked=true] b::after{content:" ✓";color:var(--p)}
+#pins{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.pin{position:absolute;left:0;top:0;padding:0;width:var(--pw,170px);aspect-ratio:3/2;pointer-events:auto;cursor:zoom-in;background:var(--ground);border:3px solid var(--paper);border-radius:1px;box-shadow:0 8px 26px #000b;opacity:0;transition:opacity .9s;will-change:transform}.pin.on{opacity:1}.pin.on.old{opacity:0}.pin img{width:100%;height:100%;object-fit:cover;display:block}
+#leg.caponly .frame{display:none}#leg.caponly.on .frame{pointer-events:none}
 #hint{position:fixed;left:50%;top:calc(var(--bar,60px) + 8px);transform:translateX(-50%);font:12px var(--mono);color:var(--dim);opacity:0;transition:opacity .7s;pointer-events:none;z-index:2;white-space:nowrap;text-shadow:0 1px 6px #000}#hint.on{opacity:1}
 #more{font:12px var(--mono);color:var(--dim);max-height:0;overflow:hidden;opacity:0;transition:opacity .8s,max-height .8s;white-space:nowrap;text-overflow:ellipsis}#more.on{opacity:1;max-height:1.6em}
 #leg{position:fixed;right:max(24px,env(safe-area-inset-right,0px));bottom:calc(var(--foot,120px) + 8px);width:min(34vw,420px);z-index:2;opacity:0;transition:opacity .9s;pointer-events:none}#leg.on{opacity:1}
@@ -62,7 +66,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
   #leg{left:16px;right:16px;width:auto}#leg .frame{aspect-ratio:16/10;max-height:30vh}#legCap{text-align:left}
   #view .nav{width:40px}#view em{font-size:17px}
   #panel{top:auto;left:0;right:0;width:auto;height:58%;transform:translateY(102%);box-shadow:0 -12px 40px #0006}
-  #bar{gap:6px 14px;padding-bottom:6px}#tag{display:none}
+  #bar{gap:6px 14px;padding-bottom:6px}#right{gap:12px}.pin{--pw:112px}#tag{display:none}
   #cap em{font-size:19px}#now{min-height:58px}#years{height:40px}
 }
 </style></head><body>
@@ -78,9 +82,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
   <span id="tag" hidden>draft list, not published</span>
   <div id="right">
     <a class="quiet" href="https://gunnartynes.com/">Main site</a>
+    <button class="quiet" id="viewBtn" aria-haspopup="menu" aria-expanded="false" title="How the camera moves during play">View</button>
+    <button class="quiet" id="photoBtn" aria-haspopup="menu" aria-expanded="false" title="Show photos during play">Photos</button>
     <button class="quiet" id="fit" title="Show the whole world">World</button>
     <button class="quiet" id="doubt" hidden aria-pressed="false" title="Include entries marked doubtful">Doubtful</button>
-    <button class="quiet" id="snd" aria-pressed="true" title="Play music from the same period">Sound</button>
   </div>
 </header>
 <footer id="foot">
@@ -92,6 +97,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
   <canvas id="years" aria-label="Scrub through the years"></canvas>
 </footer>
 <div id="tip"></div>
+<div id="pins" aria-hidden="false"></div>
+<div id="pop" role="menu" hidden></div>
 <div id="hint" aria-live="polite"></div>
 <div id="leg" aria-hidden="true"><button class="frame" type="button" id="legFrame" aria-label="Open this photo"><img alt=""><img alt=""></button><div id="legCap"></div></div>
 <div id="view" hidden role="dialog" aria-label="Photos"><button id="vClose" aria-label="Close photos">×</button><figure><img id="vImg" alt=""></figure><button class="nav" id="vPrev" aria-label="Previous photo">‹</button><button class="nav" id="vNext" aria-label="Next photo">›</button><div class="meta"><em id="vCap"></em><small id="vBy"></small></div></div>
@@ -107,7 +114,8 @@ const COL={paper:css('--paper'),dim:css('--dim'),faint:css('--faint'),tour:[css(
 const STRETCH=1.22,SHOW_SECONDS=.62,SLOW_RATE=.16,PHOTO_SECONDS=4.2,TOUR_GAP=21,REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const px=lon=>lon,py=lat=>-lat*STRETCH;
 const cv=$('#map'),g=cv.getContext('2d'),yc=$('#years'),yg=yc.getContext('2d');
-let W=0,H=0,DPR=1,dirty=true,showDoubt=false,soundOn=true;
+/* Music is off for now. The code stays, ready for when audio is worked on: set soundOn to true and bring back a Sound button. */
+let W=0,H=0,DPR=1,dirty=true,showDoubt=false,soundOn=false;
 const LIVE={shows:SHOWS.shows,land:LIVEMAP.land,outline:LIVEMAP.coast};
 if(SHOWS.draft){$('#tag').hidden=false;$('#doubt').hidden=false}
 const LAND=[];for(const[lat,row]of LIVE.land)for(const lon of row)LAND.push(px(lon),py(lat));
@@ -152,7 +160,7 @@ function chrome(){return{top:$('#bar').offsetHeight,bot:$('#foot').offsetHeight}
 function fitBox(x0,x1,y0,y1,pad){
   const{top,bot}=chrome(),w=Math.max(8,x1-x0),h=Math.max(5,y1-y0);
   const panelOpen=$('#panel').classList.contains('open');
-  const legOn=$('#leg').classList.contains('on');
+  const legOn=$('#leg').classList.contains('on')&&!$('#leg').classList.contains('caponly');
   const pw=panelOpen&&W>700?400:(legOn&&W>700?Math.min(W*.34,420)+30:0);
   const extra=legOn&&W<=700?$('#leg').offsetHeight+10:0;
   /* Max guards a window that has no size yet, such as a background tab: a zero or negative zoom would blank the map for good. */
@@ -172,7 +180,8 @@ function aimAhead(n){
 const SX=x=>(x-cam.x)*cam.z+W/2,SY=y=>(y-cam.y)*cam.z+H/2;
 
 /* ---------- playback ---------- */
-const P={pos:0,playing:false,pulse:-1,pulseT:0,slow:false,rate:1,hi:-1,speed:1};
+const P={pos:0,playing:false,pulse:-1,pulseT:0,slow:false,rate:1,hi:-1,speed:1,view:'follow',photos:'off'};
+try{const v=localStorage.getItem('gt.live.view');if(['follow','overview','free'].includes(v))P.view=v;const f=localStorage.getItem('gt.live.photos');if(['off','map','side','behind'].includes(f))P.photos=f}catch(e){}
 try{const v=parseFloat(localStorage.getItem('gt.live.speed'));if([.5,1,2,4].includes(v)){P.speed=v;P.rate=v}}catch(e){}   /* pos: shows reached, with the fraction of the leg under way */
 const LAST=()=>S.length-1;
 P.pos=LAST();
@@ -184,12 +193,30 @@ function setPos(v,fromUser){
   if(now!==before){if(now>before||fromUser){P.pulse=now;P.pulseT=performance.now()}showCaption();aim();if(P.playing)songFor(S[now])}
   dirty=true;
 }
-function aim(){const n=Math.floor(P.pos);if(S[n]&&!atEnd())aimAhead(n)}
+function aim(){const n=Math.floor(P.pos);if(S[n]&&!atEnd()&&P.view==='overview')aimAhead(n)}
+/* Follow: the view stays on the moving dot, at whatever zoom the visitor has set. */
+const defaultZoom=()=>clamp(W/95,7,16);
+function viewOffset(z){
+  const{top,bot}=chrome(),panel=$('#panel').classList.contains('open'),legOn=$('#leg').classList.contains('on')&&!$('#leg').classList.contains('caponly');
+  const pw=panel&&W>700?400:(legOn&&W>700?Math.min(W*.34,420)+30:0),extra=legOn&&W<=700?$('#leg').offsetHeight+10:0;
+  return{x:pw/2/z,y:-(top-bot-extra)/2/z};
+}
+function headPoint(){
+  const n=Math.floor(P.pos),f=P.pos-n,a=S[n];if(!a)return{x:cam.x,y:cam.y};if(!legFrom(n)||f<=0)return a;
+  const b=legPaths(a,S[n+1])[0][1],c=curve(a,b),q=f<.5?2*f*f:1-Math.pow(-2*f+2,2)/2;
+  return{x:(1-q)*(1-q)*a.x+2*(1-q)*q*c.cx+q*q*b.x,y:(1-q)*(1-q)*a.y+2*(1-q)*q*c.cy+q*q*b.y};
+}
+function followCam(){
+  if(P.view!=='follow'||cam.manual||atEnd())return;
+  const h=headPoint(),z=cam.userZ||defaultZoom(),o=viewOffset(z);
+  cam.tz=z;cam.tx=h.x+o.x;cam.ty=h.y+o.y;
+  if(Math.abs(cam.tx-cam.x)>180)cam.x+=Math.sign(cam.tx-cam.x)*360;   /* a flight across the Pacific comes back round the far edge */
+}
 function atEnd(){return P.pos>=LAST()&&!P.playing}
 function play(on){
   if(!on){P.armed=P.slow||P.armed;setSlow(false)}else flashHint();
   P.playing=on;$('#play').classList.toggle('on',on);$('#play').setAttribute('aria-label',on?'Pause':'Play the tours');
-  if(on){cam.manual=false;if(P.pos>=LAST())setPos(0,true);else aim();P.pulse=Math.floor(P.pos);P.pulseT=performance.now();showCaption();if(soundOn)songFor(S[Math.floor(P.pos)],true);if(P.armed)setSlow(true)}
+  if(on){cam.manual=P.view==='free';if(P.pos>=LAST()){if(!cam.manual&&P.view==='follow'){const a=S[0],z=cam.userZ||defaultZoom();cam.tz=z}setPos(0,true)}else aim();P.pulse=Math.floor(P.pos);P.pulseT=performance.now();showCaption();if(soundOn)songFor(S[Math.floor(P.pos)],true);if(P.armed)setSlow(true)}
   else stopSong();
   dirty=true;
 }
@@ -201,13 +228,23 @@ function syncSpeed(){document.querySelectorAll('#speed button').forEach(b=>b.set
 function setSpeed(v){if(v==='slow'){P.armed=true;if(P.playing)setSlow(true);syncSpeed();return}P.speed=+v;P.armed=false;try{localStorage.setItem('gt.live.speed',v)}catch(e){}if(P.slow)setSlow(false);syncSpeed();dirty=true}
 function setSlow(on){
   if(P.slow===on)return;P.slow=on;syncSpeed();
-  $('#leg').classList.toggle('on',false);$('#more').classList.toggle('on',on);
-  if(on){flashHint(`${VERB} again to speed up`,2600);Leg.key=null;Leg.t=0;showLeg(true)}
-  else{Leg.list=[];$('#hint').classList.remove('on')}
-  syncChrome();if(P.playing)aim();showMore();dirty=true;
+  $('#more').classList.toggle('on',on);
+  if(on)flashHint(`${VERB} again to speed up`,2600);else $('#hint').classList.remove('on');
+  restartPhotos();syncChrome();if(P.playing)aim();showMore();dirty=true;
 }
-/* Photos from this stretch of the road: this show's first, then the nearest shows on the same run. */
+/* Photos during play. Off by default; Slow always brings up the side photo, as it is the point of slowing down. */
+const photoMode=()=>P.photos!=='off'?P.photos:(P.slow?'side':'off');
 const Leg={list:[],i:0,t:0,key:null,side:0,cur:null};
+function restartPhotos(){
+  Leg.key=null;Leg.list=[];Leg.cur=null;Leg.t=0;
+  const m=photoMode(),box=$('#leg');
+  box.classList.remove('on','caponly');box.querySelectorAll('img').forEach(i=>i.classList.remove('show'));
+  if(m!=='map')clearPins();
+  if(m!=='behind')Back.cur=Back.prev=null;
+  if(P.playing&&m!=='off')showLeg(true);
+  dirty=true;
+}
+/* This stretch of the road: this show's photos first, then the nearest shows on the same run. */
 function legPhotos(n){
   const s=S[n];if(!s)return[];const out=[],T=TOURS[s.tour];
   const near=[];for(let i=Math.max(T.a,n-8);i<=Math.min(T.b,n+8);i++)if(photosOf(S[i]).length)near.push(S[i]);
@@ -218,27 +255,63 @@ function legPhotos(n){
 function showLeg(force){
   const n=Math.floor(P.pos),key=(S[n]||{}).i;
   if(force||key!==Leg.key){
-    Leg.key=key;const next=legPhotos(n);
-    /* stay in step with the road: move on when this show has its own photos */
-    const own=next[0]&&next[0].show.i===n;
-    if(force||own||!Leg.list.length||!next.some(p=>Leg.cur&&p.src===Leg.cur.src)){Leg.list=next;Leg.i=0;Leg.t=-1}else{Leg.list=next;Leg.i=Math.max(0,next.findIndex(p=>p.src===Leg.cur.src))}
+    Leg.key=key;const next=legPhotos(n),own=next[0]&&next[0].show.i===n,shown=PHOTO_SECONDS-Leg.t;
+    if(force||!Leg.list.length||!next.length){Leg.list=next;Leg.i=0;Leg.t=-1}
+    else if(own&&(!Leg.cur||Leg.cur.show.i!==n)&&shown>2.4){Leg.list=next;Leg.i=0;Leg.t=-1}
+    else{Leg.list=next;Leg.i=Math.max(0,next.findIndex(p=>Leg.cur&&p.src===Leg.cur.src))}
   }
-  if(Leg.t<0||!Leg.cur){Leg.t=PHOTO_SECONDS;paintLeg()}
+  if(Leg.t<0){Leg.t=PHOTO_SECONDS;paintLeg()}
 }
+function legCaption(p){$('#legCap').textContent=[p.cap,`${p.show.c}, ${fmt(p.show.d)}`,p.by?'Photo: '+p.by:''].filter(Boolean).join(' · ')}
 function paintLeg(){
-  const box=$('#leg'),p=Leg.list[Leg.i];
-  if(!p){box.classList.remove('on');Leg.cur=null;syncChrome();return}
-  if(Leg.cur&&Leg.cur.src===p.src&&box.classList.contains('on'))return;
-  const imgs=box.querySelectorAll('img'),inc=imgs[1-Leg.side],out=imgs[Leg.side];
-  const go=()=>{out.classList.remove('show');inc.classList.add('show');Leg.side=1-Leg.side;
-    $('#legCap').textContent=[p.cap,`${p.show.c}, ${fmt(p.show.d)}`,p.by?'Photo: '+p.by:''].filter(Boolean).join(' · ');
-    if(P.slow&&!box.classList.contains('on')){box.classList.add('on');syncChrome();aim()}};
-  Leg.cur=p;inc.onload=go;inc.onerror=()=>{Leg.i=(Leg.i+1)%Leg.list.length;Leg.t=.2};inc.src=p.src;
+  const box=$('#leg'),p=Leg.list[Leg.i],m=photoMode();
+  if(!p){if(box.classList.contains('on')){box.classList.remove('on','caponly');syncChrome()}Leg.cur=null;return}
+  Leg.cur=p;
   const nx=Leg.list[(Leg.i+1)%Leg.list.length];if(nx){const im=new Image();im.src=nx.src}
+  if(m==='map'){addPin(p);return}
+  if(m==='behind'){setBack(p);box.classList.add('on','caponly');legCaption(p);return}
+  const imgs=box.querySelectorAll('img'),inc=imgs[1-Leg.side],out=imgs[Leg.side];
+  inc.onload=()=>{out.classList.remove('show');inc.classList.add('show');Leg.side=1-Leg.side;legCaption(p);if(!box.classList.contains('on')){box.classList.add('on');syncChrome();aim()}};
+  inc.onerror=()=>{Leg.i=(Leg.i+1)%Leg.list.length;Leg.t=.2};inc.src=p.src;
 }
 function tickLeg(dt){
-  if(!P.slow||!P.playing)return;showLeg();
+  if(!P.playing||photoMode()==='off')return;showLeg();
   Leg.t-=dt;if(Leg.t<=0&&Leg.list.length){Leg.t=PHOTO_SECONDS;Leg.i=(Leg.i+1)%Leg.list.length;paintLeg()}
+}
+/* On the map: small prints pinned to their city, which stay for a while as the road moves on. */
+const Pins=[],PIN_LIFE=22000,PIN_MAX=5;
+function addPin(p){
+  if(Pins.some(x=>x.p.src===p.src))return;
+  const el=document.createElement('button');el.type='button';el.className='pin';el.setAttribute('aria-label',`Open photo, ${p.show.c}`);el.title=[p.cap,`${p.show.c}, ${fmt(p.show.d)}`].filter(Boolean).join(' · ');
+  const img=new Image();img.alt='';img.onload=()=>el.classList.add('on');img.src=p.src;el.appendChild(img);el.onclick=()=>openPhotos(p.show,p.idx);
+  $('#pins').appendChild(el);
+  Pins.push({p,el,city:p.show.city,t:performance.now(),side:Pins.length%2?1:-1,tilt:((p.src.length*7)%7-3)*.7});
+  while(Pins.length>PIN_MAX)dropPin(Pins[0]);
+}
+function dropPin(x){Pins.splice(Pins.indexOf(x),1);x.el.classList.remove('on');setTimeout(()=>x.el.remove(),900)}
+function clearPins(){while(Pins.length)dropPin(Pins[0])}
+function drawPins(now){
+  if(!Pins.length)return;
+  for(const x of [...Pins]){
+    if(P.playing&&now-x.t>PIN_LIFE){dropPin(x);continue}
+    const w=x.el.offsetWidth,h=x.el.offsetHeight,cx=SX(x.city.x),cy=SY(x.city.y);
+    const gone=cx<-10||cx>W+10||cy<chrome().top-10||cy>H-chrome().bot+10;
+    x.el.classList.toggle('old',gone);x.el.style.pointerEvents=gone?'none':'';if(gone)continue;
+    let l=cx+x.side*(w*.55+14)-w/2,t=cy-h-26;
+    l=clamp(l,6,W-w-6);t=clamp(t,chrome().top+4,H-h-chrome().bot-6);
+    x.el.style.transform=`translate(${l}px,${t}px) rotate(${x.tilt}deg)`;
+    g.strokeStyle=COL.paper;g.globalAlpha=.5;g.lineWidth=1;g.beginPath();g.moveTo(cx,cy);g.lineTo(l+w/2,t+h);g.stroke();g.globalAlpha=1;
+  }
+  dirty=true;
+}
+/* Behind the map: one photo across the whole screen, faint, with the road over it. */
+const Back={cur:null,prev:null,t0:0};
+function setBack(p){const img=new Image();img.onload=()=>{Back.prev=Back.cur;Back.cur=img;Back.t0=performance.now();dirty=true};img.src=p.src}
+function drawCover(img,alpha){if(!img||alpha<=0)return;const k=Math.max(W/img.naturalWidth,H/img.naturalHeight),w=img.naturalWidth*k,h=img.naturalHeight*k;g.globalAlpha=alpha;g.drawImage(img,(W-w)/2,(H-h)/2,w,h);g.globalAlpha=1}
+function drawBack(now){
+  if(!Back.cur)return false;const a=clamp((now-Back.t0)/1400,0,1);
+  drawCover(Back.prev,.34*(1-a));drawCover(Back.cur,.34*a);if(a<1)dirty=true;
+  g.fillStyle='#11141b73';g.fillRect(0,0,W,H);return true;
 }
 function showMore(){
   const el=$('#more');if(!P.slow)return;const s=S[Math.floor(P.pos)];if(!s)return;const T=TOURS[s.tour],count=T.b-T.a+1;
@@ -285,9 +358,10 @@ function curve(a,b){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),lift=Math.mi
 function legPaths(a,b){const dx=b.x-a.x;if(Math.abs(dx)<=180)return[[a,b]];const w=dx>0?-360:360;return[[a,{x:b.x+w,y:b.y}],[{x:a.x-w,y:a.y},b]]}
 function drawMap(now){
   g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle='#11141b';g.fillRect(0,0,W,H);
+  const backed=drawBack(now);
   /* land: real shapes under a field of dots; close in, the shapes take over from the dots */
   g.save();g.setTransform(cam.z*DPR,0,0,cam.z*DPR,(W/2-cam.x*cam.z)*DPR,(H/2-cam.y*cam.z)*DPR);
-  g.fillStyle='#171b24';g.fill(COAST);g.strokeStyle='#2b303c';g.lineWidth=1/cam.z;g.stroke(COAST);g.restore();
+  g.fillStyle=backed?'#171b2466':'#171b24';g.fill(COAST);g.strokeStyle='#2b303c';g.lineWidth=1/cam.z;g.stroke(COAST);g.restore();
   const dots=clamp(1-(cam.z-7)/9,0,1);
   if(dots>0){const size=clamp(cam.z*.42,1,2.4),half=size/2;g.fillStyle='#2f3542';g.globalAlpha=dots;
     for(let i=0;i<LAND.length;i+=2){const x=SX(LAND[i]),y=SY(LAND[i+1]);if(x>-4&&x<W+4&&y>-4&&y<H+4)g.fillRect(x-half,y-half,size,size)}
@@ -303,6 +377,7 @@ function drawMap(now){
     g.stroke();
   }
   if(P.hi>=0&&TOURS[P.hi]){const T=TOURS[P.hi];g.strokeStyle=T.col;g.globalAlpha=.85;g.lineWidth=1.6;g.beginPath();for(let i=T.a;i<T.b;i++)for(const[a,b]of legPaths(S[i],S[i+1])){const c=curve(a,b);g.moveTo(SX(a.x),SY(a.y));g.quadraticCurveTo(SX(c.cx),SY(c.cy),SX(b.x),SY(b.y))}g.stroke();g.globalAlpha=1}
+  drawPins(now);
   /* the leg under way, and the point travelling along it */
   if(cur&&legFrom(n)&&frac>0&&!atEnd()){
     const a=cur,b=legPaths(cur,S[n+1])[0][1],c=curve(a,b),T=TOURS[curTour],q=frac<.5?2*frac*frac:1-Math.pow(-2*frac+2,2)/2;
@@ -372,11 +447,12 @@ function frame(now){
     P.rate+=((P.slow?SLOW_RATE:P.speed)-P.rate)*(1-Math.exp(-dt/.45));
     const speed=(legFrom(n)?1/SHOW_SECONDS:1/(SHOW_SECONDS*1.9))*P.rate;
     tickLeg(dt);
-    if(P.pos>=LAST()){play(false);P.armed=false;syncSpeed();P.scrubbed=false;cam.manual=false;fitWorld();showCaption()}
+    if(P.pos>=LAST()){play(false);P.armed=false;syncSpeed();clearPins();Back.cur=Back.prev=null;$('#leg').classList.remove('on','caponly');P.scrubbed=false;cam.manual=false;fitWorld();showCaption()}
     else setPos(P.pos+dt*speed);
     dirty=true;
   }
-  const k=1-Math.exp(-dt/(P.slow?1.1:(P.playing?.55:.28)));
+  followCam();
+  const k=1-Math.exp(-dt/(P.view==='follow'&&!cam.manual&&!atEnd()?(P.slow?.45:clamp(.2/P.rate,.08,.4)):(P.slow?1.1:(P.playing?.55:.28))));
   if(Math.abs(cam.x-cam.tx)>.002||Math.abs(cam.y-cam.ty)>.002||Math.abs(cam.z-cam.tz)>.001){
     const lz=Math.log(cam.z)+(Math.log(cam.tz)-Math.log(cam.z))*k;cam.z=Math.exp(lz);cam.x+=(cam.tx-cam.x)*k;cam.y+=(cam.ty-cam.y)*k;dirty=true;
   }
@@ -391,7 +467,7 @@ cv.addEventListener('pointerdown',ev=>{cv.setPointerCapture(ev.pointerId);pts.se
 cv.addEventListener('pointermove',ev=>{
   if(pts.has(ev.pointerId))pts.set(ev.pointerId,[ev.clientX,ev.clientY]);
   if(pts.size===2){const[a,b]=[...pts.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pinch)zoomAt((a[0]+b[0])/2,(a[1]+b[1])/2,d/pinch);pinch=d;moved=99;return}
-  if(pts.size===1&&dragLast){const dx=ev.clientX-dragLast[0],dy=ev.clientY-dragLast[1];moved+=Math.abs(dx)+Math.abs(dy);dragLast=[ev.clientX,ev.clientY];if(moved>6){cam.manual=true;cam.tx-=dx/cam.z;cam.ty-=dy/cam.z;cam.x=cam.tx;cam.y=cam.ty;dirty=true}return}
+  if(pts.size===1&&dragLast){const dx=ev.clientX-dragLast[0],dy=ev.clientY-dragLast[1];moved+=Math.abs(dx)+Math.abs(dy);dragLast=[ev.clientX,ev.clientY];if(moved>6){if(!cam.manual&&P.view==='follow'&&P.playing)flashHint('Stopped following. View › Follow to rejoin',3200);cam.manual=true;cam.tx-=dx/cam.z;cam.ty-=dy/cam.z;cam.x=cam.tx;cam.y=cam.ty;dirty=true}return}
   if(ev.pointerType!=='mouse')return;
   const h=P.playing?null:hit(ev.clientX,ev.clientY);
   if(h!==hoverCity){hoverCity=h;cv.classList.toggle('over',!!h);dirty=true}
@@ -401,11 +477,14 @@ cv.addEventListener('pointermove',ev=>{
 cv.addEventListener('pointerup',ev=>{pts.delete(ev.pointerId);pinch=0;cv.classList.remove('drag');if(moved<6&&pts.size===0){if(P.playing){setSlow(!P.slow);P.armed=P.slow}else{const h=hit(ev.clientX,ev.clientY);if(h)openCity(h);else if(selCity)closeCity()}}dragLast=null});
 cv.addEventListener('pointercancel',ev=>{pts.delete(ev.pointerId);cv.classList.remove('drag');dragLast=null});
 cv.addEventListener('pointerleave',()=>{if(hoverCity){hoverCity=null;dirty=true}$('#tip').style.display='none'});
-function zoomAt(mx,my,f){cam.manual=true;const zmin=Math.min(W/345,1.2),nz=clamp(cam.tz*f,zmin,60),wx=(mx-W/2)/cam.tz+cam.tx,wy=(my-H/2)/cam.tz+cam.ty;cam.tz=nz;cam.tx=wx-(mx-W/2)/nz;cam.ty=wy-(my-H/2)/nz;dirty=true}
+function zoomAt(mx,my,f){
+  const zmin=Math.min(W/345,1.2);
+  if(P.view==='follow'&&!cam.manual&&!atEnd()){cam.userZ=clamp(cam.tz*f,zmin,60);cam.tz=cam.userZ;dirty=true;return}
+  cam.manual=true;const nz=clamp(cam.tz*f,zmin,60);cam.userZ=nz;constwx=(mx-W/2)/cam.tz+cam.tx,wy=(my-H/2)/cam.tz+cam.ty;cam.tz=nz;cam.tx=wx-(mx-W/2)/nz;cam.ty=wy-(my-H/2)/nz;dirty=true}
 cv.addEventListener('wheel',ev=>{ev.preventDefault();zoomAt(ev.clientX,ev.clientY,Math.exp(-ev.deltaY*.0016))},{passive:false});
 
 /* the years strip */
-function scrub(ev){const r=yc.getBoundingClientRect(),x=ev.clientX-r.left;let best=0,bd=1e9;for(const s of S){const d=Math.abs(yearX(s.t)-x);if(d<bd){bd=d;best=s.i}}P.scrubbed=true;cam.manual=false;const was=Math.floor(P.pos);if(best===was){showCaption();aim()}else setPos(best,true);dirty=true}
+function scrub(ev){const r=yc.getBoundingClientRect(),x=ev.clientX-r.left;let best=0,bd=1e9;for(const s of S){const d=Math.abs(yearX(s.t)-x);if(d<bd){bd=d;best=s.i}}P.scrubbed=true;cam.manual=P.view==='free';const was=Math.floor(P.pos);if(best===was){showCaption();aim()}else setPos(best,true);dirty=true}
 yc.addEventListener('pointerdown',ev=>{yc.setPointerCapture(ev.pointerId);yc._on=true;scrub(ev)});
 yc.addEventListener('pointermove',ev=>{if(yc._on)scrub(ev)});
 yc.addEventListener('pointerup',()=>yc._on=false);yc.addEventListener('pointercancel',()=>yc._on=false);
@@ -429,6 +508,26 @@ function openCity(c,year){
   $('#panel').classList.add('open');$('#panel').scrollTop=0;dirty=true;
 }
 function closeCity(){selCity=null;selYear=null;P.hi=-1;$('#panel').classList.remove('open');dirty=true}
+const MENUS={
+  viewBtn:{key:'view',store:'gt.live.view',items:[['follow','Follow','The camera stays on the dot, at your zoom'],['overview','Overview','Frames the next few stops'],['free','Free','Stays where you put it']]},
+  photoBtn:{key:'photos',store:'gt.live.photos',items:[['off','Off','Photos only when you slow down'],['map','On the map','Small prints pinned to their cities'],['side','Beside the map','One photo at a time at the side'],['behind','Behind the map','A faint photo behind the road']]}
+};
+function closeMenu(){$('#pop').hidden=true;['viewBtn','photoBtn'].forEach(i=>$('#'+i).setAttribute('aria-expanded',false))}
+function openMenu(id){
+  const m=MENUS[id],btn=$('#'+id),pop=$('#pop'),was=!pop.hidden&&pop.dataset.for===id;closeMenu();if(was)return;
+  pop.dataset.for=id;pop.innerHTML=m.items.map(([v,l,d])=>`<button type="button" role="menuitemradio" aria-checked="${P[m.key]===v&&!(m.key==='view'&&cam.manual&&v==='follow')}" data-v="${v}"><b>${l}</b><small>${d}</small></button>`).join('');
+  pop.hidden=false;btn.setAttribute('aria-expanded',true);
+  const r=btn.getBoundingClientRect(),w=pop.offsetWidth;pop.style.left=clamp(r.right-w,8,W-w-8)+'px';pop.style.top=(r.bottom+6)+'px';
+}
+Object.keys(MENUS).forEach(id=>{$('#'+id).onclick=ev=>{ev.stopPropagation();openMenu(id)}});
+$('#pop').addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-v]');if(!b)return;const m=MENUS[$('#pop').dataset.for],v=b.dataset.v;
+  P[m.key]=v;try{localStorage.setItem(m.store,v)}catch(e){}
+  if(m.key==='view'){cam.manual=v==='free';if(cam.manual){cam.tx=cam.x;cam.ty=cam.y;cam.tz=cam.z}else if(!atEnd())aim()}else restartPhotos();
+  syncMenus();closeMenu();dirty=true;
+});
+addEventListener('pointerdown',ev=>{if(!$('#pop').hidden&&!ev.target.closest('#pop,#viewBtn,#photoBtn'))closeMenu()});
+function syncMenus(){$('#photoBtn').classList.toggle('on',P.photos!=='off')}
 $('#close').onclick=closeCity;
 $('#speed').addEventListener('click',ev=>{const b=ev.target.closest('[data-speed]');if(!b)return;if(b.dataset.speed==='slow'&&!P.playing){P.armed=!P.armed;b.setAttribute('aria-pressed',P.armed);if(P.armed)document.querySelectorAll('#speed button:not([data-speed=slow])').forEach(x=>x.setAttribute('aria-pressed',false));else syncSpeed();return}setSpeed(b.dataset.speed)});
 if(window.ResizeObserver)new ResizeObserver(()=>{syncChrome();dirty=true}).observe($('#foot'));
@@ -442,14 +541,13 @@ $('#vClose').onclick=closePhotos;$('#vPrev').onclick=()=>stepPhoto(-1);$('#vNext
 $('#view').addEventListener('click',ev=>{if(ev.target.id==='view'||ev.target.tagName==='FIGURE')closePhotos()});
 $('#view').addEventListener('pointerdown',ev=>{V.x=ev.clientX});$('#view').addEventListener('pointerup',ev=>{if(V.x!=null&&Math.abs(ev.clientX-V.x)>50&&V.list.length>1)stepPhoto(ev.clientX<V.x?1:-1);V.x=null});
 $('#play').onclick=()=>play(!P.playing);
-$('#fit').onclick=()=>{cam.manual=true;fitBox(-128,152,py(66),py(-40),W>700?26:8);dirty=true};
-$('#snd').onclick=ev=>{soundOn=!soundOn;ev.currentTarget.setAttribute('aria-pressed',soundOn);if(!soundOn)stopSong();else if(P.playing)songFor(S[Math.floor(P.pos)],true)};
+$('#fit').onclick=()=>{cam.manual=true;cam.userZ=null;fitBox(-128,152,py(66),py(-40),W>700?26:8);dirty=true};
 $('#doubt').onclick=ev=>{showDoubt=!showDoubt;ev.currentTarget.setAttribute('aria-pressed',showDoubt);play(false);closeCity();build();P.pos=LAST();P.scrubbed=false;CITIES.forEach(c=>c.sx=null);fitWorld();showCaption();dirty=true};
 addEventListener('keydown',ev=>{if(!$('#view').hidden){if(ev.key==='Escape')closePhotos();else if(ev.key==='ArrowRight')stepPhoto(1);else if(ev.key==='ArrowLeft')stepPhoto(-1);return}if(ev.key===' '&&ev.target.tagName!=='BUTTON'){ev.preventDefault();play(!P.playing)}else if(ev.key==='Escape')closeCity();else if((ev.key==='s'||ev.key==='S')&&P.playing){setSlow(!P.slow);P.armed=P.slow}else if((ev.key==='+'||ev.key==='=')||ev.key==='-'){const L=[.5,1,2,4],i=L.indexOf(P.speed)+(ev.key==='-'?-1:1);if(L[i])setSpeed(L[i])}else if(ev.key==='ArrowRight'){P.scrubbed=true;setPos(Math.floor(P.pos)+1,true)}else if(ev.key==='ArrowLeft'){P.scrubbed=true;setPos(Math.floor(P.pos)-1,true)}});
 function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;if(atEnd()&&!cam.manual&&!P.scrubbed){fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz}else aim();if(!(cam.z>0)){cam.z=cam.tz>0?cam.tz:1;cam.x=cam.tx;cam.y=cam.ty}dirty=true}
 addEventListener('resize',()=>{resize();syncChrome()});
-window.__live={setSpeed,setSlow,Leg,openPhotos,photosOf,P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,au,play,setPos,openCity,SX,SY};
-syncSpeed();syncChrome();resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
+window.__live={Pins,Back,headPoint,photoMode,setSpeed,setSlow,Leg,openPhotos,photosOf,P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,au,play,setPos,openCity,SX,SY};
+syncMenus();syncSpeed();syncChrome();resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
 requestAnimationFrame(frame);
 </script>
