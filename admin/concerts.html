@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Concert Admin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--ground:#11141b;--plate:#1a1e28;--plate2:#242936;--rule:#ffffff1c;--paper:#ece8dc;--dim:#a3a6ad;--faint:#6f747f;--ok:#62b8ab;--bad:#df8a74;
+  --serif:"Newsreader",Georgia,serif;--sans:"Instrument Sans","Helvetica Neue",Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{height:100%;margin:0}body{background:var(--ground);color:var(--paper);font:15px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font:inherit;color:inherit}button{background:none;border:1px solid var(--rule);border-radius:3px;padding:7px 12px;cursor:pointer}button:hover{border-color:#ffffff50}
+button.solid{background:var(--paper);color:var(--ground);border-color:var(--paper)}button.danger{color:var(--bad)}.quiet{border:0;padding:3px 0;color:var(--dim);font-size:14px;text-decoration:none;background:none;cursor:pointer}.quiet:hover{color:var(--paper)}
+input,select,textarea{width:100%;min-width:0;background:var(--ground);border:1px solid var(--rule);border-radius:3px;padding:8px 9px}label{font-size:13px;color:var(--dim);display:block}label input,label select,label textarea{margin-top:4px;color:var(--paper);font-size:15px}
+:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+#gate{max-width:440px;margin:12vh auto;padding:0 20px}#gate h1,#side h1{font:400 26px/1.1 var(--serif);margin:0}#gate p{color:var(--dim)}
+#app{display:grid;grid-template-columns:360px 1fr;height:100%}
+#side{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--rule)}#sideTop{padding:14px 16px;border-bottom:1px solid var(--rule);display:grid;gap:9px}
+.bar{display:flex;align-items:center;gap:14px}.spacer{flex:1}
+.tools{display:flex;gap:8px}.tools select{flex:1}#counts{font:12px var(--mono);color:var(--dim)}
+#list{list-style:none;margin:0;padding:0;overflow:auto;flex:1}#list button{width:100%;text-align:left;border:0;border-bottom:1px solid var(--rule);border-radius:0;padding:9px 16px;display:block}
+#list button.on{background:var(--plate2)}#list time{font:12px var(--mono);color:var(--dim);display:block}#list strong{font-weight:500}#list span{color:var(--dim);font-size:13px;display:block}
+#main{overflow:auto;padding:22px 26px 90px}#main h2{font:italic 400 28px/1.15 var(--serif);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;max-width:760px}.full{grid-column:1/-1}.help{font-size:13px;color:var(--faint);margin:6px 0 0;max-width:62ch}
+.check{display:flex;gap:8px;align-items:center;color:var(--paper);font-size:14px}.check input{width:auto;margin:0}
+#saveBar{display:flex;gap:10px;align-items:center;margin-top:20px;max-width:760px;flex-wrap:wrap}.back{display:none;margin-bottom:12px}
+#status{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--plate2);padding:9px 14px;border-radius:3px;font-size:14px;display:none;z-index:9;max-width:90vw}#status.show{display:block}#status.ok{color:var(--ok)}#status.bad{color:var(--bad)}
+#hist li{padding:9px 0;border-bottom:1px solid var(--rule);display:flex;gap:10px;align-items:center;justify-content:space-between}#hist ol{list-style:none;padding:0;margin:0;max-width:760px}#hist small{color:var(--dim);display:block}
+.src{font:12px var(--mono);color:var(--faint);margin-top:14px;max-width:760px}.src a{color:var(--dim)}
+@media(max-width:760px){#app{grid-template-columns:1fr;height:auto}body.open #side{display:none}body:not(.open) #main{display:none}#side{height:100dvh}.back{display:inline-block}}
+</style></head><body>
+<div id="gate" hidden><h1>Concert admin</h1><p>Sign in on the <a href="./" style="color:var(--paper)">main admin page</a> first. This page uses the same key.</p><div id="gateMsg" role="alert" style="color:var(--bad)"></div></div>
+<div id="app" hidden>
+  <aside id="side"><div id="sideTop">
+    <div class="bar"><h1>Concerts</h1><span class="spacer"></span><a class="quiet" href="./">Releases</a><button class="quiet" id="histBtn">History</button><a class="quiet" href="../live/" target="_blank" rel="noopener">View</a></div>
+    <input id="q" type="search" placeholder="Search city, venue, year" aria-label="Search concerts">
+    <div class="tools"><select id="year" aria-label="Year"></select><button id="addBtn">Add a concert</button></div>
+    <div id="counts"></div></div><ul id="list"></ul></aside>
+  <main id="main"><p id="empty" style="color:var(--dim);max-width:60ch">Choose a concert to edit it, or add a new one. Saving publishes straight to the site, usually within two minutes, and every saved version stays in History.</p><form id="form" hidden autocomplete="off"></form><div id="hist" hidden></div></main>
+</div>
+<div id="status" role="status"></div>
+<script>
+'use strict';
+const REPO='gunnitynes/gunnartynes-site',BRANCH='main',FILE='live/shows.js';
+const apiParam=new URLSearchParams(location.search).get('api');
+const API=apiParam&&/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?apiParam:'https://api.github.com';
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let token='',data=null,openId=null,isNew=false,saving=false;
+async function gh(path,opt={}){
+  const r=await fetch(API+path,{method:opt.method||'GET',cache:'no-store',headers:{Authorization:'Bearer '+token,Accept:opt.raw?'application/vnd.github.raw+json':'application/vnd.github+json',...(opt.body?{'Content-Type':'application/json'}:{})},body:opt.body?JSON.stringify(opt.body):undefined});
+  if(!r.ok){const e=new Error('GitHub answered '+r.status);e.status=r.status;throw e}
+  return opt.raw?r.text():r.json();
+}
+const repo=p=>`/repos/${REPO}${p}`;
+function parse(text){const m=text.match(/window\.SHOWS\s*=\s*([\s\S]*?);\s*$/);if(!m)throw new Error('The concert file could not be read.');return JSON.parse(m[1])}
+function serialize(d){d.shows.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);return '// Edited through /admin. Each saved version is in the repository history.\nwindow.SHOWS='+JSON.stringify(d)+';\n'}
+/* One save is one commit. The file is re-read first, so edits made on another device are never overwritten. */
+async function commit(change,message,attempt=0){
+  const ref=await gh(repo(`/git/ref/heads/${BRANCH}`)),base=ref.object.sha,baseCommit=await gh(repo(`/git/commits/${base}`));
+  const text=await gh(repo(`/contents/${FILE}?ref=${base}`),{raw:true});
+  const out=typeof change==='string'?change:serialize(change(parse(text)));
+  const b=await gh(repo('/git/blobs'),{method:'POST',body:{content:out,encoding:'utf-8'}});
+  const t=await gh(repo('/git/trees'),{method:'POST',body:{base_tree:baseCommit.tree.sha,tree:[{path:FILE,mode:'100644',type:'blob',sha:b.sha}]}});
+  const c=await gh(repo('/git/commits'),{method:'POST',body:{message,tree:t.sha,parents:[base]}});
+  try{await gh(repo(`/git/refs/heads/${BRANCH}`),{method:'PATCH',body:{sha:c.sha}})}
+  catch(e){if(attempt<2&&(e.status===422||e.status===409))return commit(change,message,attempt+1);throw e}
+  return{text:out,data:parse(out)};
+}
+function friendly(e){
+  if(e.status===401)return 'GitHub rejected the access key. It may have expired, so create a new one on the main admin page.';
+  if(e.status===403||e.status===404)return 'This key can\'t write to the repository. Check that it has Contents set to Read and write.';
+  if(e instanceof TypeError)return 'Couldn\'t reach GitHub. Check your connection and try again. Nothing was saved.';
+  return e.message;
+}
+let statusTimer=0;
+function status(msg,kind,sticky){const s=$('#status');s.textContent=msg;s.className='show '+(kind||'');clearTimeout(statusTimer);if(!sticky)statusTimer=setTimeout(()=>{s.className=''},7000)}
+let watchToken=0;
+async function watchLive(text){
+  const mine=++watchToken,t0=Date.now();status('Saved. Going live, usually within two minutes…','',true);
+  while(Date.now()-t0<300000){await new Promise(r=>setTimeout(r,6000));if(mine!==watchToken)return;try{const live=await (await fetch('../live/shows.js?t='+Date.now(),{cache:'no-store'})).text();if(live===text){status('Live on the site.','ok');return}}catch(e){}}
+  if(mine===watchToken)status('Saved, but still not live after five minutes. It should appear soon.');
+}
+const showKey=s=>s.id;
+function name(s){return s.v&&!/unknown|not known/i.test(s.v)?s.v:(s.n||'Venue not known')}
+function renderYears(){const ys=[...new Set(data.shows.map(s=>s.d.slice(0,4)))].sort().reverse(),cur=$('#year').value;$('#year').innerHTML='<option value="">All years</option>'+ys.map(y=>`<option${y===cur?' selected':''}>${y}</option>`).join('')}
+function visible(){const q=$('#q').value.trim().toLowerCase(),y=$('#year').value;return data.shows.filter(s=>(!y||s.d.startsWith(y))&&(!q||[s.d,s.c,s.k,s.v,s.n,s.w].join(' ').toLowerCase().includes(q)))}
+function renderList(){
+  $('#counts').textContent=`${data.shows.length} concerts · ${new Set(data.shows.map(s=>s.c+s.k)).size} cities`;
+  $('#list').innerHTML=visible().slice().reverse().map(s=>`<li><button type="button" data-id="${esc(s.id)}" class="${s.id===openId?'on':''}"><time>${esc(s.d)}</time><strong>${esc(name(s))}</strong><span>${esc([s.c,s.k].filter(Boolean).join(', '))}</span></button></li>`).join('');
+}
+$('#q').oninput=renderList;$('#year').onchange=renderList;
+$('#list').addEventListener('click',ev=>{const b=ev.target.closest('[data-id]');if(b)openEditor(b.dataset.id)});
+$('#addBtn').onclick=()=>openEditor(null);
+function fld(label,n,v,o={}){return `<label${o.full?' class="full"':''} for="f_${n}">${label}${o.area?`<textarea id="f_${n}" name="${n}" rows="${o.area}">${esc(v)}</textarea>`:`<input id="f_${n}" name="${n}" value="${esc(v==null?'':v)}"${o.ph?` placeholder="${esc(o.ph)}"`:''}${o.req?' required':''}${o.pattern?` pattern="${o.pattern}"`:''}${o.mode?` inputmode="${o.mode}"`:''}>`}</label>`}
+function closeEditor(){openId=null;isNew=false;$('#form').hidden=true;$('#hist').hidden=true;$('#empty').hidden=false;document.body.classList.remove('open');renderList()}
+function openEditor(id){
+  isNew=id==null;openId=id;
+  const s=isNew?{d:'',c:'',k:'',v:'',n:'',w:''}:data.shows.find(x=>x.id===id);if(!s)return;
+  $('#empty').hidden=true;$('#hist').hidden=true;const f=$('#form');f.hidden=false;document.body.classList.add('open');
+  const links=[...(s.ca?[['Listing',s.ca]]:[]),...(s.press||[]).map((u,i)=>['Newspaper '+(i+1),u])];
+  f.innerHTML=`<button type="button" class="back" id="back">← All concerts</button><h2>${isNew?'New concert':esc(name(s))}</h2>
+  <div class="grid">
+    ${fld('Date','d',s.d,{req:1,ph:'YYYY-MM-DD',pattern:'\\d{4}-\\d{2}-\\d{2}'})}${fld('End date, for a festival','e',s.e||'',{ph:'Optional',pattern:'\\d{4}-\\d{2}-\\d{2}'})}
+    ${fld('City','c',s.c,{req:1})}${fld('Country','k',s.k,{req:1})}
+    ${fld('Venue','v',s.v||'')}${fld('Festival or event','n',s.n||'')}
+    ${fld('With','w',s.w||'',{full:1,ph:'Other acts on the bill, separated by commas'})}
+    ${fld('Note shown to visitors','note',s.note||'',{full:1,area:2})}
+    <label class="check full"><input type="checkbox" name="absent"${s.absent?' checked':''}> I wasn't on stage at this one</label>
+    <div class="full"><div class="bar"><button type="button" id="find">Find on the map</button><select id="places" hidden aria-label="Choose the place" style="flex:1"></select></div>
+    <p class="help" id="geoMsg">${s.lat!=null?`On the map at ${esc(s.lat)}, ${esc(s.lon)}.`:'Fill in the city and country, then find it on the map. Only those words are sent to the place lookup.'}</p></div>
+    ${fld('Latitude','lat',s.lat==null?'':s.lat,{req:1,mode:'decimal'})}${fld('Longitude','lon',s.lon==null?'':s.lon,{req:1,mode:'decimal'})}
+  </div>
+  ${links.length?`<div class="src">Sources: ${links.map(([l,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(l)}</a>`).join(' · ')}</div>`:''}
+  <div id="saveBar"><button type="submit" class="solid" id="saveBtn">Save and publish</button><span class="spacer"></span>${isNew?'':'<button type="button" class="danger" id="delBtn">Delete concert</button>'}</div>`;
+  $('#back').onclick=closeEditor;
+  $('#find').onclick=findPlace;
+  const before=(s.c||'')+'|'+(s.k||'');
+  f.dataset.place=before;
+  const del=$('#delBtn');if(del)del.onclick=()=>confirmDelete(s);
+  renderList();$('#main').scrollTop=0;
+}
+async function findPlace(){
+  const f=$('#form'),city=f.elements.c.value.trim(),country=f.elements.k.value.trim().toLowerCase(),msg=$('#geoMsg'),sel=$('#places');
+  if(!city){msg.textContent='Fill in the city first.';return}
+  msg.textContent='Looking…';sel.hidden=true;
+  try{
+    const r=await fetch('https://geocoding-api.open-meteo.com/v1/search?'+new URLSearchParams({name:city,count:8,language:'en',format:'json'}));
+    const res=((await r.json()).results||[]);
+    if(!res.length){msg.textContent='No place found. Try another spelling, or type the coordinates in below.';return}
+    const ordered=res.slice().sort((a,b)=>((b.country||'').toLowerCase()===country)-((a.country||'').toLowerCase()===country));
+    sel.innerHTML=ordered.map((p,i)=>`<option value="${i}">${esc([p.name,p.admin1,p.country].filter(Boolean).join(', '))}</option>`).join('');sel.hidden=false;
+    const take=i=>{const p=ordered[i];f.elements.lat.value=(+p.latitude).toFixed(3);f.elements.lon.value=(+p.longitude).toFixed(3);msg.textContent='Check that this is the right place.'};
+    sel.onchange=()=>take(+sel.value);take(0);
+  }catch(e){msg.textContent='The place lookup didn\'t answer. Type the coordinates in below.'}
+}
+function confirmDelete(s){
+  const bar=$('#saveBar');bar.innerHTML=`<span class="spacer">Delete ${esc(name(s))}, ${esc(s.d)}? You can restore it from History.</span><button type="button" id="keep">Keep it</button><button type="button" class="danger" id="sure">Delete</button>`;
+  $('#keep').onclick=()=>openEditor(s.id);
+  $('#sure').onclick=async()=>{try{status('Deleting…','',true);const r=await commit(d=>{d.shows=d.shows.filter(x=>x.id!==s.id);return d},`Delete concert: ${s.d} ${s.c}`);data=r.data;renderYears();closeEditor();watchLive(r.text)}catch(e){status(friendly(e),'bad')}};
+}
+$('#form').addEventListener('submit',async ev=>{
+  ev.preventDefault();if(saving)return;
+  const f=ev.target,v=n=>f.elements[n].value.trim(),lat=parseFloat(v('lat')),lon=parseFloat(v('lon'));
+  if(!(Math.abs(lat)<=90&&Math.abs(lon)<=180)){status('The coordinates don\'t look right. Use Find on the map.','bad');return}
+  const moved=f.dataset.place!==v('c')+'|'+v('k');
+  if(!isNew&&moved&&$('#places').hidden&&lat===data.shows.find(x=>x.id===openId).lat){status('You changed the place. Use Find on the map, so the dot moves too.','bad');return}
+  const id=isNew?`added|${v('d')}|${v('c').toLowerCase()}|${Date.now().toString(36)}`:openId;
+  const fields={d:v('d'),e:v('e')||undefined,c:v('c'),k:v('k'),v:v('v')||undefined,n:v('n')||undefined,w:v('w')||undefined,note:v('note')||undefined,absent:f.elements.absent.checked||undefined,lat,lon,s:'confirmed by Gunnar'};
+  saving=true;$('#saveBtn').disabled=true;status('Saving…','',true);
+  try{
+    const r=await commit(d=>{
+      if(isNew)d.shows.push({id,src:'Gunnar',...fields});
+      else{const i=d.shows.findIndex(x=>x.id===id);if(i<0)throw new Error('That concert is no longer in the list. Reload the page.');d.shows[i]={...d.shows[i],...fields}}
+      return d;
+    },`${isNew?'Add':'Edit'} concert: ${fields.d} ${fields.c}`);
+    data=r.data;isNew=false;openId=id;renderYears();openEditor(id);watchLive(r.text);
+  }catch(e){status(friendly(e),'bad')}
+  finally{saving=false;const b=$('#saveBtn');if(b)b.disabled=false}
+});
+$('#histBtn').onclick=async()=>{
+  $('#form').hidden=true;$('#empty').hidden=true;const h=$('#hist');h.hidden=false;document.body.classList.add('open');openId=null;renderList();
+  h.innerHTML='<h2>History</h2><p style="color:var(--dim)">Loading…</p>';
+  try{
+    const list=await gh(repo(`/commits?path=${encodeURIComponent(FILE)}&per_page=30&sha=${BRANCH}`));
+    h.innerHTML=`<button type="button" class="back" id="back2" style="display:inline-block">← All concerts</button><h2>History</h2><p style="color:var(--dim);max-width:60ch">Each save is listed here. Going back restores the concert list as it was, and that becomes a new save, so nothing is lost.</p><ol>${list.map((c,i)=>`<li><div>${esc((c.commit.message||'').split('\n')[0])}<small>${esc(new Date(c.commit.author.date).toLocaleString())}</small></div>${i?`<button type="button" data-sha="${esc(c.sha)}">Go back to this</button>`:'<small>Current</small>'}</li>`).join('')}</ol>`;
+    $('#back2').onclick=closeEditor;
+    h.onclick=async ev=>{const b=ev.target.closest('[data-sha]');if(!b)return;try{status('Restoring…','',true);const text=await gh(repo(`/contents/${FILE}?ref=${b.dataset.sha}`),{raw:true});const r=await commit(text,'Restore the concert list to an earlier version');data=r.data;renderYears();closeEditor();watchLive(r.text)}catch(e){status(friendly(e),'bad')}};
+  }catch(e){h.innerHTML=`<p>${esc(friendly(e))}</p>`}
+};
+(async()=>{
+  try{token=localStorage.getItem('gt.key')||''}catch(e){}
+  if(!token){$('#gate').hidden=false;return}
+  try{data=parse(await gh(repo(`/contents/${FILE}?ref=${BRANCH}`),{raw:true}));$('#app').hidden=false;renderYears();renderList()}
+  catch(e){$('#gate').hidden=false;$('#gateMsg').textContent=friendly(e)}
+})();
+window.__admin={get data(){return data}};
+</script>
+</body></html>

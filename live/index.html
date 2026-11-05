@@ -306,7 +306,7 @@ yc.addEventListener('pointerup',()=>yc._on=false);yc.addEventListener('pointerca
 /* a city's shows */
 function openCity(c){
   selCity=c;$('#tip').style.display='none';
-  $('#pBody').innerHTML=`<h2>${esc(c.name)}</h2><div class="sub">${esc(c.k)} · ${c.shows.length} ${c.shows.length===1?'show':'shows'}</div><ol>${c.shows.map(s=>`<li><time>${esc(fmt(s.d,s.e))}</time><strong>${esc(s.v&&!/unknown/i.test(s.v)?s.v:(s.n||'Venue not known'))}</strong>${s.n&&s.v&&s.n!==s.v?`<small>${esc(s.n)}</small>`:''}${s.w?`<small>with ${esc(s.w)}</small>`:''}${s.note?`<small class="flag">${esc(s.note)}</small>`:''}<small class="faint">${esc(s.s)} · ${esc(s.src)}${(s.press||[]).map((u,i)=>` · <a href="${esc(u)}" target="_blank" rel="noopener">newspaper ${i+1}</a>`).join('')}</small></li>`).join('')}</ol>`;
+  $('#pBody').innerHTML=`<h2>${esc(c.name)}</h2><div class="sub">${esc(c.k)} · ${c.shows.length} ${c.shows.length===1?'show':'shows'}</div><ol>${c.shows.map(s=>`<li><time>${esc(fmt(s.d,s.e))}</time><strong>${esc(s.v&&!/unknown/i.test(s.v)?s.v:(s.n||'Venue not known'))}</strong>${s.n&&s.v&&s.n!==s.v?`<small>${esc(s.n)}</small>`:''}${s.w?`<small>with ${esc(s.w)}</small>`:''}${s.absent?'<small>Without Gunnar</small>':''}${s.note?`<small class="${SHOWS.draft?'flag':''}">${esc(s.note)}</small>`:''}<small class="faint">${SHOWS.draft?esc(s.s)+' · ':''}${esc(s.src)}${s.ca?` · <a href="${esc(s.ca)}" target="_blank" rel="noopener">listing</a>`:''}${(s.press||[]).map((u,i)=>` · <a href="${esc(u)}" target="_blank" rel="noopener">newspaper ${i+1}</a>`).join('')}</small></li>`).join('')}</ol>`;
   $('#panel').classList.add('open');dirty=true;
 }
 function closeCity(){selCity=null;$('#panel').classList.remove('open');dirty=true}
