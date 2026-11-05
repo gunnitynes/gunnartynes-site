@@ -175,7 +175,8 @@ $('#form').addEventListener('submit',async ev=>{
   const moved=f.dataset.place!==v('c')+'|'+v('k');
   if(!isNew&&moved&&$('#places').hidden&&lat===data.shows.find(x=>x.id===openId).lat){status('You changed the place. Use Find on the map, so the dot moves too.','bad');return}
   const id=isNew?`added|${v('d')}|${v('c').toLowerCase()}|${Date.now().toString(36)}`:openId;
-  const fields={d:v('d'),e:v('e')||undefined,c:v('c'),k:v('k'),v:v('v')||undefined,n:v('n')||undefined,w:v('w')||undefined,note:v('note')||undefined,absent:f.elements.absent.checked||undefined,lat,lon,s:'confirmed by Gunnar'};
+  const before=isNew?null:data.shows.find(x=>x.id===openId),placeChanged=before&&(moved||(before.v||'')!==v('v'));
+  const fields={...(placeChanged?{vlat:undefined,vlon:undefined}:{}),d:v('d'),e:v('e')||undefined,c:v('c'),k:v('k'),v:v('v')||undefined,n:v('n')||undefined,w:v('w')||undefined,note:v('note')||undefined,absent:f.elements.absent.checked||undefined,lat,lon,s:'confirmed by Gunnar'};
   const slug=(fields.d+'-'+fields.c).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');
   const stamp=Date.now().toString(36);
   const uploads=pending.map((p,i)=>({path:`live/photos/${slug}-${stamp}-${i}.jpg`,src:`photos/${slug}-${stamp}-${i}.jpg`,b64:p.b64}));
