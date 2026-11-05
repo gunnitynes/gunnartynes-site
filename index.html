@@ -477,6 +477,7 @@ const audio={el:null,id:null,url:{},fading:new Set(),pre:new Map(),token:0};
 function biteOf(e){
   const b=bites[e.id];
   if(b)return b;
+  if(e.bite)return{kind:'url',url:e.bite.src,start:e.bite.start||0,own:true,title:e.bite.title};
   const pref=e.dt!=null&&e.tracks[e.dt]&&e.tracks[e.dt].p?e.dt:-1;
   const i=pref>=0?pref:e.tracks.findIndex(t=>t.p);
   return i>=0?{kind:'track',idx:i,start:0,placeholder:true}:null;
@@ -570,13 +571,13 @@ function renderBite(e){
   const box=$('#bite');box.hidden=PUBLIC&&!b;
   ['#drop','#linkIn','#linkGo','#startIn','#pin'].forEach(s=>{const el=$(s);if(el)(el.closest('.row')||el).style.display=PUBLIC?'none':''});
   let name='No audio yet',src=PUBLIC?'':'Add a file or link below';
-  if(b&&b.kind==='track'){const t=e.tracks[b.idx];name=t?t.t:'';src=b.placeholder?'30-second Apple Music preview, standing in for your soundbite':'Apple Music preview'}
+  if(b&&b.kind==='track'){const t=e.tracks[b.idx];name=t?t.t:'';src='30-second preview'}
   if(b&&b.kind==='file'){name=b.name;src='Your file, stored in this browser'}
-  if(b&&b.kind==='url'){name=b.url.split('/').pop();src=b.url}
+  if(b&&b.kind==='url'){name=b.own?(b.title||e.title):b.url.split('/').pop();src=b.own?'':b.url}
   $('#biteName').textContent=name;$('#biteSrc').textContent=src;
   $('#startIn').value=b?(b.start||0):0;
   $('#pin').checked=!!pins[e.id];
-  $('#linkIn').value=b&&b.kind==='url'?b.url:'';
+  $('#linkIn').value=b&&b.kind==='url'&&!b.own?b.url:'';
   $('#play').disabled=!b;$('#play').style.opacity=b?1:.35;
   const list=e.tracks.length?`<h4 style="margin:14px 0 6px;font:11px var(--mono);color:var(--dim);font-weight:400">TRACKS</h4><ol class="tracks">${e.tracks.map((t,i)=>`<li><small>${t.n||i+1}</small><button data-t="${i}" ${t.p?'':'disabled'} class="${b&&b.kind==='track'&&b.idx===i?'sel':''}">${esc(t.t)}</button><small>${t.ms?fmt(t.ms/1000):''}</small></li>`).join('')}</ol>`:'';
   $('#biteTracks').innerHTML=list;

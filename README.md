@@ -17,19 +17,15 @@ Then open http://localhost:8791.
 
 Each visitor's last choice is remembered. Links can force a view with `?view=record`, `?view=timeline`, `?layout=vertical` or `?layout=horizontal`.
 
-## Add a soundbite
+## Editing: /admin
 
-Open the site with `?edit` in the address, click a release, then do one of these in the Soundbite section:
+Open `/admin/` on the site, on any device, and sign in with a GitHub access key limited to this repository. There you can edit any release, add or delete releases, upload covers and add soundbites.
 
-- Drop an audio file on the page. It is stored in this browser on this computer.
-- Put a file in `audio/` and enter `audio/name.wav` as the link. This is the only option that carries over to another computer.
-- Click a track to use its 30-second preview. Previews need internet.
+For a soundbite, choose a full track, place the clip on its waveform and save. The track stays on your device; only the clip is uploaded, as 256 kbps AAC, or WAV in browsers that can't make AAC.
 
-"Start at" sets where the soundbite begins. For files, you can also click the waveform.
+Each save is a commit, live within about two minutes, and History can return to any earlier version.
 
-## Correct the data
-
-Facts live in `tools/build_catalogue.py`, in `OVERRIDES` and `FILM`. Change them and run `python3 tools/build_catalogue.py`. Open questions are listed in `data/to-confirm.md`.
+`catalogue.js` is now the master copy and lives in this repository. Pull before changing anything by hand. The old build script refuses to run, because it would erase edits made here.
 
 ## On the web
 
