@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Gunnar Tynes: Live</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="description" content="Concerts on a world map, in the order they were played.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--ground:#11141b;--plate:#1a1e28;--plate2:#242936;--rule:#ffffff1c;--paper:#ece8dc;--dim:#a3a6ad;--faint:#6f747f;
+  --p:#e6b450;--r:#62b8ab;--m:#df8a74;--b:#9dabe6;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;--sans:"Instrument Sans","Helvetica Neue",Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:var(--ground);color:var(--paper);font:14px/1.45 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}a{color:inherit}
+:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+#map{position:fixed;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+#map.over{cursor:pointer}#map.drag{cursor:grabbing}
+#bar{position:fixed;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:14px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141bf2 60%,#11141b00);z-index:3}
+#bar h1{margin:0;font:400 20px/1 var(--serif);white-space:nowrap}
+#views{display:flex;gap:14px}#right{margin-left:auto;display:flex;gap:16px;align-items:center}
+.quiet{font-size:13px;color:var(--dim);padding:3px 2px;border-bottom:1px solid transparent;text-decoration:none;transition:color .15s}
+.quiet:hover{color:var(--paper)}.quiet[aria-pressed=true],.quiet.on{color:var(--paper);border-color:var(--paper)}
+#tag{font:11px var(--mono);color:var(--p)}
+#foot{position:fixed;left:0;right:0;bottom:0;padding:0 max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141b00,#11141be6 38%);z-index:2;pointer-events:none}
+#now{display:grid;grid-template-columns:44px 1fr;gap:4px 14px;align-items:center;pointer-events:none;min-height:66px}
+#play{pointer-events:auto;width:44px;height:44px;border-radius:50%;background:var(--paper);color:var(--ground);display:grid;place-items:center;box-shadow:0 2px 14px #000a;transition:transform .15s}
+#play:hover{transform:scale(1.08)}#play svg{width:24px;height:24px;fill:currentColor;display:block}
+#play .i-pause{display:none}#play.on .i-pause{display:block}#play.on .i-play{display:none}
+#cap{min-width:0}#cap em{display:block;font:italic 400 23px/1.15 var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cap b{font-weight:400;font-size:13px;color:var(--paper)}#cap span{font:12px var(--mono);color:var(--dim);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#years{display:block;width:100%;height:46px;margin-top:6px;pointer-events:auto;touch-action:none;cursor:ew-resize}
+#tip{position:fixed;pointer-events:none;background:var(--plate2);padding:6px 9px;font-size:13px;z-index:6;max-width:300px;border-radius:2px;display:none}
+#tip em{font:italic 16px var(--serif);display:block}#tip span{font:11px var(--mono);color:var(--dim)}
+#panel{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:100%;background:var(--plate);z-index:5;transform:translateX(102%);transition:transform .26s cubic-bezier(.2,.7,.2,1);overflow:auto;padding:22px 24px 40px;box-shadow:-12px 0 40px #0006}
+#panel.open{transform:none}
+#close{position:absolute;top:14px;right:16px;font-size:22px;color:var(--dim);line-height:1;padding:6px}
+#panel h2{font:italic 400 30px/1.1 var(--serif);margin:0 40px 2px 0}#panel .sub{font:12px var(--mono);color:var(--dim);margin-bottom:18px}
+#panel ol{list-style:none;margin:0;padding:0}#panel li{padding:10px 0;border-top:1px solid var(--rule)}
+#panel li time{font:12px var(--mono);color:var(--dim);display:block}#panel li strong{font-weight:500;display:block}
+#panel li small{color:var(--dim);display:block;font-size:12px}#panel li .flag{color:var(--p)}#panel li .faint{color:var(--faint);font:11px var(--mono)}
+@media(max-width:700px){
+  #panel{top:auto;left:0;right:0;width:auto;height:58%;transform:translateY(102%);box-shadow:0 -12px 40px #0006}
+  #bar{gap:6px 14px;padding-bottom:6px}#tag{display:none}
+  #cap em{font-size:19px}#now{min-height:58px}#years{height:40px}
+}
+</style></head><body>
+<canvas id="map" aria-label="World map of concerts"></canvas>
+<header id="bar">
+  <h1>gunnar tynes</h1>
+  <nav id="views" aria-label="View">
+    <a class="quiet" href="../?view=timeline&amp;layout=horizontal">Timeline</a>
+    <a class="quiet" href="../?view=timeline&amp;layout=vertical">Vertical</a>
+    <a class="quiet" href="../?view=record">Record</a>
+    <span class="quiet on" aria-current="page">Live</span>
+  </nav>
+  <span id="tag" hidden>draft list, not published</span>
+  <div id="right">
+    <a class="quiet" href="https://gunnartynes.com/">Main site</a>
+    <button class="quiet" id="fit" title="Show the whole world">World</button>
+    <button class="quiet" id="doubt" hidden aria-pressed="false" title="Include entries marked doubtful">Doubtful</button>
+    <button class="quiet" id="snd" aria-pressed="true" title="Play music from the same period">Sound</button>
+  </div>
+</header>
+<footer id="foot">
+  <div id="now">
+    <button id="play" type="button" aria-label="Play the tours"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
+    <div id="cap" aria-live="off"><em></em><b></b><span></span></div>
+  </div>
+  <canvas id="years" aria-label="Scrub through the years"></canvas>
+</footer>
+<div id="tip"></div>
+<aside id="panel" aria-label="Shows in this city"><button id="close" aria-label="Close">×</button><div id="pBody"></div></aside>
+<script src="map.js"></script>
+<script src="shows.js"></script>
+<script src="../catalogue.js"></script>
+<script>
+'use strict';
+const $=s=>document.querySelector(s),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const COL={paper:css('--paper'),dim:css('--dim'),faint:css('--faint'),tour:[css('--p'),css('--r'),css('--m'),css('--b')]};
+const STRETCH=1.22,SHOW_SECONDS=.62,TOUR_GAP=45,REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const px=lon=>lon,py=lat=>-lat*STRETCH;
+const cv=$('#map'),g=cv.getContext('2d'),yc=$('#years'),yg=yc.getContext('2d');
+let W=0,H=0,DPR=1,dirty=true,showDoubt=false,soundOn=true;
+const LIVE={shows:SHOWS.shows,land:LIVEMAP.land,outline:LIVEMAP.coast};
+if(SHOWS.draft){$('#tag').hidden=false;$('#doubt').hidden=false}
+const LAND=[];for(const[lat,row]of LIVE.land)for(const lon of row)LAND.push(px(lon),py(lat));
+const COAST=new Path2D();for(const ring of LIVE.outline){ring.forEach((q,i)=>{if(!i||Math.abs(q[0]-ring[i-1][0])>180)COAST.moveTo(px(q[0]),py(q[1]));else COAST.lineTo(px(q[0]),py(q[1]))});COAST.closePath()}
+
+/* ---------- data: shows in order, grouped into tours by the gaps between them ---------- */
+let S=[],CITIES=[],TOURS=[];
+const day=s=>Date.parse(s+'T00:00:00Z')/864e5;
+const fmt=(s,e)=>{const f=x=>new Date(x+'T00:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});return e?f(s)+' – '+f(e):f(s)};
+function build(){
+  S=LIVE.shows.filter(s=>showDoubt||s.s!=='doubtful').slice().sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+  const map=new Map();TOURS=[];
+  S.forEach((s,i)=>{
+    s.i=i;s.x=px(s.lon);s.y=py(s.lat);s.t=day(s.d);
+    if(!i||s.t-S[i-1].t>TOUR_GAP)TOURS.push({a:i,b:i,col:COL.tour[TOURS.length%4]});
+    const T=TOURS[TOURS.length-1];T.b=i;s.tour=TOURS.length-1;
+    const key=s.c+'|'+s.k;let c=map.get(key);if(!c){c={key,name:s.c,k:s.k,x:s.x,y:s.y,shows:[],first:i};map.set(key,c)}
+    c.shows.push(s);s.city=c;
+  });
+  CITIES=[...map.values()];
+  TOURS.forEach(T=>{let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(let i=T.a;i<=T.b;i++){const s=S[i];x0=Math.min(x0,s.x);x1=Math.max(x1,s.x);y0=Math.min(y0,s.y);y1=Math.max(y1,s.y)}T.box=[x0,x1,y0,y1]});
+}
+build();
+
+/* ---------- camera ---------- */
+const cam={x:0,y:-40,z:3,tx:0,ty:-40,tz:3,manual:false};
+function chrome(){return{top:$('#bar').offsetHeight,bot:$('#foot').offsetHeight}}
+function fitBox(x0,x1,y0,y1,pad){
+  const{top,bot}=chrome(),w=Math.max(8,x1-x0),h=Math.max(5,y1-y0);
+  const pw=$('#panel').classList.contains('open')&&W>700?400:0;
+  const z=clamp(Math.min((W-pw-pad*2)/w,(H-top-bot-pad*2)/h),Math.min(W/345,(H-top-bot)/150),W>700?26:18);
+  const off=(top-bot)/2/z;
+  cam.tx=(x0+x1)/2+pw/2/z;cam.ty=(y0+y1)/2-off;cam.tz=z;
+}
+function fitWorld(){cam.manual=false;fitBox(-128,152,py(66),py(-40),W>700?26:8);dirty=true}
+function aimAhead(n){
+  if(cam.manual)return;
+  const a=Math.max(0,n-2),b=Math.min(LAST(),n+7);let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  const ref=S[n].x;
+  for(let i=a;i<=b;i++){const s=S[i];if(s.tour!==S[n].tour)continue;let x=s.x;if(x-ref>180)x-=360;else if(ref-x>180)x+=360;x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,s.y);y1=Math.max(y1,s.y)}
+  const pad=W>700?110:44,cw=(x0+x1)/2,ch=(y0+y1)/2,minW=W>700?40:24;
+  fitBox(cw-Math.max(x1-x0,minW)/2,cw+Math.max(x1-x0,minW)/2,ch-Math.max(y1-y0,9)/2,ch+Math.max(y1-y0,9)/2,pad);
+}
+const SX=x=>(x-cam.x)*cam.z+W/2,SY=y=>(y-cam.y)*cam.z+H/2;
+
+/* ---------- playback ---------- */
+const P={pos:0,playing:false,pulse:-1,pulseT:0};   /* pos: shows reached, with the fraction of the leg under way */
+const LAST=()=>S.length-1;
+P.pos=LAST();
+function legFrom(i){return i>=0&&i+1<S.length&&S[i+1].tour===S[i].tour}
+function setPos(v,fromUser){
+  const before=Math.floor(P.pos);
+  P.pos=clamp(v,0,LAST());
+  const now=Math.floor(P.pos);
+  if(now!==before){if(now>before||fromUser){P.pulse=now;P.pulseT=performance.now()}showCaption();aim();if(P.playing)songFor(S[now])}
+  dirty=true;
+}
+function aim(){const n=Math.floor(P.pos);if(S[n]&&!atEnd())aimAhead(n)}
+function atEnd(){return P.pos>=LAST()&&!P.playing}
+function play(on){
+  P.playing=on;$('#play').classList.toggle('on',on);$('#play').setAttribute('aria-label',on?'Pause':'Play the tours');
+  if(on){cam.manual=false;if(P.pos>=LAST())setPos(0,true);else aim();P.pulse=Math.floor(P.pos);P.pulseT=performance.now();showCaption();if(soundOn)songFor(S[Math.floor(P.pos)],true)}
+  else stopSong();
+  dirty=true;
+}
+function showCaption(){
+  const cap=$('#cap'),em=cap.querySelector('em'),b=cap.querySelector('b'),sp=cap.querySelector('span');
+  if(atEnd()&&!P.scrubbed){
+    const countries=new Set(S.map(s=>s.k)).size;
+    em.textContent=`${S.length} concerts`;b.textContent=`${CITIES.length} cities, ${countries} countries, ${S[0].d.slice(0,4)}–${S[LAST()].d.slice(0,4)}`;sp.textContent='Press play to follow the tours in order';return;
+  }
+  const s=S[Math.floor(P.pos)];if(!s)return;
+  em.textContent=s.v&&!/unknown/i.test(s.v)?s.v:(s.n||s.c);
+  b.textContent=`${s.c}, ${s.k}`;
+  sp.textContent=[fmt(s.d,s.e),s.w?'with '+s.w:'',s.v&&s.n&&s.n!==s.v?s.n:''].filter(Boolean).join(' · ');
+}
+
+/* ---------- sound: múm's release of the period, from the catalogue ---------- */
+const music=(window.CATALOGUE||[]).filter(e=>/múm/.test(e.artist)&&e.tier==='core'&&!e.screen&&(e.tracks||[]).some(t=>t.p)).sort((a,b)=>a.year-b.year);
+const au={el:null,key:null};
+function pick(year){const pool=music.filter(e=>e.year<=year);const e=pool.length?pool[pool.length-1]:music[0];if(!e)return null;const tr=e.tracks.filter(t=>t.p);const t=e.dt!=null&&e.tracks[e.dt]&&e.tracks[e.dt].p?e.tracks[e.dt]:tr[0];return{e,t,tr}}
+function songFor(s,force){
+  if(!soundOn||!P.playing||!s)return;
+  const p=pick(+s.d.slice(0,4));if(!p)return;
+  const key=p.e.id;if(key===au.key&&!force&&au.el&&!au.el.paused)return;
+  fade(au.el);au.key=key;
+  const a=new Audio(p.t.p);let idx=p.tr.indexOf(p.t);a.volume=0;
+  a.onended=()=>{idx=(idx+1)%p.tr.length;a.src=p.tr[idx].p;a.play().catch(()=>{})};
+  a.play().then(()=>{if(au.el!==a){a.pause();return}const t0=performance.now();const f=()=>{if(au.el!==a)return;const v=(performance.now()-t0)/700;a.volume=Math.min(.85,v);if(v<.85)requestAnimationFrame(f)};f()}).catch(()=>{});
+  au.el=a;
+}
+function fade(a){if(!a)return;const v0=a.volume,t0=performance.now();const f=()=>{const t=(performance.now()-t0)/500;if(t>=1){a.pause();a.onended=null;return}a.volume=v0*(1-t);requestAnimationFrame(f)};f()}
+function stopSong(){fade(au.el);au.el=null;au.key=null}
+
+/* ---------- drawing ---------- */
+function curve(a,b){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),lift=Math.min(.16,14/Math.max(d,1));return{cx:(a.x+b.x)/2-dy*lift*.4,cy:(a.y+b.y)/2-d*lift}}
+/* A leg over the Pacific leaves one edge of the map and comes back at the other. */
+function legPaths(a,b){const dx=b.x-a.x;if(Math.abs(dx)<=180)return[[a,b]];const w=dx>0?-360:360;return[[a,{x:b.x+w,y:b.y}],[{x:a.x-w,y:a.y},b]]}
+function drawMap(now){
+  g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle='#11141b';g.fillRect(0,0,W,H);
+  /* land: real shapes under a field of dots; close in, the shapes take over from the dots */
+  g.save();g.setTransform(cam.z*DPR,0,0,cam.z*DPR,(W/2-cam.x*cam.z)*DPR,(H/2-cam.y*cam.z)*DPR);
+  g.fillStyle='#171b24';g.fill(COAST);g.strokeStyle='#2b303c';g.lineWidth=1/cam.z;g.stroke(COAST);g.restore();
+  const dots=clamp(1-(cam.z-7)/9,0,1);
+  if(dots>0){const size=clamp(cam.z*.42,1,2.4),half=size/2;g.fillStyle='#2f3542';g.globalAlpha=dots;
+    for(let i=0;i<LAND.length;i+=2){const x=SX(LAND[i]),y=SY(LAND[i+1]);if(x>-4&&x<W+4&&y>-4&&y<H+4)g.fillRect(x-half,y-half,size,size)}
+    g.globalAlpha=1}
+  const pos=P.pos,n=Math.floor(pos),frac=pos-n,cur=S[n],curTour=cur?cur.tour:-1;
+  g.lineCap='round';
+  /* routes */
+  for(let t=0;t<=curTour;t++){
+    const T=TOURS[t],live=t===curTour&&!atEnd();
+    g.strokeStyle=T.col;g.globalAlpha=live?.78:(atEnd()?.2:.11);g.lineWidth=live?1.6:1;
+    g.beginPath();
+    for(let i=T.a;i<T.b&&i<n;i++)for(const[a,b]of legPaths(S[i],S[i+1])){const c=curve(a,b);g.moveTo(SX(a.x),SY(a.y));g.quadraticCurveTo(SX(c.cx),SY(c.cy),SX(b.x),SY(b.y))}
+    g.stroke();
+  }
+  /* the leg under way, and the point travelling along it */
+  if(cur&&legFrom(n)&&frac>0&&!atEnd()){
+    const a=cur,b=legPaths(cur,S[n+1])[0][1],c=curve(a,b),T=TOURS[curTour],q=frac<.5?2*frac*frac:1-Math.pow(-2*frac+2,2)/2;
+    const pt=u=>({x:(1-u)*(1-u)*a.x+2*(1-u)*u*c.cx+u*u*b.x,y:(1-u)*(1-u)*a.y+2*(1-u)*u*c.cy+u*u*b.y});
+    g.strokeStyle=T.col;g.globalAlpha=.9;g.lineWidth=1.8;g.beginPath();
+    for(let k=0;k<=18;k++){const p=pt(q*k/18);k?g.lineTo(SX(p.x),SY(p.y)):g.moveTo(SX(p.x),SY(p.y))}
+    g.stroke();const h=pt(q);g.fillStyle=COL.paper;g.globalAlpha=1;g.beginPath();g.arc(SX(h.x),SY(h.y),3,0,7);g.fill();
+  }
+  g.globalAlpha=1;
+  /* cities: grow with the shows played there so far */
+  const counts=new Map();for(let i=0;i<=n;i++){const c=S[i].city;counts.set(c,(counts.get(c)||0)+1)}
+  const labelled=[];
+  for(const[c,k]of counts){
+    const x=SX(c.x),y=SY(c.y);if(x<-20||x>W+20||y<-20||y>H+20)continue;
+    const r=clamp(1.7+Math.sqrt(k)*.95,2,9)*(W>700?1:.8);c.r=r;c.sx=x;c.sy=y;
+    const inTour=cur&&!atEnd()&&c.shows.some(s=>s.tour===curTour&&s.i<=n);const recent=cur&&!atEnd()&&c.shows.some(s=>s.i<=n&&s.i>n-10);
+    g.globalAlpha=inTour?1:(atEnd()?.92:.55);
+    g.fillStyle=inTour?TOURS[curTour].col:COL.paper;
+    g.beginPath();g.arc(x,y,r,0,7);g.fill();
+    if(selCity===c||hoverCity===c){g.globalAlpha=1;g.strokeStyle=COL.paper;g.lineWidth=1.5;g.beginPath();g.arc(x,y,r+3,0,7);g.stroke()}
+    if(recent)labelled.push(c);
+  }
+  g.globalAlpha=1;
+  /* arrival */
+  if(cur&&P.pulse>=0&&!REDUCED){const t=(now-P.pulseT)/900;if(t<1){const s=S[P.pulse];if(s){g.strokeStyle=COL.paper;g.globalAlpha=(1-t)*.8;g.lineWidth=1.5;g.beginPath();g.arc(SX(s.x),SY(s.y),6+t*30,0,7);g.stroke();g.globalAlpha=1}dirty=true}}
+  /* names along the current tour, once there is room */
+  if(cam.z>6&&labelled.length<46){
+    g.font='11px "IBM Plex Mono",monospace';g.textBaseline='middle';const boxes=[];
+    labelled.sort((a,b)=>(b===cur.city)-(a===cur.city));
+    for(const c of labelled){
+      const w=g.measureText(c.name).width,x=c.sx+c.r+5,y=c.sy,box=[x-2,y-8,x+w+2,y+8];
+      if(x+w>W-4||boxes.some(b=>b[0]<box[2]&&b[2]>box[0]&&b[1]<box[3]&&b[3]>box[1]))continue;
+      boxes.push(box);g.fillStyle=c===cur.city?COL.paper:COL.dim;g.fillText(c.name,x,y);
+    }
+  }
+}
+function yearX(t){const a=day(S[0].d.slice(0,4)+'-01-01'),b=day('2027-01-01');return 8+(t-a)/(b-a)*(yc.clientWidth-16)}
+function drawYears(){
+  const w=yc.clientWidth,h=yc.clientHeight,d=Math.min(2,devicePixelRatio||1);
+  if(yc.width!==Math.round(w*d)||yc.height!==Math.round(h*d)){yc.width=Math.round(w*d);yc.height=Math.round(h*d)}
+  yg.setTransform(d,0,0,d,0,0);yg.clearRect(0,0,w,h);
+  const base=h-16,ticks=new Map();
+  /* one column per fortnight of touring */
+  const cell=Math.max(2,w/320);const col=new Map();
+  for(const s of S){const x=Math.round(yearX(s.t)/cell);col.set(x,(col.get(x)||[]).concat(s))}
+  const max=Math.max(...[...col.values()].map(c=>c.length));
+  const n=Math.floor(P.pos);
+  for(const[x,list]of col){
+    const bh=Math.max(2,list.length/max*(base-3)),past=list[0].i<=n;
+    yg.fillStyle=past?TOURS[list[0].tour].col:'#3a3f4b';yg.globalAlpha=past?.95:1;yg.fillRect(x*cell,base-bh,Math.max(1,cell-.6),bh);
+  }
+  yg.globalAlpha=1;
+  yg.font='10px "IBM Plex Mono",monospace';yg.textBaseline='alphabetic';yg.fillStyle=COL.faint;
+  const y0=+S[0].d.slice(0,4),every=w<520?5:(w<900?2:1),ty=h-3;
+  for(let y=Math.ceil(y0/every)*every;y<=2026;y+=every){const x=yearX(day(y+'-01-01'));yg.fillStyle=COL.faint;yg.fillRect(x,base+1,1,3);yg.fillText(String(y),x+2,ty)}
+  const s=S[n];if(s){const x=yearX(s.t);yg.fillStyle=COL.paper;yg.fillRect(x-.75,0,1.5,base+4)}
+}
+
+/* ---------- the frame ---------- */
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(.1,(now-last)/1000);last=now;
+  if(P.playing){
+    const n=Math.floor(P.pos);
+    /* within a tour it travels at show speed; between tours it holds a moment while the camera moves */
+    const speed=legFrom(n)?1/SHOW_SECONDS:1/(SHOW_SECONDS*1.9);
+    if(P.pos>=LAST()){play(false);P.scrubbed=false;cam.manual=false;fitWorld();showCaption()}
+    else setPos(P.pos+dt*speed);
+    dirty=true;
+  }
+  const k=1-Math.exp(-dt/(P.playing?.55:.28));
+  if(Math.abs(cam.x-cam.tx)>.002||Math.abs(cam.y-cam.ty)>.002||Math.abs(cam.z-cam.tz)>.001){
+    const lz=Math.log(cam.z)+(Math.log(cam.tz)-Math.log(cam.z))*k;cam.z=Math.exp(lz);cam.x+=(cam.tx-cam.x)*k;cam.y+=(cam.ty-cam.y)*k;dirty=true;
+  }
+  if(dirty){dirty=false;drawMap(now);drawYears()}
+  requestAnimationFrame(frame);
+}
+
+/* ---------- pointer: pan, zoom, hover, tap ---------- */
+let hoverCity=null,selCity=null,pts=new Map(),moved=0,pinch=0,dragLast=null;
+function hit(x,y){let best=null,bd=1e9;for(const c of CITIES){if(c.first>P.pos||c.sx==null)continue;const d=Math.hypot(c.sx-x,c.sy-y),lim=Math.max(c.r+4,W>700?9:16);if(d<lim&&d<bd){bd=d;best=c}}return best}
+cv.addEventListener('pointerdown',ev=>{cv.setPointerCapture(ev.pointerId);pts.set(ev.pointerId,[ev.clientX,ev.clientY]);moved=0;pinch=0;dragLast=[ev.clientX,ev.clientY];cv.classList.add('drag')});
+cv.addEventListener('pointermove',ev=>{
+  if(pts.has(ev.pointerId))pts.set(ev.pointerId,[ev.clientX,ev.clientY]);
+  if(pts.size===2){const[a,b]=[...pts.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pinch)zoomAt((a[0]+b[0])/2,(a[1]+b[1])/2,d/pinch);pinch=d;moved=99;return}
+  if(pts.size===1&&dragLast){const dx=ev.clientX-dragLast[0],dy=ev.clientY-dragLast[1];moved+=Math.abs(dx)+Math.abs(dy);dragLast=[ev.clientX,ev.clientY];if(moved>6){cam.manual=true;cam.tx-=dx/cam.z;cam.ty-=dy/cam.z;cam.x=cam.tx;cam.y=cam.ty;dirty=true}return}
+  if(ev.pointerType!=='mouse')return;
+  const h=hit(ev.clientX,ev.clientY);
+  if(h!==hoverCity){hoverCity=h;cv.classList.toggle('over',!!h);dirty=true}
+  const tip=$('#tip');
+  if(h){tip.style.display='block';tip.innerHTML=`<em>${esc(h.name)}</em><span>${h.shows.length} ${h.shows.length===1?'show':'shows'}</span>`;tip.style.left=Math.min(W-180,ev.clientX+14)+'px';tip.style.top=Math.max(50,ev.clientY-46)+'px'}else tip.style.display='none';
+});
+cv.addEventListener('pointerup',ev=>{pts.delete(ev.pointerId);pinch=0;cv.classList.remove('drag');if(moved<6&&pts.size===0){const h=hit(ev.clientX,ev.clientY);if(h)openCity(h);else if(selCity)closeCity()}dragLast=null});
+cv.addEventListener('pointercancel',ev=>{pts.delete(ev.pointerId);cv.classList.remove('drag');dragLast=null});
+cv.addEventListener('pointerleave',()=>{if(hoverCity){hoverCity=null;dirty=true}$('#tip').style.display='none'});
+function zoomAt(mx,my,f){cam.manual=true;const zmin=Math.min(W/345,1.2),nz=clamp(cam.tz*f,zmin,60),wx=(mx-W/2)/cam.tz+cam.tx,wy=(my-H/2)/cam.tz+cam.ty;cam.tz=nz;cam.tx=wx-(mx-W/2)/nz;cam.ty=wy-(my-H/2)/nz;dirty=true}
+cv.addEventListener('wheel',ev=>{ev.preventDefault();zoomAt(ev.clientX,ev.clientY,Math.exp(-ev.deltaY*.0016))},{passive:false});
+
+/* the years strip */
+function scrub(ev){const r=yc.getBoundingClientRect(),x=ev.clientX-r.left;let best=0,bd=1e9;for(const s of S){const d=Math.abs(yearX(s.t)-x);if(d<bd){bd=d;best=s.i}}P.scrubbed=true;cam.manual=false;const was=Math.floor(P.pos);if(best===was){showCaption();aim()}else setPos(best,true);dirty=true}
+yc.addEventListener('pointerdown',ev=>{yc.setPointerCapture(ev.pointerId);yc._on=true;scrub(ev)});
+yc.addEventListener('pointermove',ev=>{if(yc._on)scrub(ev)});
+yc.addEventListener('pointerup',()=>yc._on=false);yc.addEventListener('pointercancel',()=>yc._on=false);
+
+/* a city's shows */
+function openCity(c){
+  selCity=c;$('#tip').style.display='none';
+  $('#pBody').innerHTML=`<h2>${esc(c.name)}</h2><div class="sub">${esc(c.k)} · ${c.shows.length} ${c.shows.length===1?'show':'shows'}</div><ol>${c.shows.map(s=>`<li><time>${esc(fmt(s.d,s.e))}</time><strong>${esc(s.v&&!/unknown/i.test(s.v)?s.v:(s.n||'Venue not known'))}</strong>${s.n&&s.v&&s.n!==s.v?`<small>${esc(s.n)}</small>`:''}${s.w?`<small>with ${esc(s.w)}</small>`:''}${s.note?`<small class="flag">${esc(s.note)}</small>`:''}<small class="faint">${esc(s.s)} · ${esc(s.src)}${(s.press||[]).map((u,i)=>` · <a href="${esc(u)}" target="_blank" rel="noopener">newspaper ${i+1}</a>`).join('')}</small></li>`).join('')}</ol>`;
+  $('#panel').classList.add('open');dirty=true;
+}
+function closeCity(){selCity=null;$('#panel').classList.remove('open');dirty=true}
+$('#close').onclick=closeCity;
+$('#play').onclick=()=>play(!P.playing);
+$('#fit').onclick=()=>{cam.manual=true;fitBox(-128,152,py(66),py(-40),W>700?26:8);dirty=true};
+$('#snd').onclick=ev=>{soundOn=!soundOn;ev.currentTarget.setAttribute('aria-pressed',soundOn);if(!soundOn)stopSong();else if(P.playing)songFor(S[Math.floor(P.pos)],true)};
+$('#doubt').onclick=ev=>{showDoubt=!showDoubt;ev.currentTarget.setAttribute('aria-pressed',showDoubt);play(false);closeCity();build();P.pos=LAST();P.scrubbed=false;CITIES.forEach(c=>c.sx=null);fitWorld();showCaption();dirty=true};
+addEventListener('keydown',ev=>{if(ev.key===' '&&ev.target.tagName!=='BUTTON'){ev.preventDefault();play(!P.playing)}else if(ev.key==='Escape')closeCity();else if(ev.key==='ArrowRight'){P.scrubbed=true;setPos(Math.floor(P.pos)+1,true)}else if(ev.key==='ArrowLeft'){P.scrubbed=true;setPos(Math.floor(P.pos)-1,true)}});
+function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;if(atEnd()&&!cam.manual&&!P.scrubbed)fitWorld();else aim();dirty=true}
+addEventListener('resize',resize);
+window.__live={P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,au,play,setPos,openCity,SX,SY};
+resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
+if(document.fonts)document.fonts.ready.then(()=>dirty=true);
+requestAnimationFrame(frame);
+</script>
+</body></html>
