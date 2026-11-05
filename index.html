@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Gunnar Tynes: Recorded Work</title>
 <meta name="description" content="A chronological catalogue of recordings, screen, stage and radio work, 1997 to the present, with credits and sources.">
-<meta name="robots" content="noindex">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
@@ -47,6 +46,7 @@ button{background:none;border:0;cursor:pointer;padding:0}
 #filters[hidden]{display:none}
 #roles{flex-direction:column}#filters .chip{width:100%;text-align:left}
 #bar h1{cursor:pointer}
+#homeLink{text-decoration:none;white-space:nowrap}
 #views{display:flex;gap:12px}
 #now{position:fixed;display:none;text-align:center;z-index:3;pointer-events:none;padding:0 12px}
 #now em{display:block;font:italic 400 clamp(19px,2.6vh,26px)/1.15 var(--serif);text-wrap:balance}
@@ -165,6 +165,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
     <button class="quiet" id="vOrient" aria-pressed="false" title="Switch the timeline between horizontal and vertical">Vertical</button>
   </div>
   <div id="right">
+    <a class="quiet" id="homeLink" href="https://gunnartynes.com/">Main site</a>
     <input id="q" type="search" placeholder="Search" aria-label="Search artist or title">
     <button class="quiet" id="soundBtn" aria-pressed="false" title="Play each release as you hover over it">Sound</button>
     <button class="quiet" id="filterBtn" aria-expanded="false" aria-controls="filters">Filter</button>
