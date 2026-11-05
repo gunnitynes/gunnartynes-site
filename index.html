@@ -167,7 +167,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
   <div id="right">
     <a class="quiet" id="homeLink" href="https://gunnartynes.com/">Main site</a>
     <input id="q" type="search" placeholder="Search" aria-label="Search artist or title">
-    <button class="quiet" id="soundBtn" aria-pressed="false" title="Play each release as you hover over it">Sound</button>
+    <button class="quiet" id="soundBtn" aria-pressed="false" title="Turn sound on or off">Sound</button>
     <button class="quiet" id="filterBtn" aria-expanded="false" aria-controls="filters">Filter</button>
     <button class="quiet talk" id="talkBtn">Talk</button>
   </div>
@@ -636,7 +636,15 @@ cv.addEventListener('pointermove',ev=>{
   const tip=$('#tip');
   if(h&&!sel){tip.style.display='block';tip.innerHTML=`<em>${esc(h.title)}</em><br><b>${esc(h.artist)}</b><span>${h.year}</span>`;tip.style.left=Math.min(W-330,ev.clientX+14)+'px';tip.style.top=Math.min(H-90,ev.clientY+14)+'px'}else tip.style.display='none';
 });
-cv.addEventListener('pointerup',ev=>{pts.delete(ev.pointerId);pinch=0;cv.classList.remove('drag');if(mode==='talk'){if(finished)leaveTalk(hit(ev.clientX,ev.clientY));return}if(view.name==='disc'){discUp(ev);return}if(moved<6&&pts.size===0){flick.x=flick.y=0;const h=hit(ev.clientX,ev.clientY);select(h);if(!h)fitAll()}
+/* On the timelines an album plays when it is clicked. This waits for the click itself, which every browser accepts as permission to play. */
+let tapped=null;
+cv.addEventListener('click',()=>{
+  const e=tapped;tapped=null;
+  if(!e||sel!==e||view.name!=='line'||mode!=='browse')return;
+  if(audio.id===e.id||!soundOn){stopAudio(.2);return}
+  playBite(e,.05,.15);
+});
+cv.addEventListener('pointerup',ev=>{pts.delete(ev.pointerId);pinch=0;cv.classList.remove('drag');if(mode==='talk'){if(finished)leaveTalk(hit(ev.clientX,ev.clientY));return}if(view.name==='disc'){discUp(ev);return}if(moved<6&&pts.size===0){flick.x=flick.y=0;const h=hit(ev.clientX,ev.clientY);tapped=h;select(h);if(!h)fitAll()}
   if(performance.now()-dragT>90){flick.x=flick.y=0}
   drag=null});
 cv.addEventListener('pointerleave',()=>{if(hover){hover=null;dirty=true;hoverSound(null)}lens.on=false;dirty=true;$('#tip').style.display='none'});
@@ -673,6 +681,7 @@ function syncFilter(){const on=active.size<Object.keys(ROLE).length||showApp;$('
 let soundOn=store.get('gt.sound',true),soundLive=false,soundTimer=0;
 function hoverSound(e){
   clearTimeout(soundTimer);
+  if(view.name!=='disc')return;   /* the timelines play only what is clicked */
   if(!soundOn||sel||mode!=='browse')return;
   if(!e){stopAudio(.45);return}
   preload(e);
@@ -1102,7 +1111,7 @@ function setView(name){
   $('#vLine').setAttribute('aria-pressed',name==='line');$('#vDisc').setAttribute('aria-pressed',name==='disc');
   cv.classList.remove('over');
   if(name==='disc'){disc.cxLive=null;disc.prev=-1;disc.fresh=true;discMetrics(0);discTouch();disc.seen=false;$('#hint').classList.remove('off')}
-  disc.paused=false;store.set('gt.view',name);syncLayout();dirty=true;
+  disc.paused=false;store.set('gt.view2',name);syncLayout();dirty=true;
 }
 function syncLayout(){
   const vert=view.name==='line'&&orient==='v',n=$('#now'),o=$('#vOrient');
@@ -1134,7 +1143,7 @@ layout();
 addEventListener('resize',resize);resize();fitAll(true);
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
 const wantedView=(location.search.match(/[?&]view=(record|timeline)/)||[])[1];
-const startDisc=wantedView?wantedView==='record':store.get('gt.view',innerWidth<900?'disc':'line')==='disc';
+const startDisc=wantedView?wantedView==='record':store.get('gt.view2','line')==='disc';
 if(!REDUCED&&!startDisc){
   intro.t0=performance.now()+1e7;
   const go=()=>{if(intro.t0>performance.now())intro.t0=performance.now()};
