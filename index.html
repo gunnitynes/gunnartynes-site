@@ -161,8 +161,8 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
   <h1>gunnar tynes <small id="count"></small></h1>
   <div id="views" role="group" aria-label="View">
     <button class="quiet" id="vLine" aria-pressed="true">Timeline</button>
-    <button class="quiet" id="vDisc" aria-pressed="false">Record</button>
     <button class="quiet" id="vOrient" aria-pressed="false" title="Switch the timeline between horizontal and vertical">Vertical</button>
+    <button class="quiet" id="vDisc" aria-pressed="false">Record</button>
   </div>
   <div id="right">
     <a class="quiet" id="homeLink" href="https://gunnartynes.com/">Main site</a>
@@ -485,7 +485,7 @@ const audio={el:null,id:null,url:{},fading:new Set(),pre:new Map(),token:0};
 function biteOf(e){
   const b=bites[e.id];
   if(b)return b;
-  if(e.bite)return{kind:'url',url:e.bite.src,start:e.bite.start||0,own:true,title:e.bite.title};
+  if(e.bite&&!e.trackFirst)return{kind:'url',url:e.bite.src,start:e.bite.start||0,own:true,title:e.bite.title};
   const pref=e.dt!=null&&e.tracks[e.dt]&&e.tracks[e.dt].p?e.dt:-1;
   const i=pref>=0?pref:e.tracks.findIndex(t=>t.p);
   return i>=0?{kind:'track',idx:i,start:0,placeholder:true}:null;
@@ -509,7 +509,8 @@ async function playBite(e,fadeIn=.05,fadePrev=.15){
   let a=audio.pre.get(e.id);audio.pre.delete(e.id);
   if(!a){a=new Audio();a.src=u}
   a.currentTime=b.start||0;a.volume=fadeIn>.01?0:1;
-  try{await a.play()}catch(x){return false}
+  try{await a.play()}catch(x){if(x&&x.name==='NotAllowedError'){soundLive=false;syncPlay2()}return false}
+  soundLive=true;syncPlay2();
   if(token!==audio.token){a.pause();return false}   /* something newer was asked for while this one loaded */
   audio.el=a;audio.id=e.id;
   if(fadeIn>.01){const t0=performance.now();const f=()=>{if(audio.el!==a)return;const t=(performance.now()-t0)/1000/fadeIn;a.volume=Math.min(1,t);if(t<1)requestAnimationFrame(f)};f()}
@@ -668,7 +669,8 @@ $('#q').addEventListener('input',ev=>{query=ev.target.value.trim().toLowerCase()
 $('#bar').querySelector('h1').onclick=()=>{select(null);if(orient==='v'&&view.name==='line'){cam.ty=-1e9;clampCam();cam.tau=.45;dirty=true}else fitAll();if(view.name==='disc'){disc.target=disc.stops[0];discTouch()}};
 $('#filterBtn').onclick=()=>{const f=$('#filters');f.hidden=!f.hidden;$('#filterBtn').setAttribute('aria-expanded',!f.hidden)};
 function syncFilter(){const on=active.size<Object.keys(ROLE).length||showApp;$('#filterBtn').classList.toggle('on',on);$('#filterBtn').textContent=on?'Filter on':'Filter'}
-let soundOn=false,soundTimer=0;
+/* Sound starts on. Browsers keep a page silent until the visitor's first click, tap or key, so soundLive says whether it can really be heard yet. */
+let soundOn=store.get('gt.sound',true),soundLive=false,soundTimer=0;
 function hoverSound(e){
   clearTimeout(soundTimer);
   if(!soundOn||sel||mode!=='browse')return;
@@ -677,12 +679,25 @@ function hoverSound(e){
   soundTimer=setTimeout(()=>playBite(e,.18,.3),170);
 }
 function setSound(on){
-  soundOn=on;$('#soundBtn').setAttribute('aria-pressed',on);
+  soundOn=on;store.set('gt.sound',on);$('#soundBtn').setAttribute('aria-pressed',on);
   if(!on){clearTimeout(soundTimer);if(!sel)stopAudio(.3)}
   syncPlay2();
 }
-function syncPlay2(){const b=$('#discPlay');b.classList.toggle('on',soundOn);b.setAttribute('aria-label',soundOn?'Pause':'Play')}
-$('#soundBtn').onclick=()=>{setSound(!soundOn);disc.paused=false;if(soundOn&&view.name==='disc'&&!sel)playBite(items[disc.cur],.1,.2)};
+function syncPlay2(){const b=$('#discPlay'),on=soundOn&&soundLive;b.classList.toggle('on',on);b.setAttribute('aria-label',on?'Pause':'Play')}
+function wakeSound(ev){
+  if(soundLive){unbindWake();return}
+  const t=ev.target;
+  if(t&&t.closest&&t.closest('#discPlay,#soundBtn'))return;   /* those two buttons start or stop the sound themselves */
+  if(ev.type==='keydown'&&ev.key===' ')return;
+  if(!soundOn){return}
+  if(view.name==='disc'&&!sel&&mode==='browse'&&items[disc.cur]){if(biteOf(items[disc.cur])){disc.paused=false;playBite(items[disc.cur],.1,.2);return}soundLive=true;syncPlay2();unbindWake()}
+  else{soundLive=true;syncPlay2();unbindWake()}
+}
+const WAKE=['mousedown','touchend','click','keydown'];
+function unbindWake(){WAKE.forEach(k=>window.removeEventListener(k,wakeSound,true))}
+WAKE.forEach(k=>window.addEventListener(k,wakeSound,true));
+$('#soundBtn').setAttribute('aria-pressed',soundOn);
+$('#soundBtn').onclick=()=>{soundLive=true;setSound(!soundOn);disc.paused=false;if(soundOn&&view.name==='disc'&&!sel)playBite(items[disc.cur],.1,.2)};
 $('#moreBtn').onclick=ev=>{showApp=!showApp;ev.currentTarget.setAttribute('aria-pressed',showApp);layout();select(null);syncFilter();fitAll()};
 $('#close').onclick=()=>{select(null);fitAll()};
 $('#play').onclick=()=>{if(!sel)return;if(audio.id===sel.id)stopAudio(.2);else playBite(sel)};
@@ -886,8 +901,8 @@ function discNearest(a){let b=0,d=1e9;disc.stops.forEach((v,i)=>{const k=Math.ab
 /* The play button: sound and turning together. Paused, the record stays put until spun or played again. */
 function discToggle(){
   discTouch();
-  if(soundOn){setSound(false);disc.paused=true;return}
-  setSound(true);disc.paused=false;disc.vel=0;disc.target=null;disc.touched=-1e9;
+  if(soundOn&&soundLive){setSound(false);disc.paused=true;return}
+  soundLive=true;setSound(true);disc.paused=false;disc.vel=0;disc.target=null;disc.touched=-1e9;
   if(sel)select(null);
   playBite(items[disc.cur],.1,.2);
 }
@@ -923,7 +938,7 @@ function tickDisc(dt,now){
   }else if(!sel&&!disc.paused&&(!hover||soundOn)&&!REDUCED&&view.mix===1&&now-disc.touched>3500){
     /* Left alone it plays, one release every AUTOPLAY_SECONDS, then the arm returns to the start. */
     /* While playing, a release with no audio passes quickly instead of sitting silent. */
-    const secs=soundOn&&!biteOf(items[disc.cur])?SILENT_SECONDS:AUTOPLAY_SECONDS;
+    const secs=soundOn&&soundLive&&!biteOf(items[disc.cur])?SILENT_SECONDS:AUTOPLAY_SECONDS;
     disc.s+=(disc.tile*1.08/secs)/Math.max(.1,discR(disc.s))*dt;busy=true;
     if(disc.s>=lastS){disc.s=lastS;disc.target=first;disc.touched=now}
   }

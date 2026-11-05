@@ -286,6 +286,7 @@ function openEditor(id){
     <div class="checks">${Object.keys(ROLES).map(k=>`<label><input type="checkbox" name="role" value="${k}"${(e.roles||[]).includes(k)?' checked':''}> ${ROLES[k]}</label>`).join('')}</div>
     <div class="grid" style="margin-top:12px">${field('Credit, as shown to visitors','roleText',e.roleText||'',{area:2,full:1})}</div>
   </section>
+  <section><h3>Default song</h3><div id="songBox"></div></section>
   <section><h3>Soundbite</h3><div id="biteBox"></div></section>
   <section><h3>Cover</h3>
     <div class="coverRow"><img id="coverImg" alt="" src="${esc(coverUrl(e))}"${e.cover?'':' style="visibility:hidden"'}><label class="drop" style="flex:1;min-width:190px" id="coverDrop">Drop an image here, or tap to choose<input type="file" id="coverIn" accept="image/*" hidden></label></div>
@@ -350,7 +351,26 @@ async function takeCover(file){
 
 /* ---------- soundbite: the track stays on this device, only the chosen clip is uploaded ---------- */
 const clipState={buf:null,start:0,len:30,name:'',peaks:null,src:null,ctx:null,t0:0,raf:0};
+/* The song a release plays by default: your soundbite if there is one, or any track with a preview. */
+function renderSongBox(e){
+  const box=$('#songBox');if(!box)return;
+  const tracks=e.tracks||[],hasBite=e.bite&&!dropBite,playable=tracks.some(t=>t.p);
+  if(!hasBite&&!playable){box.innerHTML='<p id="noSong" style="margin:0;opacity:.7">No song with a preview yet. Add a soundbite below and it will play by default.</p>';return}
+  const firstP=tracks.findIndex(t=>t.p),dt=e.dt!=null&&tracks[e.dt]&&tracks[e.dt].p?e.dt:firstP;
+  const cur=hasBite&&!e.trackFirst?'bite':String(dt);
+  box.innerHTML=`<label for="f_song">Plays when this release comes up
+    <select id="f_song" name="song">
+      ${hasBite?`<option value="bite"${cur==='bite'?' selected':''}>Your soundbite${e.bite.title?': '+esc(e.bite.title):''}</option>`:''}
+      ${tracks.map((t,i)=>`<option value="${i}"${t.p?'':' disabled'}${cur===String(i)?' selected':''}>${esc(t.n||i+1)}. ${esc(t.t)}${t.p?'':' (no preview)'}</option>`).join('')}
+    </select></label>
+    <audio id="songAudio" controls preload="none" style="width:100%;height:36px;margin-top:8px"></audio>`;
+  const sel=$('#f_song'),au=$('#songAudio');
+  const load=()=>{const t=tracks[+sel.value];au.pause();au.hidden=sel.value==='bite'||!t||!t.p;if(!au.hidden)au.src=t.p;else au.removeAttribute('src')};
+  sel.onchange=()=>{load();if(!au.hidden)au.play().catch(()=>{})};
+  load();
+}
 function renderBiteBox(e){
+  renderSongBox(e);
   const has=e.bite&&!dropBite;
   $('#biteBox').innerHTML=`
    ${has?`<div id="curBite"><audio controls preload="none" src="../${esc(e.bite.src)}"></audio><button type="button" id="rmBite">Remove</button></div>`:''}
@@ -496,8 +516,16 @@ $('#form').addEventListener('submit',async ev=>{
       if(fk||fr||fdir.length||fc||fa||fn)e.film={...(e.film||{}),kind:fk,role:fr,director:fdir,composer:fc||null,creditedAs:fa||null,nomination:fn||null};else delete e.film;
       if(d.get('screen'))e.screen=true;else delete e.screen;
       if(coverPath)e.cover=coverPath;
+      const song=v('song');
+      if(song&&song!=='bite'){
+        const tr=e.tracks||[],auto=e.dt!=null&&tr[e.dt]&&tr[e.dt].p?e.dt:tr.findIndex(t=>t.p);
+        if(+song!==auto)e.dt=+song;   /* an untouched choice leaves the release as it was */
+        if(e.bite)e.trackFirst=true;else delete e.trackFirst;
+      }
+      else if(song==='bite')delete e.trackFirst;
+      if(bitePath)delete e.trackFirst;   /* a clip you just made becomes the default */
       if(bitePath)e.bite={src:bitePath,title:biteTitle};
-      else if(dropBite)delete e.bite;
+      else if(dropBite){delete e.bite;delete e.trackFirst}
       else if(e.bite)e.bite.title=biteTitle||e.bite.title;
       return list;
     },files,`${isNew?'Add':'Edit'}: ${title}`);
