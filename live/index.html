@@ -62,19 +62,26 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #cam:hover{border-color:var(--paper)}
 .thumbs{display:flex;flex-wrap:wrap;gap:4px;margin:7px 0 3px}.thumbs button{position:relative;width:62px;height:46px;overflow:hidden;background:var(--plate2);border-radius:1px}
 .thumbs img{width:100%;height:100%;object-fit:cover;display:block}.thumbs .more{position:absolute;inset:0;background:#11141bb0;display:grid;place-items:center;font:12px var(--mono)}
+#rel{position:fixed;top:14px;right:max(16px,env(safe-area-inset-right,0px));width:clamp(150px,15vw,216px);z-index:4;padding:9px;background:#11141bec;border-radius:2px;box-shadow:0 10px 36px #000a;opacity:0;transition:opacity .45s;pointer-events:none}#rel.on{opacity:1}
+#rel small{display:block;font:500 10.5px/1.25 var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--p);margin-bottom:7px}
+#rel .cov{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:var(--plate);margin-bottom:8px}#rel .cov[hidden]{display:none}
+#rel em{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font:italic 400 18px/1.15 var(--serif);color:#fff}
+#rel b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:400 12.5px/1.3 var(--sans);color:var(--dim);margin-top:3px}
 #view{position:fixed;inset:0;background:#0b0d12f7;z-index:8;display:grid;grid-template-rows:1fr auto;touch-action:pan-y}
 #view figure{margin:0;min-height:0;display:grid;place-items:center;padding:16px 16px 6px}#view img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 #view .meta{padding:6px 18px max(16px,env(safe-area-inset-bottom,0px));text-align:center}#view em{font:italic 20px/1.25 var(--serif);display:block}#view small{font:12px var(--mono);color:var(--dim);display:block;margin-top:3px}#view small a{color:var(--dim)}
 #view .nav{position:absolute;top:50%;transform:translateY(-50%);width:50px;height:70px;font-size:30px;color:var(--paper);opacity:.8}#view .nav:hover{opacity:1}#vPrev{left:4px}#vNext{right:4px}
 #vClose{position:absolute;top:10px;right:14px;font-size:26px;color:var(--paper);padding:6px 10px;z-index:1}
 @media(max-width:700px){
-  #kmBox{justify-content:space-between}#speed{margin-right:-7px}#cap{display:block}#info{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 18px;min-height:124px}.f:empty{display:none}.f.big{grid-column:1/-1;order:-1}.f:nth-child(3):not(:empty)~.f:nth-child(4):not(:empty){grid-column:1/-1}.f:nth-child(3):not(:empty)~.f:nth-child(4):not(:empty) span{-webkit-line-clamp:1}.f small{margin-bottom:3px}.f span{font-size:16px}.f.date span{font-size:16px}.f.big span{font-size:23px}
+  #kmBox{justify-content:space-between}#speed{margin-right:-7px}#cap{display:block}#more{display:none}#info{grid-template-columns:minmax(0,21fr) minmax(0,29fr);grid-template-rows:26px 48px;gap:5px 14px;height:87px;min-height:0;padding-top:7px;overflow:hidden;align-content:start}.f:empty{display:none}.f.big{grid-column:1/-1;order:-1;display:flex;align-items:baseline;gap:9px}.f.big small{flex:none;margin:0}.f small{margin-bottom:2px;font-size:10px}.f span{font-size:13.5px;line-height:17px}.f.date span{font-size:12.5px;line-height:17px}.f.big span{display:block;flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;font-size:21px;line-height:26px}
+  #rel{top:calc(var(--bar,84px) + 6px);right:12px;width:124px;padding:7px}#rel small{font-size:9.5px;margin-bottom:5px}#rel .cov{margin-bottom:5px}#rel em{font-size:14.5px;-webkit-line-clamp:2}#rel b{font-size:11px;-webkit-line-clamp:1}
   #leg{top:calc(var(--bar,84px) + 4px);width:62vw;right:16px}#leg .frame{aspect-ratio:3/2}
   #view .nav{width:40px}#view em{font-size:17px}
   #panel{top:auto;left:0;right:0;width:auto;height:58%;transform:translateY(102%);box-shadow:0 -12px 40px #0006}
   #bar{gap:6px 14px;padding-bottom:6px}#views{gap:6px 9px}#right{gap:12px}.pin{--pw:112px}#tag{display:none}
   #cap em{font-size:25px}#cap b{font-size:14px}#years{height:40px}
 }
+@media(max-width:345px){#views{gap:6px 6px}#views .quiet{font-size:12px}}
 </style></head><body>
 <canvas id="map" aria-label="World map of concerts"></canvas>
 <header id="bar">
@@ -86,6 +93,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
     <span class="quiet on" aria-current="page">Live</span>
     <button class="quiet" id="photoBtn" hidden aria-haspopup="menu" aria-expanded="false" title="Show tour photos during play">Tour photos</button>
     <button class="quiet" id="viewBtn" aria-haspopup="menu" aria-expanded="false" title="How the camera moves during play">View</button>
+    <button class="quiet" id="relBtn" aria-pressed="false" title="Show each release as the journey reaches it">Releases</button>
   </nav>
   <span id="tag" hidden>draft list, not published</span>
   <!-- Hidden for now, at Gunnar's request; World and Doubtful still work when shown. -->
@@ -109,6 +117,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 <div id="pop" role="menu" hidden></div>
 <div id="hint" aria-live="polite"></div>
 
+<aside id="rel" aria-live="off"><small></small><img class="cov" alt=""><em></em><b></b></aside>
 <div id="leg" aria-hidden="true"><button class="frame" type="button" id="legFrame" aria-label="Open this photo"><img alt=""><img alt=""></button><div id="legCap"></div></div>
 <div id="view" hidden role="dialog" aria-label="Photos"><button id="vClose" aria-label="Close photos">×</button><figure><img id="vImg" alt=""></figure><button class="nav" id="vPrev" aria-label="Previous photo">‹</button><button class="nav" id="vNext" aria-label="Next photo">›</button><div class="meta"><em id="vCap"></em><small id="vBy"></small></div></div>
 <aside id="panel" aria-label="Shows in this city"><button id="close" aria-label="Close">×</button><div id="pBody"></div></aside>
@@ -476,16 +485,21 @@ let capKey='';
 /* The right-hand side of the band: four fixed places, so nothing jumps sideways from show to show. */
 function setInfo(list){
   const el=$('#info');el.textContent='';
+  /* A phone has one fixed panel: two facts beside the date share a place, and a long venue shrinks to one line instead of growing the panel. */
+  if(W<=700&&list[2]&&list[2][1]&&list[3]&&list[3][1])list=[list[0],list[1],[`${list[2][0]} · ${list[3][0]}`,`${list[2][1]} · ${list[3][1]}`]];
   for(let i=0;i<4;i++){
     const d=document.createElement('div'),f=list[i];d.className='f';
     if(f&&f[1]){if(f[2])d.className+=' '+f[2];const a=document.createElement('small'),v=document.createElement('span');a.textContent=f[0];v.textContent=f[1];d.append(a,v)}
     el.appendChild(d);
   }
+  if(W<=700){const v=el.querySelector('.f.big span');if(v&&v.scrollWidth>v.clientWidth)v.style.fontSize=Math.max(13,21*v.clientWidth/v.scrollWidth-.3)+'px'}
 }
 const known=v=>v&&!/unknown/i.test(v)?v:'';
+/* On a phone a range within one year names that year once, so it fits its place. */
+const fmtShown=(s,e)=>{if(W>700||!e||s.slice(0,4)!==e.slice(0,4))return fmt(s,e);const f=x=>new Date(x+'T00:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'});return `${f(s)} – ${fmt(e)}`};
 function showFields(s,dateLabel){
   const v=known(s.v),main=v?['Venue',v,'big']:s.n?['Event',s.n,'big']:['Venue','Not known','big none'];
-  return [[dateLabel,fmt(s.d,s.e),'date'],main,['Event',v&&s.n&&s.n!==v?s.n:''],['With',s.w||'']];
+  return [[dateLabel,fmtShown(s.d,s.e),'date'],main,['Event',v&&s.n&&s.n!==v?s.n:''],['With',s.w||'']];
 }
 function journeyCaption(){
   const n=Math.floor(P.pos),st=segAt(n,P.pos-n),cap=$('#cap');
@@ -496,7 +510,7 @@ function journeyCaption(){
   if(!long){if(capKey){capKey='';showCaption()}return}
   const key=seg.kind+n;if(key===capKey)return;capKey=key;
   const set=(q,t)=>{cap.querySelector(q).textContent=t};
-  const breakInfo=()=>{const h=j.segs.find(m=>m.kind==='hold');setInfo([['Break',h?gapText(h.days):'','date'],['Next show',`${next.c}, ${next.k}`,'big'],['Date',fmt(next.d,next.e)]])};
+  const breakInfo=()=>{const h=j.segs.find(m=>m.kind==='hold');setInfo([['Break',h?gapText(h.days):'','date'],['Next show',`${next.c}, ${next.k}`,'big'],['Date',fmtShown(next.d,next.e)]])};
   if(seg.kind==='hold'){set('em','Home');set('b',`${j.home.c}, ${j.home.k}`);breakInfo();return}
   const toName=seg.kind==='home'?'Home':next.c;
   set('em',`${seg.a.c} → ${toName}`);set('b',`${nf(seg.km)} km`);
@@ -787,15 +801,63 @@ function drawYears(){
   const s=S[n];if(s){const x=yearX(s.t);yg.fillStyle=COL.paper;yg.fillRect(x-.75,0,1.5,base+4)}
 }
 
+/* ---------- releases: when the switch is on, each record appears in the top right corner as the journey reaches its date ---------- */
+const Rel={on:false,list:[],i:0,queue:[],cur:null,t:0,gap:0,lastPos:0};
+(function buildReleases(){
+  const stage=/live score|concert|theatre|orchestral/i;
+  const core=(window.CATALOGUE||[]).filter(e=>e.tier==='core'),byYear={};
+  /* A date counts only if it is real and in the year the Timeline gives: 1 January is a placeholder, and later years are reissues. Those show the year alone, spread evenly through it. */
+  const exact=e=>e.date&&!/-01-01$/.test(e.date)&&+e.date.slice(0,4)===e.year;
+  for(const e of core)if(!exact(e))(byYear[e.year]=byYear[e.year]||[]).push(e);
+  Rel.list=core.map(e=>{
+    let t,when;
+    if(exact(e)){t=day(e.date);when=fmt(e.date)}
+    else{const y=byYear[e.year];t=day(e.year+'-01-01')+365*(y.indexOf(e)+.5)/y.length;when=String(e.year)}
+    return{e,t,label:`${stage.test(e.film&&e.film.kind||'')?'Premiered':'Released'} · ${when}`};
+  }).sort((a,b)=>a.t-b.t);
+})();
+const storyDay=()=>{const n=Math.floor(P.pos),a=S[n],b=S[n+1];return b?a.t+(P.pos-n)*(b.t-a.t):a.t};
+function relClear(){Rel.queue.length=0;Rel.cur=null;Rel.t=0;$('#rel').classList.remove('on')}
+function relSync(){relClear();const d=storyDay();Rel.i=P.pos<.5?0:Rel.list.findIndex(r=>r.t>d);if(Rel.i<0)Rel.i=Rel.list.length;Rel.lastPos=P.pos}
+function relPreload(r){if(r&&r.e.cover&&!r.im){r.im=new Image();r.im.src='../'+r.e.cover}}
+function relShow(r){
+  const el=$('#rel'),c=el.querySelector('.cov');Rel.cur=r;$('#hint').classList.remove('on');
+  el.querySelector('small').textContent=r.label;el.querySelector('em').textContent=r.e.title;el.querySelector('b').textContent=r.e.artist;
+  c.hidden=!r.e.cover;c.onerror=()=>{c.hidden=true};if(r.e.cover){c.src='../'+r.e.cover;c.alt=`Cover of ${r.e.title}`}else c.removeAttribute('src');
+  const slowdown=Math.sqrt(Math.max(1,P.rate/2)),n=Math.floor(P.pos),st=segAt(n,P.pos-n);
+  Rel.t=(st&&st.seg.kind==='hold'?3.2:4.2)/slowdown*(Rel.queue.length>2?.7:1);
+  el.classList.add('on');
+}
+/* In a long break the map waits on Home until that period's records have all been shown. */
+const relWaiting=()=>Rel.on&&Rel.queue.length>0;
+function relTick(dt){
+  if(!Rel.on)return;
+  if(atEnd()){if(Rel.cur||Rel.queue.length)relClear();return}
+  if(Math.abs(P.pos-Rel.lastPos)>1.5)relSync();
+  Rel.lastPos=P.pos;
+  if(!P.playing)return;
+  const d=storyDay();
+  while(Rel.i<Rel.list.length&&Rel.list[Rel.i].t<=d)Rel.queue.push(Rel.list[Rel.i++]);
+  relPreload(Rel.queue[0]);relPreload(Rel.list[Rel.i]);
+  if(Rel.gap>0){Rel.gap-=dt;return}
+  if(Rel.cur){Rel.t-=dt;if(Rel.t<=0){Rel.cur=null;$('#rel').classList.remove('on');Rel.gap=.5}return}
+  if(Rel.queue.length)relShow(Rel.queue.shift());
+}
+function setReleases(on){
+  Rel.on=on;$('#relBtn').setAttribute('aria-pressed',on);try{localStorage.setItem('gt.live.releases',on?'1':'0')}catch(e){}
+  relSync();if(on)flashHint('Releases on: each record appears as the journey reaches it');
+}
+
 /* ---------- the frame ---------- */
 let last=performance.now();
 function frame(now){
   const dt=Math.min(.1,(now-last)/1000);last=now;
+  relTick(dt);
   if(P.playing){
     const n=Math.floor(P.pos);
     /* within a tour it travels at show speed; between tours it holds a moment while the camera moves */
     P.rate+=((P.slow?SLOW_RATE:P.speed)-P.rate)*(1-Math.exp(-dt/.45));
-    const inHome=segAt(n,P.pos-n);const speed=P.hold>now?0:Math.max((inHome&&inHome.seg.kind==='hold'?(P.rate<=2?Math.min(P.rate,1):P.rate/2):P.rate)/legSeconds(n),P.slow?1/40:0);
+    const inHome=segAt(n,P.pos-n);const speed=P.hold>now||(inHome&&inHome.seg.kind==='hold'&&relWaiting())?0:Math.max((inHome&&inHome.seg.kind==='hold'?(P.rate<=2?Math.min(P.rate,1):P.rate/2):P.rate)/legSeconds(n),P.slow?1/40:0);
     tickLeg(dt);journeyCaption();
     if(P.pos>=LAST()){play(false);P.armed=false;syncSpeed();clearPins();Back.cur=Back.prev=null;$('#leg').classList.remove('on','caponly');P.scrubbed=false;cam.manual=false;fitWorld();showCaption()}
     else setPos(P.pos+dt*speed);
@@ -886,6 +948,7 @@ function openMenu(id){
   pop.hidden=false;btn.setAttribute('aria-expanded',true);
   const r=btn.getBoundingClientRect(),w=pop.offsetWidth;pop.style.left=clamp(r.left,8,W-w-8)+'px';pop.style.top=(r.bottom+6)+'px';
 }
+$('#relBtn').onclick=()=>setReleases(!Rel.on);
 Object.keys(MENUS).forEach(id=>{$('#'+id).onclick=ev=>{ev.stopPropagation();openMenu(id)}});
 $('#pop').addEventListener('click',ev=>{
   const b=ev.target.closest('[data-v]');if(!b)return;const m=MENUS[$('#pop').dataset.for],v=b.dataset.v;
@@ -913,7 +976,8 @@ $('#doubt').onclick=ev=>{showDoubt=!showDoubt;ev.currentTarget.setAttribute('ari
 addEventListener('keydown',ev=>{if(!$('#view').hidden){if(ev.key==='Escape')closePhotos();else if(ev.key==='ArrowRight')stepPhoto(1);else if(ev.key==='ArrowLeft')stepPhoto(-1);return}if(ev.key===' '&&ev.target.tagName!=='BUTTON'){ev.preventDefault();play(!P.playing)}else if(ev.key==='Escape')closeCity();else if((ev.key==='s'||ev.key==='S')&&P.playing){setSlow(!P.slow);P.armed=P.slow}else if((ev.key==='+'||ev.key==='=')||ev.key==='-'){const L=[.5,1,2,4],i=L.indexOf(P.speed)+(ev.key==='-'?-1:1);if(L[i])setSpeed(L[i])}else if(ev.key==='ArrowRight'){P.scrubbed=true;setPos(Math.floor(P.pos)+1,true)}else if(ev.key==='ArrowLeft'){P.scrubbed=true;setPos(Math.floor(P.pos)-1,true)}});
 function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;if(atEnd()&&!cam.manual&&!P.scrubbed){fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz}else aim();if(!(cam.z>0)){cam.z=cam.tz>0?cam.tz:1;cam.x=cam.tx;cam.y=cam.ty}dirty=true}
 addEventListener('resize',()=>{resize();syncChrome()});
-window.__live={redraw:()=>{dirty=true},radio:Radio,get TOURS(){return ()=>TOURS},runZoom,journey,segAt,followBase,closePlan,closeness,zoomFor,legSeconds,followZoom,closeCity,focusCity,Pins,Back,headPoint,photoMode,setSpeed,setSlow,Leg,openPhotos,photosOf,P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,play,setPos,openCity,SX,SY};
+try{if(localStorage.getItem('gt.live.releases')==='1'){Rel.on=true;$('#relBtn').setAttribute('aria-pressed',true)}}catch(e){}
+window.__live={Rel,storyDay,setInfo,syncChrome,showCaption,redraw:()=>{dirty=true},radio:Radio,get TOURS(){return ()=>TOURS},runZoom,journey,segAt,followBase,closePlan,closeness,zoomFor,legSeconds,followZoom,closeCity,focusCity,Pins,Back,headPoint,photoMode,setSpeed,setSlow,Leg,openPhotos,photosOf,P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,play,setPos,openCity,SX,SY};
 syncMenus();syncSpeed();syncChrome();resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
 requestAnimationFrame(frame);
