@@ -204,21 +204,29 @@ P.pos=LAST();
 function legFrom(i){return i>=0&&i+1<S.length&&S[i+1].tour===S[i].tour}
 /* Every journey in the order it happened. Time is real distance, so the world feels its size. After a long gap the band goes home first. */
 const mkHome=(c,k,la,lo)=>({x:px(lo),y:py(la),la,lo,name:c,c,k,home:true});
+const ICE_CENTRE={x:px(-18.9),y:py(64.95)};
 const HOME_RVK=mkHome('Reykjavík','Iceland',64.147,-21.94),HOME_BER=mkHome('Berlin','Germany',52.52,13.405);
 /* Reykjavík until 2018, Berlin after. A gap that spans the move goes to whichever home its middle falls in. */
 const homeFor=(a,b)=>((a.t+b.t)/2<day('2018-01-01')?HOME_RVK:HOME_BER);
 function kmBetween(a,b){const r=Math.PI/180,dl=(b.la-a.la)*r,dn=(b.lo-a.lo)*r,h=Math.sin(dl/2)**2+Math.cos(a.la*r)*Math.cos(b.la*r)*Math.sin(dn/2)**2;return 6371*2*Math.asin(Math.min(1,Math.sqrt(h)))}
+/* Flight time grows with distance, but less and less: a long flight is still long, without every hop being a fixed multiple of the last. */
+const flightSeconds=km=>km<5?.7:clamp(1+1.5*Math.sqrt(km/100),1,26);
+/* The pause at each stop comes from the calendar: back-to-back nights run on, a free week breathes. */
+const restSeconds=days=>clamp(.25+.42*Math.log2(Math.max(1,days)),.25,2);
 function moveSeg(a,b,kind){const km=kmBetween(a,b),to=legPaths(a,b)[0][1];
-  /* At the close-up level a short trip covers a lot of screen, so trips within Iceland get extra time to pan calmly. */
-  const local=km<500&&a.la>63&&b.la>63?Math.min(2.6,km/70):0;
-  return{kind,a,b,to,c:curve(a,to),km,deg:legDeg(a,b),t:clamp(SHOW_SECONDS+km/KM_PER_SECOND+local,SHOW_SECONDS,26)}}
+  return{kind,a,b,to,c:curve(a,to),km,deg:legDeg(a,b),t:flightSeconds(km)}}
+/* The early years in Iceland, up to the first long tour in May 2002: mentioned, not dwelt on. */
+const EARLY_END='2002-05-23';
+const earlyIce=s=>!!s&&s.d<EARLY_END&&inIceland(s);
 /* Nobody flies home from Japan for three weeks and back. The farther away you are, the longer a gap has to be before you go home. */
 const homeGap=(a,b,H)=>14+Math.min(kmBetween(a,H),kmBetween(b,H))/400;
 function journey(n){
   const a=S[n],b=S[n+1];if(!b)return null;if(a._j)return a._j;
   const segs=[],km=kmBetween(a,b);let home=null;
   const HOME0=homeFor(a,b);
-  if(b.t-a.t<homeGap(a,b,HOME0)){if(km>600)segs.push({kind:'stay',t:1.1});segs.push(moveSeg(a,b,a.tour===b.tour?'leg':'trip'))}
+  const gapDays=b.t-a.t;
+  if(earlyIce(a)&&earlyIce(b)){const g2=moveSeg(a,b,a.tour===b.tour?'leg':'trip');g2.t=clamp(.7+.1*Math.log2(Math.max(1,gapDays)),.7,1.2);segs.push(g2)}
+  else if(earlyIce(a)||earlyIce(b)||gapDays<homeGap(a,b,HOME0)){segs.push({kind:'stay',t:restSeconds(gapDays)});const g2=moveSeg(a,b,a.tour===b.tour?'leg':'trip');if(a.d<EARLY_END){g2.t*=.6;segs[0].t*=.6}segs.push(g2)}
   else{
     const days=Math.round(b.t-a.t),HOME=HOME0;home=HOME;
     segs.push({kind:'stay',t:1.1});
@@ -244,32 +252,30 @@ function setPos(v,fromUser){
 function aim(){const n=Math.floor(P.pos);if(S[n]&&!atEnd()&&P.view==='overview')aimAhead(n)}
 /* Follow: the view stays on the moving dot, at whatever zoom the visitor has set. */
 const defaultZoom=()=>clamp(W/70,9,22);
-/* Each run keeps one steady zoom, set from how far apart its stops usually are. Everything in Iceland shares one close-up level, so playing around home never pumps in and out. */
-const macroZoom=()=>W>700?3000:1900;
+/* Iceland is shown whole. Everything else keeps one wide zoom per run, wide enough that a hop moves the map by a fraction of the screen. */
 const inIceland=s=>s.lat>63&&s.lat<67&&s.lon>-25&&s.lon<-13;
+const iceZoom=()=>W>700?W/48:W*.45/11;
 function runZoom(T){
   if(T.z&&T.zw===W)return T.z;
-  let ice=true;for(let i=T.a;i<=T.b;i++)if(!inIceland(S[i])){ice=false;break}
   const hops=[];for(let i=T.a;i<T.b;i++)hops.push(legDeg(S[i],S[i+1]));hops.sort((x,y)=>x-y);
-  const mid=hops.length?hops[hops.length>>1]:0,top=hops.length?hops[Math.floor(hops.length*.85)]:0,cap=W/14;
-  T.z=ice?macroZoom():(!hops.length?defaultZoom()*1.6:(mid<.3?clamp(W*.5/Math.max(top,.25),cap,W>700?700:460):clamp(W*.5/Math.max(top,mid*2),defaultZoom(),cap)));
+  const mid=hops.length?hops[hops.length>>1]:0,top=hops.length?hops[Math.floor(hops.length*.85)]:0;
+  T.z=hops.length?clamp(W*.2/Math.max(top,mid*1.5,1),defaultZoom(),Math.max(W/28,defaultZoom())):defaultZoom();
   T.zw=W;return T.z;
 }
-function followBase(){
-  if(cam.userZ)return cam.userZ;
-  const a=S[Math.floor(P.pos)];return runZoom(TOURS[a.tour]);
-}
+const atIceland=n=>inIceland(S[n])&&(!S[n+1]||inIceland(S[n+1]));
+/* Until the first long tour, one zoom throughout: short trips abroad are plain pans, with no zooming in and out around them. */
+const zoomFor=n=>S[n].d<EARLY_END||atIceland(n)?iceZoom():runZoom(TOURS[S[n].tour]);
+function followBase(){return cam.userZ||zoomFor(Math.floor(P.pos))}
 function followZoom(){
   const n=Math.floor(P.pos),st=segAt(n,P.pos-n);let z=followBase();if(!st)return z;
   const{seg,u}=st;
   /* Between runs the zoom moves once, from this run's level to the next one's, and never overshoots. */
   if(!cam.userZ&&seg.kind!=='stay'&&seg.kind!=='leg'&&S[n+1]){
-    const zb=runZoom(TOURS[S[n+1].tour]);
+    const zb=zoomFor(n+1);
     z=seg.kind==='home'||seg.kind==='trip'?Math.exp(Math.log(z)+(Math.log(zb)-Math.log(z))*easeJ(u)):zb;
   }
-  if(!seg.km)return z;
+  if(!seg.km||seg.km<600||S[n].d<EARLY_END)return z;
   /* Only a journey too long for the screen eases back, and only as far as it needs. */
-  if(seg.km<600)return z;   /* a trip around home or a short hop is only ever a pan */
   const lim=Math.max(W/345,W*.7/seg.deg);
   if(lim<z)z=Math.exp(Math.log(z)+(Math.log(lim)-Math.log(z))*Math.sin(Math.PI*u));
   return z;
@@ -286,9 +292,18 @@ function headPoint(){
   if(seg.kind==='stay'){const prev=j.segs[j.segs.indexOf(seg)-1];return prev?prev.b:a}
   return segPoint(seg,easeJ(u));
 }
+/* Where the camera looks: Iceland stays framed whole; on tour it looks a little ahead along the run, so it drifts instead of stopping at every town. */
+function followTarget(){
+  const h=headPoint(),n=Math.floor(P.pos),st=segAt(n,P.pos-n);
+  if(cam.userZ||!st)return h;
+  if(atIceland(n)&&st.seg.kind!=='home'&&st.seg.kind!=='away')return ICE_CENTRE;
+  if(st.seg.kind!=='stay'&&st.seg.kind!=='leg')return h;
+  let sx=0,sy=0,c=0;for(let i=n+1;i<=Math.min(LAST(),n+3);i++){if(S[i].tour!==S[n].tour||inIceland(S[i]))break;let x=S[i].x;if(x-h.x>180)x-=360;else if(h.x-x>180)x+=360;sx+=x;sy+=S[i].y;c++}
+  return c?{x:h.x*.62+sx/c*.38,y:h.y*.62+sy/c*.38}:h;
+}
 function followCam(){
   if(P.view!=='follow'||cam.manual||atEnd())return;
-  const h=headPoint(),z=followZoom(),o=viewOffset(z);
+  const h=followTarget(),z=followZoom(),o=viewOffset(z);
   cam.tz=z;cam.tx=h.x+o.x;cam.ty=h.y+o.y;
   if(Math.abs(cam.tx-cam.x)>180)cam.x+=Math.sign(cam.tx-cam.x)*360;   /* a flight across the Pacific comes back round the far edge */
 }
@@ -669,12 +684,30 @@ function drawMap(now){
       boxes.push(box);g.fillStyle=c===cur.city?COL.paper:COL.dim;g.fillText(c.name,x,y);
     }
   }
+  drawEarly(n);
   /* drawn last, so that no venue or city name runs through it */
   if(homeCard){
     const{x,y,a,label}=homeCard;g.globalAlpha=a;g.textBaseline='middle';g.font='italic 26px Newsreader,Georgia,serif';const w1=g.measureText('Home').width;g.font='500 13px "IBM Plex Mono",monospace';const w2=g.measureText(label).width;
     const bx=Math.min(x+20,W-Math.max(w1,w2)-34),by=y-30;g.fillStyle='#11141b';g.fillRect(bx-4,by-4,Math.max(w1,w2)+24,56);g.fillStyle=COL.tour[0];g.fillRect(bx-4,by-4,2,56);
     g.fillStyle='#fff';g.font='italic 26px Newsreader,Georgia,serif';g.fillText('Home',bx+8,by+13);g.fillStyle=COL.paper;g.font='500 13px "IBM Plex Mono",monospace';g.fillText(label,bx+8,by+37);g.globalAlpha=1;
   }
+}
+/* The early Iceland years go by quickly, so the last few shows stay listed beside the island. */
+let earlyA=0;
+function drawEarly(n){
+  const on=!atEnd()&&earlyIce(S[n])&&atIceland(n)&&P.view==='follow'&&!cam.manual;
+  earlyA+=((on?1:0)-earlyA)*.22;if(Math.abs((on?1:0)-earlyA)>.01)dirty=true;else earlyA=on?1:0;
+  if(earlyA<=0)return;
+  const rows=[];for(let i=n;i>=0&&rows.length<6;i--)if(earlyIce(S[i]))rows.push(S[i]);
+  const big=W>700,x=big?SX(px(-13.2))+26:16,y0=big?SY(py(66.2)):SY(py(63.3))+22,lh=big?21:19;
+  g.textBaseline='middle';
+  rows.forEach((s,i)=>{
+    const name=known(s.v)||s.n||s.c,where=s.c!=='Reykjavík'&&name!==s.c?`, ${s.c}`:'',y=y0+i*lh;
+    g.globalAlpha=earlyA*(i?Math.max(.22,.72-i*.11):1);
+    g.font=`500 ${big?13:12}px "IBM Plex Mono",monospace`;g.fillStyle=COL.paper;const dt=fmt(s.d);g.fillText(dt,x,y);
+    g.font=`${big?15:13.5}px "Instrument Sans",sans-serif`;g.fillStyle='#fff';let txt=name+where;const room=W-x-16-(big?108:96);while(txt.length>6&&g.measureText(txt).width>room)txt=txt.slice(0,-2);if(txt!==name+where)txt=txt.trimEnd()+'…';g.fillText(txt,x+(big?100:88),y);
+  });
+  g.globalAlpha=1;
 }
 function yearX(t){const a=day(S[0].d.slice(0,4)+'-01-01'),b=day('2027-01-01');return 8+(t-a)/(b-a)*(yc.clientWidth-16)}
 const YC={w:0,s:null,col:null,max:0};
@@ -716,10 +749,10 @@ function frame(now){
     dirty=true;
   }
   followCam();
-  const k=1-Math.exp(-dt/(P.cityBack?.6:P.view==='follow'&&!cam.manual&&!atEnd()?(P.slow?.5:clamp(.3/P.rate,.1,.45)):(P.slow?1.1:(P.playing?.55:.28))));
+  const k=1-Math.exp(-dt/(P.cityBack?.6:P.view==='follow'&&!cam.manual&&!atEnd()?.75:(P.slow?1.1:(P.playing?.55:.28))));
   const near=.25/cam.z;if(Math.abs(cam.x-cam.tx)>near||Math.abs(cam.y-cam.ty)>near||Math.abs(cam.z-cam.tz)>cam.z*.0008){
     const following=P.view==='follow'&&!cam.manual&&!atEnd();
-    const kz=P.cityBack?1-Math.exp(-dt/.75):(following?1-Math.exp(-dt/1.6):k);
+    const kz=P.cityBack?1-Math.exp(-dt/.75):(following?1-Math.exp(-dt/2):k);
     const lz=Math.log(cam.z)+(Math.log(cam.tz)-Math.log(cam.z))*kz;cam.z=Math.exp(lz);cam.x+=(cam.tx-cam.x)*k;cam.y+=(cam.ty-cam.y)*k;dirty=true;
   }
   if(dirty){dirty=false;drawMap(now);drawYears()}
