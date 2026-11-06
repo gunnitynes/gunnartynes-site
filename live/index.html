@@ -100,7 +100,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
     <button id="play" type="button" aria-label="Play the tours"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
     <div id="cap" aria-live="off"><em></em><b></b><div id="more"></div></div>
     <div id="info" aria-live="off"></div>
-    <div id="kmBox"><div id="radio" hidden></div><div id="km" title="Straight-line distance between the shows and home"></div><div id="speed" role="group" aria-label="Speed"><button type="button" data-speed="slow" title="Slow, with photos and more about each show">Slow</button><button type="button" data-speed=".5">½×</button><button type="button" data-speed="1">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="4">4×</button></div></div>
+    <div id="kmBox"><div id="radio" hidden></div><div id="km" title="Straight-line distance between the shows and home"></div><div id="speed" role="group" aria-label="Speed"><button type="button" data-speed="slow" title="Slow, with photos and more about each show">Slow</button><button type="button" data-speed=".5">½×</button><button type="button" data-speed="1">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="4">4×</button><button type="button" data-speed="8">8×</button></div></div>
   </div>
   <canvas id="years" aria-label="Scrub through the years"></canvas>
 </footer>
@@ -198,7 +198,9 @@ const SX=x=>(x-cam.x)*cam.z+W/2,SY=y=>(y-cam.y)*cam.z+H/2;
 /* ---------- playback ---------- */
 const P={pos:0,playing:false,pulse:-1,pulseT:0,slow:false,rate:2,hi:-1,speed:2,view:'follow',photos:'off'};
 try{const f=localStorage.getItem('gt.live.photos');if(['off','map','side','behind'].includes(f))P.photos=f}catch(e){}
-try{const v=parseFloat(localStorage.getItem('gt.live.speed2'));if([.5,1,2,4].includes(v)){P.speed=v;P.rate=v}}catch(e){}   /* pos: shows reached, with the fraction of the leg under way */
+/* The buttons read 1× for what P.speed calls 2: that is the pace the journey is written for. */
+const SPEED_UNIT=2;
+try{const v=parseFloat(localStorage.getItem('gt.live.speed3'));if([.5,1,2,4,8].includes(v)){P.speed=v*SPEED_UNIT;P.rate=P.speed}}catch(e){}   /* pos: shows reached, with the fraction of the leg under way */
 const LAST=()=>S.length-1;
 P.pos=LAST();
 function legFrom(i){return i>=0&&i+1<S.length&&S[i+1].tour===S[i].tour}
@@ -211,7 +213,7 @@ const homeFor=(a,b)=>((a.t+b.t)/2<day('2018-01-01')?HOME_RVK:HOME_BER);
 function kmBetween(a,b){const r=Math.PI/180,dl=(b.la-a.la)*r,dn=(b.lo-a.lo)*r,h=Math.sin(dl/2)**2+Math.cos(a.la*r)*Math.cos(b.la*r)*Math.sin(dn/2)**2;return 6371*2*Math.asin(Math.min(1,Math.sqrt(h)))}
 /* Hops are quick; flight time grows with distance, but less and less, so a long flight is still long. */
 const flightSeconds=km=>km<5?.2:clamp(.5+1.5*Math.max(0,Math.sqrt(km/100)-.7),.5,26);
-/* Every venue gets the same stop, long enough to read what is on screen (1.6 s at the default 2×). */
+/* Every venue gets the same stop, long enough to read what is on screen (1.6 s at the default 1×). */
 const STOP_SECONDS=3.2,EARLY_STOP=.9;
 function moveSeg(a,b,kind){const km=kmBetween(a,b),to=legPaths(a,b)[0][1];
   return{kind,a,b,to,c:curve(a,to),km,deg:legDeg(a,b),t:flightSeconds(km)}}
@@ -335,8 +337,8 @@ function play(on){
 const TOUCH=matchMedia('(hover: none)').matches,VERB=TOUCH?'Tap':'Click';
 let hintTimer=0;
 function flashHint(text,ms=3800){const h=$('#hint');h.textContent=text||(TOUCH?'Tap anywhere to pause':'Click anywhere to slow down');h.classList.add('on');clearTimeout(hintTimer);hintTimer=setTimeout(()=>h.classList.remove('on'),ms)}
-function syncSpeed(){document.querySelectorAll('#speed [data-speed]').forEach(b=>b.setAttribute('aria-pressed',P.slow?b.dataset.speed==='slow':+b.dataset.speed===P.speed))}
-function setSpeed(v){if(v==='slow'){P.armed=true;if(P.playing)setSlow(true);syncSpeed();return}P.speed=+v;P.armed=false;try{localStorage.setItem('gt.live.speed2',v)}catch(e){}if(P.slow)setSlow(false);syncSpeed();dirty=true}
+function syncSpeed(){document.querySelectorAll('#speed [data-speed]').forEach(b=>b.setAttribute('aria-pressed',P.slow?b.dataset.speed==='slow':+b.dataset.speed*SPEED_UNIT===P.speed))}
+function setSpeed(v){if(v==='slow'){P.armed=true;if(P.playing)setSlow(true);syncSpeed();return}P.speed=+v*SPEED_UNIT;P.armed=false;try{localStorage.setItem('gt.live.speed3',v)}catch(e){}if(P.slow)setSlow(false);syncSpeed();dirty=true}
 function setSlow(on){
   if(P.slow===on)return;P.slow=on;syncSpeed();
   $('#more').classList.toggle('on',on);
@@ -758,14 +760,14 @@ function frame(now){
     const n=Math.floor(P.pos);
     /* within a tour it travels at show speed; between tours it holds a moment while the camera moves */
     P.rate+=((P.slow?SLOW_RATE:P.speed)-P.rate)*(1-Math.exp(-dt/.45));
-    const inHome=segAt(n,P.pos-n);const speed=P.hold>now?0:Math.max((inHome&&inHome.seg.kind==='hold'?Math.min(P.rate,1):P.rate)/legSeconds(n),P.slow?1/40:0);
+    const inHome=segAt(n,P.pos-n);const speed=P.hold>now?0:Math.max((inHome&&inHome.seg.kind==='hold'?(P.rate<=2?Math.min(P.rate,1):P.rate/2):P.rate)/legSeconds(n),P.slow?1/40:0);
     tickLeg(dt);journeyCaption();
     if(P.pos>=LAST()){play(false);P.armed=false;syncSpeed();clearPins();Back.cur=Back.prev=null;$('#leg').classList.remove('on','caponly');P.scrubbed=false;cam.manual=false;fitWorld();showCaption()}
     else setPos(P.pos+dt*speed);
     dirty=true;
   }
   followCam();
-  const k=1-Math.exp(-dt/(P.cityBack?.6:P.view==='follow'&&!cam.manual&&!atEnd()?.75:(P.slow?1.1:(P.playing?.55:.28))));
+  const k=1-Math.exp(-dt/(P.cityBack?.6:P.view==='follow'&&!cam.manual&&!atEnd()?.75/Math.max(1,P.rate/4):(P.slow?1.1:(P.playing?.55:.28))));
   const near=.25/cam.z;if(Math.abs(cam.x-cam.tx)>near||Math.abs(cam.y-cam.ty)>near||Math.abs(cam.z-cam.tz)>cam.z*.0008){
     const following=P.view==='follow'&&!cam.manual&&!atEnd();
     const kz=P.cityBack?1-Math.exp(-dt/.75):(following?1-Math.exp(-dt/2):k);
