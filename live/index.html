@@ -21,14 +21,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 .quiet:hover{color:var(--paper)}.quiet[aria-pressed=true],.quiet.on{color:var(--paper);border-color:var(--paper)}
 #tag{font:11px var(--mono);color:var(--p)}
 #foot{position:fixed;left:0;right:0;bottom:0;padding:0 max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141b00,#11141bf0 26%,#11141bfa);z-index:2;padding-top:26px;pointer-events:none}
-#kmBox{align-self:end;justify-self:end;text-align:right;pointer-events:auto;min-width:0;max-width:44vw}#radio{font:12.5px var(--sans);color:#c5c7cd;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#radio a{color:#fff;text-decoration:none}#radio a:hover{text-decoration:underline}#km{font:500 14px var(--mono);color:#fff;margin-bottom:3px;white-space:nowrap}#snd{margin-left:6px}
+#kmBox{grid-column:1/-1;display:flex;justify-content:flex-end;align-items:center;gap:16px;pointer-events:auto;min-width:0}#radio{font:12.5px var(--sans);color:#c5c7cd;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#radio a{color:#fff;text-decoration:none}#radio a:hover{text-decoration:underline}#km{font:12px var(--mono);color:var(--dim);white-space:nowrap}
 #speed{pointer-events:auto;display:flex;gap:1px;align-self:end;justify-self:end;font:12px var(--mono)}#speed button{padding:4px 7px;color:var(--faint);border-bottom:1px solid transparent}#speed button:hover{color:var(--paper)}#speed button[aria-pressed=true]{color:var(--paper);border-color:var(--paper)}
-#now{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:4px 14px;align-items:center;pointer-events:none;min-height:66px}
+#now{display:grid;grid-template-columns:44px minmax(220px,29%) minmax(0,1fr);gap:8px 14px;align-items:center;pointer-events:none}
 #play{pointer-events:auto;width:44px;height:44px;border-radius:50%;background:var(--paper);color:var(--ground);display:grid;place-items:center;box-shadow:0 2px 14px #000a;transition:transform .15s}
 #play:hover{transform:scale(1.08)}#play svg{width:24px;height:24px;fill:currentColor;display:block}
 #play .i-pause{display:none}#play.on .i-pause{display:block}#play.on .i-play{display:none}
-#cap{min-width:0}#cap em{display:block;font:italic 400 29px/1.12 var(--serif);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#cap b{font-weight:500;font-size:15px;color:var(--paper);display:block;margin-top:2px}#cap .when{font:500 15px var(--mono);color:#fff;display:block;margin-top:2px}#cap .also{font:13.5px/1.35 var(--sans);color:#d5d6da;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#cap .also:empty{display:none}
+#cap{min-width:0}#cap em{display:block;font:italic 400 33px/1.12 var(--serif);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cap b{font-weight:500;font-size:16px;color:var(--paper);display:block;margin-top:3px}
+#info{display:grid;grid-template-columns:minmax(128px,.6fr) minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:8px 28px;align-items:start;min-width:0;min-height:82px;padding-left:24px;border-left:1px solid var(--rule)}
+.f{min-width:0}.f small{display:block;font:500 10.5px/1.2 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.f span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:400 19px/1.25 var(--sans);color:#fff}
+.f.date span{font:500 19px/1.25 var(--mono)}.f.big span{font:400 28px/1.14 var(--serif)}.f.none span{color:var(--dim)}
+@media(max-width:1100px){#now{grid-template-columns:44px minmax(0,1fr)}#cap{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 12px}#cap em{max-width:100%}#more{flex-basis:100%}#info{grid-column:1/-1;padding:9px 0 0;border-left:0;border-top:1px solid var(--rule);min-height:91px}}
 #years{display:block;width:100%;height:46px;margin-top:6px;pointer-events:auto;touch-action:none;cursor:ew-resize}
 #tip{position:fixed;pointer-events:none;background:var(--plate2);padding:6px 9px;font-size:13px;z-index:6;max-width:300px;border-radius:2px;display:none}
 #tip em{font:italic 16px var(--serif);display:block}#tip span{font:11px var(--mono);color:var(--dim)}
@@ -63,12 +68,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #view .nav{position:absolute;top:50%;transform:translateY(-50%);width:50px;height:70px;font-size:30px;color:var(--paper);opacity:.8}#view .nav:hover{opacity:1}#vPrev{left:4px}#vNext{right:4px}
 #vClose{position:absolute;top:10px;right:14px;font-size:26px;color:var(--paper);padding:6px 10px;z-index:1}
 @media(max-width:700px){
-  #now{grid-template-columns:44px minmax(0,1fr)}#kmBox{grid-column:2;justify-self:start;text-align:left;max-width:100%}#km{font-size:13px}#speed{margin-left:-7px}
+  #kmBox{justify-content:space-between}#speed{margin-right:-7px}#cap{display:block}#info{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 18px;min-height:124px}.f:empty{display:none}.f.big{grid-column:1/-1;order:-1}.f:nth-child(3):not(:empty)~.f:nth-child(4):not(:empty){grid-column:1/-1}.f:nth-child(3):not(:empty)~.f:nth-child(4):not(:empty) span{-webkit-line-clamp:1}.f small{margin-bottom:3px}.f span{font-size:16px}.f.date span{font-size:16px}.f.big span{font-size:23px}
   #leg{top:calc(var(--bar,84px) + 4px);width:62vw;right:16px}#leg .frame{aspect-ratio:3/2}
   #view .nav{width:40px}#view em{font-size:17px}
   #panel{top:auto;left:0;right:0;width:auto;height:58%;transform:translateY(102%);box-shadow:0 -12px 40px #0006}
   #bar{gap:6px 14px;padding-bottom:6px}#views{gap:6px 9px}#right{gap:12px}.pin{--pw:112px}#tag{display:none}
-  #cap em{font-size:23px}#cap b{font-size:14px}#cap .when{font-size:14px}#cap .also{font-size:13px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}#now{min-height:58px}#years{height:40px}
+  #cap em{font-size:25px}#cap b{font-size:14px}#years{height:40px}
 }
 </style></head><body>
 <canvas id="map" aria-label="World map of concerts"></canvas>
@@ -93,8 +98,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 <footer id="foot">
   <div id="now">
     <button id="play" type="button" aria-label="Play the tours"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
-    <div id="cap" aria-live="off"><em></em><b></b><span class="when"></span><span class="also"></span><div id="more"></div></div>
-    <div id="kmBox"><div id="radio" hidden></div><div id="km" title="Straight-line distance between the shows and home"></div><div id="speed" role="group" aria-label="Speed"><button type="button" data-speed="slow" title="Slow, with photos and more about each show">Slow</button><button type="button" data-speed=".5">½×</button><button type="button" data-speed="1">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="4">4×</button><button type="button" id="snd" aria-pressed="true" title="Music on or off">Sound</button></div></div>
+    <div id="cap" aria-live="off"><em></em><b></b><div id="more"></div></div>
+    <div id="info" aria-live="off"></div>
+    <div id="kmBox"><div id="radio" hidden></div><div id="km" title="Straight-line distance between the shows and home"></div><div id="speed" role="group" aria-label="Speed"><button type="button" data-speed="slow" title="Slow, with photos and more about each show">Slow</button><button type="button" data-speed=".5">½×</button><button type="button" data-speed="1">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="4">4×</button></div></div>
   </div>
   <canvas id="years" aria-label="Scrub through the years"></canvas>
 </footer>
@@ -117,8 +123,9 @@ const COL={paper:css('--paper'),dim:css('--dim'),faint:css('--faint'),tour:[css(
 const ZMAX=8000,VENUE_Z=220,KM_PER_SECOND=420,STRETCH=1.22,SHOW_SECONDS=1.24,SLOW_RATE=.32,PHOTO_SECONDS=4.2,TOUR_GAP=21,REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const px=lon=>lon,py=lat=>-lat*STRETCH;
 const cv=$('#map'),g=cv.getContext('2d'),yc=$('#years'),yg=yc.getContext('2d');
-let W=0,H=0,DPR=1,dirty=true,showDoubt=false,soundOn=true;
-try{if(localStorage.getItem('gt.live.sound')==='off')soundOn=false}catch(e){}
+let W=0,H=0,DPR=1,dirty=true,showDoubt=false;
+/* Music is off for now, at Gunnar's request. The radio code below stays in place; true brings it back, along with a Sound button. */
+const soundOn=false;
 const LIVE={shows:SHOWS.shows,land:LIVEMAP.land,outline:LIVEMAP.coast};
 if(SHOWS.draft){$('#tag').hidden=false;$('#doubt').hidden=false}
 const LAND=[];for(const[lat,row]of LIVE.land)for(const lon of row)LAND.push(px(lon),py(lat));
@@ -400,20 +407,34 @@ function syncChrome(){
 const nf=v=>Math.round(v).toLocaleString('en-GB');
 function gapText(d){if(d<60)return Math.round(d/7)+' weeks';const m=Math.round(d/30.4);return m<24?m+' months':(Math.round(d/365)+' years')}
 let capKey='';
+/* The right-hand side of the band: four fixed places, so nothing jumps sideways from show to show. */
+function setInfo(list){
+  const el=$('#info');el.textContent='';
+  for(let i=0;i<4;i++){
+    const d=document.createElement('div'),f=list[i];d.className='f';
+    if(f&&f[1]){if(f[2])d.className+=' '+f[2];const a=document.createElement('small'),v=document.createElement('span');a.textContent=f[0];v.textContent=f[1];d.append(a,v)}
+    el.appendChild(d);
+  }
+}
+const known=v=>v&&!/unknown/i.test(v)?v:'';
+function showFields(s,dateLabel){
+  const v=known(s.v),main=v?['Venue',v,'big']:s.n?['Event',s.n,'big']:['Venue','Not known','big none'];
+  return [[dateLabel,fmt(s.d,s.e),'date'],main,['Event',v&&s.n&&s.n!==v?s.n:''],['With',s.w||'']];
+}
 function journeyCaption(){
   const n=Math.floor(P.pos),st=segAt(n,P.pos-n),cap=$('#cap');
   drawKm(n,st);
   if(!st)return;
-  const{seg,u,j}=st,next=S[n+1];
+  const{seg,j}=st,next=S[n+1];
   const long=seg.kind==='hold'||(seg.km>=500&&seg.kind!=='stay');
   if(!long){if(capKey){capKey='';showCaption()}return}
-  const done=seg.km?easeJ(u)*seg.km:0,key=seg.kind+n+Math.round(done/20);if(key===capKey)return;capKey=key;
+  const key=seg.kind+n;if(key===capKey)return;capKey=key;
   const set=(q,t)=>{cap.querySelector(q).textContent=t};
-  if(seg.kind==='hold'){set('em','Home');set('b',`${j.home.c}, ${j.home.k}`);set('.when',`${gapText(seg.days)} until the next show`);set('.also',`Next: ${next.c}, ${fmt(next.d)}`);return}
-  const fromName=seg.a.c,toName=seg.kind==='home'?'Home':next.c;
-  set('em',`${fromName} → ${toName}`);set('b',`${nf(done)} of ${nf(seg.km)} km`);
-  set('.when',seg.kind==='home'?`Going home after ${fmt(S[n].d)}`:`To play ${fmt(next.d)}`);
-  set('.also',seg.kind==='home'?'':(next.v&&!/unknown/i.test(next.v)?next.v:(next.n||'')));
+  const breakInfo=()=>{const h=j.segs.find(m=>m.kind==='hold');setInfo([['Break',h?gapText(h.days):'','date'],['Next show',`${next.c}, ${next.k}`,'big'],['Date',fmt(next.d,next.e)]])};
+  if(seg.kind==='hold'){set('em','Home');set('b',`${j.home.c}, ${j.home.k}`);breakInfo();return}
+  const toName=seg.kind==='home'?'Home':next.c;
+  set('em',`${seg.a.c} → ${toName}`);set('b',`${nf(seg.km)} km`);
+  if(seg.kind==='home')breakInfo();else setInfo(showFields(next,'To play'));
 }
 function drawKm(n,st){
   const el=$('#km');let so=0;for(let i=0;i<n;i++){const j=journey(i);if(j)so+=j.km}
@@ -422,16 +443,16 @@ function drawKm(n,st){
 }
 function showCaption(){
   capKey='';showMore();
-  const cap=$('#cap'),em=cap.querySelector('em'),b=cap.querySelector('b'),sp=cap.querySelector('.when'),also=cap.querySelector('.also');also.textContent='';
+  const cap=$('#cap'),em=cap.querySelector('em'),b=cap.querySelector('b');
   if(atEnd()&&!P.scrubbed){
-    const countries=new Set(S.map(s=>s.k)).size;
-    em.textContent=`${S.length} concerts`;b.textContent=`${CITIES.length} cities, ${countries} countries, ${S[0].d.slice(0,4)}–${S[LAST()].d.slice(0,4)}`;sp.textContent='Press play to follow the tours in order';let total=0;for(let i=0;i<LAST();i++)total+=journey(i).km;$('#km').textContent=`${nf(Math.round(total/1000)*1000)} km travelled`;return;
+    const countries=new Set(S.map(s=>s.k)).size;let total=0;for(let i=0;i<LAST();i++)total+=journey(i).km;
+    em.textContent=`${S.length} concerts`;b.textContent='Press play to follow the tours in order';
+    setInfo([['Years',`${S[0].d.slice(0,4)}–${S[LAST()].d.slice(0,4)}`,'date'],['Travelled',`${nf(Math.round(total/1000)*1000)} km`,'big'],['Cities',String(CITIES.length)],['Countries',String(countries)]]);
+    $('#km').textContent='';return;
   }
   const s=S[Math.floor(P.pos)];if(!s)return;
-  em.textContent=s.v&&!/unknown/i.test(s.v)?s.v:(s.n||s.c);
-  b.textContent=`${s.c}, ${s.k}`;
-  sp.textContent=fmt(s.d,s.e);
-  also.textContent=[s.v&&s.n&&s.n!==s.v?s.n:'',s.w?'with '+s.w:''].filter(Boolean).join(' · ');
+  em.textContent=s.c;b.textContent=s.k;
+  setInfo(showFields(s,'Date'));
   const n=TOUR_PHOTOS?photosOf(s).length:0;
   if(n){const c=document.createElement('button');c.id='cam';c.type='button';c.textContent=n===1?'1 photo':n+' photos';c.onclick=()=>openPhotos(s);b.appendChild(c)}
 }
@@ -587,7 +608,7 @@ function drawMap(now){
   }
   if(P.hi>=0&&TOURS[P.hi]){const T=TOURS[P.hi];g.strokeStyle=T.col;g.globalAlpha=.85;g.lineWidth=1.6;g.beginPath();for(let i=T.a;i<T.b;i++)for(const[a,b]of legPaths(S[i],S[i+1])){const c=curve(a,b);g.moveTo(SX(a.x),SY(a.y));g.quadraticCurveTo(SX(c.cx),SY(c.cy),SX(b.x),SY(b.y))}g.stroke();g.globalAlpha=1}
   drawPins(now);
-  let homeShown=null;
+  let homeShown=null,homeCard=null;
   /* home legs already travelled */
   g.setLineDash([2,5]);g.strokeStyle=COL.paper;g.lineWidth=1;g.globalAlpha=atEnd()?.1:.13;g.beginPath();
   if(cam.z<VENUE_Z&&!selCity)for(let i=0;i<n;i++){const j=journey(i);if(j.segs.every(m=>!m.km||m.kind==='leg'))continue;for(const m of j.segs){if(!m.km)continue;const[x0,y0,x1,y1]=[SX(m.a.x),SY(m.a.y),SX(m.to.x),SY(m.to.y)];if(Math.max(x0,x1)<-400||Math.min(x0,x1)>W+400||Math.max(y0,y1)<-400||Math.min(y0,y1)>H+400)continue;g.moveTo(x0,y0);g.quadraticCurveTo(SX(m.c.cx),SY(m.c.cy),x1,y1)}}
@@ -612,9 +633,7 @@ function drawMap(now){
       /* Home: a slow breath of light around the dot, with how long the break lasted beside it. */
       const x=SX(j.home.x),y=SY(j.home.y),a=Math.min(1,Math.min(u,1-u)*5);
       for(const off of [0,.33,.66]){const w=(u*1.6+off)%1;g.strokeStyle=COL.tour[0];g.globalAlpha=(1-w)*.55*a;g.lineWidth=1.5;g.beginPath();g.arc(x,y,10+w*58,0,7);g.stroke()}
-      const label=gapText(seg.days);g.globalAlpha=a;g.textBaseline='middle';g.font='italic 26px Newsreader,Georgia,serif';const w1=g.measureText('Home').width;g.font='500 13px "IBM Plex Mono",monospace';const w2=g.measureText(label).width;
-      const bx=Math.min(x+20,W-Math.max(w1,w2)-34),by=y-30;g.fillStyle='#11141bd9';g.fillRect(bx-4,by-4,Math.max(w1,w2)+24,56);g.fillStyle=COL.tour[0];g.fillRect(bx-4,by-4,2,56);
-      g.fillStyle='#fff';g.font='italic 26px Newsreader,Georgia,serif';g.fillText('Home',bx+8,by+13);g.fillStyle=COL.paper;g.font='500 13px "IBM Plex Mono",monospace';g.fillText(label,bx+8,by+37);g.globalAlpha=1;
+      homeCard={x,y,a,label:gapText(seg.days)};
     }
     homeShown=(seg.kind==='hold'||seg.kind==='home'||seg.kind==='away')?j.home.c:null;if(homeShown){const x=SX(j.home.x),y=SY(j.home.y);g.globalAlpha=.9;g.strokeStyle=COL.tour[0];g.lineWidth=1.5;g.beginPath();g.arc(x,y,6,0,7);g.stroke();g.font='11px "IBM Plex Mono",monospace';g.textBaseline='middle';g.fillStyle=COL.paper;if(seg.kind!=='hold')g.fillText('home',x+11,y)}
   }
@@ -649,6 +668,12 @@ function drawMap(now){
       if(x+w>W-4||boxes.some(b=>b[0]<box[2]&&b[2]>box[0]&&b[1]<box[3]&&b[3]>box[1]))continue;
       boxes.push(box);g.fillStyle=c===cur.city?COL.paper:COL.dim;g.fillText(c.name,x,y);
     }
+  }
+  /* drawn last, so that no venue or city name runs through it */
+  if(homeCard){
+    const{x,y,a,label}=homeCard;g.globalAlpha=a;g.textBaseline='middle';g.font='italic 26px Newsreader,Georgia,serif';const w1=g.measureText('Home').width;g.font='500 13px "IBM Plex Mono",monospace';const w2=g.measureText(label).width;
+    const bx=Math.min(x+20,W-Math.max(w1,w2)-34),by=y-30;g.fillStyle='#11141b';g.fillRect(bx-4,by-4,Math.max(w1,w2)+24,56);g.fillStyle=COL.tour[0];g.fillRect(bx-4,by-4,2,56);
+    g.fillStyle='#fff';g.font='italic 26px Newsreader,Georgia,serif';g.fillText('Home',bx+8,by+13);g.fillStyle=COL.paper;g.font='500 13px "IBM Plex Mono",monospace';g.fillText(label,bx+8,by+37);g.globalAlpha=1;
   }
 }
 function yearX(t){const a=day(S[0].d.slice(0,4)+'-01-01'),b=day('2027-01-01');return 8+(t-a)/(b-a)*(yc.clientWidth-16)}
@@ -784,8 +809,6 @@ $('#pop').addEventListener('click',ev=>{
 addEventListener('pointerdown',ev=>{if(!$('#pop').hidden&&!ev.target.closest('#pop,#viewBtn,#photoBtn'))closeMenu()});
 function syncMenus(){$('#photoBtn').classList.toggle('on',P.photos!=='off')}
 $('#close').onclick=closeCity;
-function syncSound(){$('#snd').setAttribute('aria-pressed',soundOn)}
-$('#snd').onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('gt.live.sound',soundOn?'on':'off')}catch(e){}syncSound();if(soundOn)songFor();else stopSong()};
 $('#speed').addEventListener('click',ev=>{const b=ev.target.closest('[data-speed]');if(!b)return;if(b.dataset.speed==='slow'&&!P.playing){P.armed=!P.armed;b.setAttribute('aria-pressed',P.armed);if(P.armed)document.querySelectorAll('#speed [data-speed]:not([data-speed=slow])').forEach(x=>x.setAttribute('aria-pressed',false));else syncSpeed();return}setSpeed(b.dataset.speed)});
 if(window.ResizeObserver){const ro=new ResizeObserver(()=>{syncChrome();dirty=true});ro.observe($('#foot'));ro.observe($('#bar'))}
 $('#pBody').addEventListener('click',ev=>{
@@ -804,7 +827,7 @@ addEventListener('keydown',ev=>{if(!$('#view').hidden){if(ev.key==='Escape')clos
 function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;if(atEnd()&&!cam.manual&&!P.scrubbed){fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz}else aim();if(!(cam.z>0)){cam.z=cam.tz>0?cam.tz:1;cam.x=cam.tx;cam.y=cam.ty}dirty=true}
 addEventListener('resize',()=>{resize();syncChrome()});
 window.__live={redraw:()=>{dirty=true},radio:Radio,get TOURS(){return ()=>TOURS},runZoom,journey,segAt,followBase,legSeconds,followZoom,closeCity,focusCity,Pins,Back,headPoint,photoMode,setSpeed,setSlow,Leg,openPhotos,photosOf,P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,play,setPos,openCity,SX,SY};
-syncSound();syncMenus();syncSpeed();syncChrome();resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
+syncMenus();syncSpeed();syncChrome();resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
 requestAnimationFrame(frame);
 </script>
