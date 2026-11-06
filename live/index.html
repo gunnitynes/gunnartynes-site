@@ -21,7 +21,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 .quiet:hover{color:var(--paper)}.quiet[aria-pressed=true],.quiet.on{color:var(--paper);border-color:var(--paper)}
 #tag{font:11px var(--mono);color:var(--p)}
 #foot{position:fixed;left:0;right:0;bottom:0;padding:0 max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141b00,#11141bf0 26%,#11141bfa);z-index:2;padding-top:26px;pointer-events:none}
-#kmBox{align-self:end;justify-self:end;text-align:right}#km{font:500 14px var(--mono);color:#fff;margin-bottom:3px;white-space:nowrap}#snd{margin-left:6px}
+#kmBox{align-self:end;justify-self:end;text-align:right;pointer-events:auto;min-width:0;max-width:44vw}#radio{font:12.5px var(--sans);color:#c5c7cd;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#radio a{color:#fff;text-decoration:none}#radio a:hover{text-decoration:underline}#km{font:500 14px var(--mono);color:#fff;margin-bottom:3px;white-space:nowrap}#snd{margin-left:6px}
 #speed{pointer-events:auto;display:flex;gap:1px;align-self:end;justify-self:end;font:12px var(--mono)}#speed button{padding:4px 7px;color:var(--faint);border-bottom:1px solid transparent}#speed button:hover{color:var(--paper)}#speed button[aria-pressed=true]{color:var(--paper);border-color:var(--paper)}
 #now{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:4px 14px;align-items:center;pointer-events:none;min-height:66px}
 #play{pointer-events:auto;width:44px;height:44px;border-radius:50%;background:var(--paper);color:var(--ground);display:grid;place-items:center;box-shadow:0 2px 14px #000a;transition:transform .15s}
@@ -63,7 +63,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #view .nav{position:absolute;top:50%;transform:translateY(-50%);width:50px;height:70px;font-size:30px;color:var(--paper);opacity:.8}#view .nav:hover{opacity:1}#vPrev{left:4px}#vNext{right:4px}
 #vClose{position:absolute;top:10px;right:14px;font-size:26px;color:var(--paper);padding:6px 10px;z-index:1}
 @media(max-width:700px){
-  #now{grid-template-columns:44px minmax(0,1fr)}#kmBox{grid-column:2;justify-self:start;text-align:left}#km{font-size:13px}#speed{margin-left:-7px}
+  #now{grid-template-columns:44px minmax(0,1fr)}#kmBox{grid-column:2;justify-self:start;text-align:left;max-width:100%}#km{font-size:13px}#speed{margin-left:-7px}
   #leg{top:calc(var(--bar,84px) + 4px);width:62vw;right:16px}#leg .frame{aspect-ratio:3/2}
   #view .nav{width:40px}#view em{font-size:17px}
   #panel{top:auto;left:0;right:0;width:auto;height:58%;transform:translateY(102%);box-shadow:0 -12px 40px #0006}
@@ -94,7 +94,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
   <div id="now">
     <button id="play" type="button" aria-label="Play the tours"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
     <div id="cap" aria-live="off"><em></em><b></b><span class="when"></span><span class="also"></span><div id="more"></div></div>
-    <div id="kmBox"><div id="km" title="Straight-line distance between the shows and home"></div><div id="speed" role="group" aria-label="Speed"><button type="button" data-speed="slow" title="Slow, with photos and more about each show">Slow</button><button type="button" data-speed=".5">½×</button><button type="button" data-speed="1">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="4">4×</button><button type="button" id="snd" aria-pressed="true" title="Music on or off">Sound</button></div></div>
+    <div id="kmBox"><div id="radio" hidden></div><div id="km" title="Straight-line distance between the shows and home"></div><div id="speed" role="group" aria-label="Speed"><button type="button" data-speed="slow" title="Slow, with photos and more about each show">Slow</button><button type="button" data-speed=".5">½×</button><button type="button" data-speed="1">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="4">4×</button><button type="button" id="snd" aria-pressed="true" title="Music on or off">Sound</button></div></div>
   </div>
   <canvas id="years" aria-label="Scrub through the years"></canvas>
 </footer>
@@ -122,7 +122,9 @@ try{if(localStorage.getItem('gt.live.sound')==='off')soundOn=false}catch(e){}
 const LIVE={shows:SHOWS.shows,land:LIVEMAP.land,outline:LIVEMAP.coast};
 if(SHOWS.draft){$('#tag').hidden=false;$('#doubt').hidden=false}
 const LAND=[];for(const[lat,row]of LIVE.land)for(const lon of row)LAND.push(px(lon),py(lat));
-const COAST=new Path2D();for(const ring of LIVE.outline){ring.forEach((q,i)=>{if(!i||Math.abs(q[0]-ring[i-1][0])>180)COAST.moveTo(px(q[0]),py(q[1]));else COAST.lineTo(px(q[0]),py(q[1]))});COAST.closePath()}
+/* Coasts are drawn as soft curves through the points, so the outline never looks jagged and the two levels of detail match. */
+function softRing(path,r){const m=r.length,mid=(a,b)=>[(px(a[0])+px(b[0]))/2,(py(a[1])+py(b[1]))/2];let st=null;for(let i=0;i<m;i++){const nx=r[(i+1)%m];if(Math.abs(nx[0]-r[i][0])>180){st=null;continue}const e=mid(r[i],nx);if(!st){st=e;path.moveTo(e[0],e[1])}else path.quadraticCurveTo(px(r[i][0]),py(r[i][1]),e[0],e[1])}if(st)path.closePath()}
+const COAST=new Path2D();for(const ring of LIVE.outline)softRing(COAST,ring);
 
 const photosOf=s=>s.photos||[];
 /* ---------- data: shows in order, grouped into tours by the gaps between them ---------- */
@@ -187,29 +189,38 @@ function aimAhead(n){
 const SX=x=>(x-cam.x)*cam.z+W/2,SY=y=>(y-cam.y)*cam.z+H/2;
 
 /* ---------- playback ---------- */
-const P={pos:0,playing:false,pulse:-1,pulseT:0,slow:false,rate:1,hi:-1,speed:1,view:'follow',photos:'off'};
+const P={pos:0,playing:false,pulse:-1,pulseT:0,slow:false,rate:2,hi:-1,speed:2,view:'follow',photos:'off'};
 try{const v=localStorage.getItem('gt.live.view');if(['follow','overview','free'].includes(v))P.view=v;const f=localStorage.getItem('gt.live.photos');if(['off','map','side','behind'].includes(f))P.photos=f}catch(e){}
-try{const v=parseFloat(localStorage.getItem('gt.live.speed'));if([.5,1,2,4].includes(v)){P.speed=v;P.rate=v}}catch(e){}   /* pos: shows reached, with the fraction of the leg under way */
+try{const v=parseFloat(localStorage.getItem('gt.live.speed2'));if([.5,1,2,4].includes(v)){P.speed=v;P.rate=v}}catch(e){}   /* pos: shows reached, with the fraction of the leg under way */
 const LAST=()=>S.length-1;
 P.pos=LAST();
 function legFrom(i){return i>=0&&i+1<S.length&&S[i+1].tour===S[i].tour}
 /* Every journey in the order it happened. Time is real distance, so the world feels its size. After a long gap the band goes home first. */
-const HOME={x:px(-21.94),y:py(64.147),la:64.147,lo:-21.94,name:'Reykjavík',c:'Reykjavík',home:true};
+const mkHome=(c,k,la,lo)=>({x:px(lo),y:py(la),la,lo,name:c,c,k,home:true});
+const HOME_RVK=mkHome('Reykjavík','Iceland',64.147,-21.94),HOME_BER=mkHome('Berlin','Germany',52.52,13.405);
+/* Reykjavík until 2018, Berlin after. A gap that spans the move goes to whichever home its middle falls in. */
+const homeFor=(a,b)=>((a.t+b.t)/2<day('2018-01-01')?HOME_RVK:HOME_BER);
 function kmBetween(a,b){const r=Math.PI/180,dl=(b.la-a.la)*r,dn=(b.lo-a.lo)*r,h=Math.sin(dl/2)**2+Math.cos(a.la*r)*Math.cos(b.la*r)*Math.sin(dn/2)**2;return 6371*2*Math.asin(Math.min(1,Math.sqrt(h)))}
-function moveSeg(a,b,kind){const km=kmBetween(a,b),to=legPaths(a,b)[0][1];return{kind,a,b,to,c:curve(a,to),km,deg:legDeg(a,b),t:clamp(SHOW_SECONDS+km/KM_PER_SECOND,SHOW_SECONDS,26)}}
+function moveSeg(a,b,kind){const km=kmBetween(a,b),to=legPaths(a,b)[0][1];
+  /* At the close-up level a short trip covers a lot of screen, so trips within Iceland get extra time to pan calmly. */
+  const local=km<500&&a.la>63&&b.la>63?Math.min(2.6,km/70):0;
+  return{kind,a,b,to,c:curve(a,to),km,deg:legDeg(a,b),t:clamp(SHOW_SECONDS+km/KM_PER_SECOND+local,SHOW_SECONDS,26)}}
+/* Nobody flies home from Japan for three weeks and back. The farther away you are, the longer a gap has to be before you go home. */
+const homeGap=(a,b,H)=>14+Math.min(kmBetween(a,H),kmBetween(b,H))/400;
 function journey(n){
   const a=S[n],b=S[n+1];if(!b)return null;if(a._j)return a._j;
-  const segs=[],km=kmBetween(a,b);
-  if(a.tour===b.tour){if(km>600)segs.push({kind:'stay',t:1.1});segs.push(moveSeg(a,b,'leg'))}
+  const segs=[],km=kmBetween(a,b);let home=null;
+  const HOME0=homeFor(a,b);
+  if(b.t-a.t<homeGap(a,b,HOME0)){if(km>600)segs.push({kind:'stay',t:1.1});segs.push(moveSeg(a,b,a.tour===b.tour?'leg':'trip'))}
   else{
-    const days=Math.round(b.t-a.t);
+    const days=Math.round(b.t-a.t),HOME=HOME0;home=HOME;
     segs.push({kind:'stay',t:1.1});
     if(kmBetween(a,HOME)>25)segs.push(moveSeg(a,HOME,'home'));
-    segs.push({kind:'hold',days,t:1.6+Math.min(2.4,days/90)});
+    segs.push({kind:'hold',days,t:2.2+Math.min(1.8,days/120)});
     if(kmBetween(HOME,b)>25)segs.push(moveSeg(HOME,b,'away'));
   }
   let T=0;for(const g2 of segs){g2.from=T;T+=g2.t}
-  return a._j={segs,T,km:segs.reduce((m,g2)=>m+(g2.km||0),0)};
+  return a._j={segs,T,home,km:segs.reduce((m,g2)=>m+(g2.km||0),0)};
 }
 function segAt(n,f){const j=journey(n);if(!j)return null;const t=f*j.T;let g2=j.segs[j.segs.length-1];for(const x of j.segs)if(t<x.from+x.t){g2=x;break}return{seg:g2,u:clamp((t-g2.from)/g2.t,0,1),j}}
 const easeJ=u=>u*u*(3-2*u);
@@ -226,12 +237,15 @@ function setPos(v,fromUser){
 function aim(){const n=Math.floor(P.pos);if(S[n]&&!atEnd()&&P.view==='overview')aimAhead(n)}
 /* Follow: the view stays on the moving dot, at whatever zoom the visitor has set. */
 const defaultZoom=()=>clamp(W/70,9,22);
-/* Each run keeps one steady zoom, set from how far apart its stops usually are. The camera does not breathe from stop to stop. */
+/* Each run keeps one steady zoom, set from how far apart its stops usually are. Everything in Iceland shares one close-up level, so playing around home never pumps in and out. */
+const macroZoom=()=>W>700?3000:1900;
+const inIceland=s=>s.lat>63&&s.lat<67&&s.lon>-25&&s.lon<-13;
 function runZoom(T){
   if(T.z&&T.zw===W)return T.z;
+  let ice=true;for(let i=T.a;i<=T.b;i++)if(!inIceland(S[i])){ice=false;break}
   const hops=[];for(let i=T.a;i<T.b;i++)hops.push(legDeg(S[i],S[i+1]));hops.sort((x,y)=>x-y);
   const mid=hops.length?hops[hops.length>>1]:0,top=hops.length?hops[Math.floor(hops.length*.85)]:0,cap=W/14;
-  T.z=mid<.3?clamp(W*.5/Math.max(top,.25),cap,W>700?700:460):clamp(W*.5/Math.max(top,mid*2),defaultZoom(),cap);
+  T.z=ice?macroZoom():(!hops.length?defaultZoom()*1.6:(mid<.3?clamp(W*.5/Math.max(top,.25),cap,W>700?700:460):clamp(W*.5/Math.max(top,mid*2),defaultZoom(),cap)));
   T.zw=W;return T.z;
 }
 function followBase(){
@@ -241,10 +255,14 @@ function followBase(){
 function followZoom(){
   const n=Math.floor(P.pos),st=segAt(n,P.pos-n);let z=followBase();if(!st)return z;
   const{seg,u}=st;
-  /* Home is a pause between runs: the wide view, unless you have set your own zoom. */
-  if(seg.kind==='hold'||seg.kind==='home'||seg.kind==='away'){const wide=cam.userZ||defaultZoom();z=seg.kind==='away'?Math.exp(Math.log(wide)+(Math.log(runZoom(TOURS[S[n+1].tour]))-Math.log(wide))*easeJ(u)):(seg.kind==='home'?Math.exp(Math.log(z)+(Math.log(wide)-Math.log(z))*easeJ(u)):wide)}
+  /* Between runs the zoom moves once, from this run's level to the next one's, and never overshoots. */
+  if(!cam.userZ&&seg.kind!=='stay'&&seg.kind!=='leg'&&S[n+1]){
+    const zb=runZoom(TOURS[S[n+1].tour]);
+    z=seg.kind==='home'||seg.kind==='trip'?Math.exp(Math.log(z)+(Math.log(zb)-Math.log(z))*easeJ(u)):zb;
+  }
   if(!seg.km)return z;
   /* Only a journey too long for the screen eases back, and only as far as it needs. */
+  if(seg.km<600)return z;   /* a trip around home or a short hop is only ever a pan */
   const lim=Math.max(W/345,W*.7/seg.deg);
   if(lim<z)z=Math.exp(Math.log(z)+(Math.log(lim)-Math.log(z))*Math.sin(Math.PI*u));
   return z;
@@ -257,7 +275,7 @@ function viewOffset(z){
 function headPoint(){
   const n=Math.floor(P.pos),f=P.pos-n,a=S[n];if(!a)return{x:cam.x,y:cam.y};if(n+1>=S.length)return a;
   const{seg,u,j}=segAt(n,f);
-  if(seg.kind==='hold')return HOME;
+  if(seg.kind==='hold')return j.home;
   if(seg.kind==='stay'){const prev=j.segs[j.segs.indexOf(seg)-1];return prev?prev.b:a}
   return segPoint(seg,easeJ(u));
 }
@@ -280,7 +298,7 @@ const TOUCH=matchMedia('(hover: none)').matches,VERB=TOUCH?'Tap':'Click';
 let hintTimer=0;
 function flashHint(text,ms=3800){const h=$('#hint');h.textContent=text||(TOUCH?'Tap anywhere to pause':'Click anywhere to slow down');h.classList.add('on');clearTimeout(hintTimer);hintTimer=setTimeout(()=>h.classList.remove('on'),ms)}
 function syncSpeed(){document.querySelectorAll('#speed [data-speed]').forEach(b=>b.setAttribute('aria-pressed',P.slow?b.dataset.speed==='slow':+b.dataset.speed===P.speed))}
-function setSpeed(v){if(v==='slow'){P.armed=true;if(P.playing)setSlow(true);syncSpeed();return}P.speed=+v;P.armed=false;try{localStorage.setItem('gt.live.speed',v)}catch(e){}if(P.slow)setSlow(false);syncSpeed();dirty=true}
+function setSpeed(v){if(v==='slow'){P.armed=true;if(P.playing)setSlow(true);syncSpeed();return}P.speed=+v;P.armed=false;try{localStorage.setItem('gt.live.speed2',v)}catch(e){}if(P.slow)setSlow(false);syncSpeed();dirty=true}
 function setSlow(on){
   if(P.slow===on)return;P.slow=on;syncSpeed();
   $('#more').classList.toggle('on',on);
@@ -386,13 +404,13 @@ function journeyCaption(){
   const n=Math.floor(P.pos),st=segAt(n,P.pos-n),cap=$('#cap');
   drawKm(n,st);
   if(!st)return;
-  const{seg,u}=st,next=S[n+1];
+  const{seg,u,j}=st,next=S[n+1];
   const long=seg.kind==='hold'||(seg.km>=500&&seg.kind!=='stay');
   if(!long){if(capKey){capKey='';showCaption()}return}
   const done=seg.km?easeJ(u)*seg.km:0,key=seg.kind+n+Math.round(done/20);if(key===capKey)return;capKey=key;
   const set=(q,t)=>{cap.querySelector(q).textContent=t};
-  if(seg.kind==='hold'){set('em','Home');set('b','Reykjavík, Iceland');set('.when',`${gapText(seg.days)} until the next show`);set('.also',`Next: ${next.c}, ${fmt(next.d)}`);return}
-  const fromName=seg.a.home?'Reykjavík':seg.a.c,toName=seg.kind==='home'?'Home':next.c;
+  if(seg.kind==='hold'){set('em','Home');set('b',`${j.home.c}, ${j.home.k}`);set('.when',`${gapText(seg.days)} until the next show`);set('.also',`Next: ${next.c}, ${fmt(next.d)}`);return}
+  const fromName=seg.a.c,toName=seg.kind==='home'?'Home':next.c;
   set('em',`${fromName} → ${toName}`);set('b',`${nf(done)} of ${nf(seg.km)} km`);
   set('.when',seg.kind==='home'?`Going home after ${fmt(S[n].d)}`:`To play ${fmt(next.d)}`);
   set('.also',seg.kind==='home'?'':(next.v&&!/unknown/i.test(next.v)?next.v:(next.n||'')));
@@ -418,15 +436,54 @@ function showCaption(){
   if(n){const c=document.createElement('button');c.id='cam';c.type='button';c.textContent=n===1?'1 photo':n+' photos';c.onclick=()=>openPhotos(s);b.appendChild(c)}
 }
 
-/* ---------- sound: Gunnar's song, looping while the journey plays ---------- */
-const au={el:null,fade:0};
-function fadeTo(v,ms,done){const a=au.el;if(!a)return;const my=++au.fade,v0=a.volume,t0=performance.now();const f=()=>{if(my!==au.fade)return;const t=clamp((performance.now()-t0)/ms,0,1);a.volume=v0+(v-v0)*t;if(t<1)requestAnimationFrame(f);else if(done)done()};f()}
-function songFor(){
-  if(!soundOn||!P.playing)return;
-  if(!au.el){const a=new Audio('audio/avignon.m4a');a.loop=true;a.preload='auto';a.volume=0;au.el=a}
-  if(au.el.paused){au.el.play().then(()=>fadeTo(.9,900)).catch(()=>{})}else if(au.el.volume<.9)fadeTo(.9,600);
+/* ---------- radio: the Record's snippets as one continuous station. Each piece plays to its end, then crossfades into the next, chosen from around the year on the map. ---------- */
+const Radio={pool:[],els:[new Audio(),new Audio()],cur:0,item:null,next:null,played:new Set(),fade:0,on:false,timer:0,unlocked:false};
+(function buildPool(){
+  for(const e of (window.CATALOGUE||[])){
+    if(e.tier!=='core')continue;const list=[];
+    if(e.bite&&!e.trackFirst)list.push({src:'../'+e.bite.src,title:e.bite.title||e.title,e});
+    const tr=e.tracks||[],first=e.dt!=null&&tr[e.dt]&&tr[e.dt].p?e.dt:tr.findIndex(t=>t.p);
+    if(first>=0)list.push({src:tr[first].p,title:tr[first].t,e});
+    tr.forEach((t,i)=>{if(t.p&&i!==first)list.push({src:t.p,title:t.t,e,extra:true})});
+    if(list.length)Radio.pool.push({e,list});
+  }
+})();
+function radioPick(){
+  const s=S[Math.floor(P.pos)],y=s?+s.d.slice(0,4):2000,order=Radio.pool.slice().sort((a,b)=>Math.abs(a.e.year-y)-Math.abs(b.e.year-y)||Math.random()-.5);
+  /* first the release's own snippet from close to this year, then its other tracks, widening outward until something unheard turns up */
+  for(const extra of [false,true]){
+    const near=[];for(const r of order){const t=r.list.find(x=>!Radio.played.has(x.src)&&!!x.extra===extra);if(t)near.push(t);if(near.length>=4)break}
+    if(near.length)return near[Math.floor(Math.random()*near.length)];
+  }
+  Radio.played.clear();return order[0]?order[0].list[0]:null;
 }
-function stopSong(){if(au.el&&!au.el.paused)fadeTo(0,500,()=>au.el.pause())}
+function radioFade(el,to,ms,done){const my=(el._f=(el._f||0)+1),v0=el.volume,t0=performance.now();const f=()=>{if(el._f!==my)return;const t=clamp((performance.now()-t0)/ms,0,1);el.volume=v0+(to-v0)*t;if(t<1)requestAnimationFrame(f);else if(done)done()};f()}
+function radioLabel(){
+  const el=$('#radio'),it=Radio.item;if(!it||!Radio.on){el.hidden=true;return}
+  const link=(it.e.links||{}).apple;el.hidden=false;
+  el.innerHTML=`♪ <${link?`a href="${esc(link)}" target="_blank" rel="noopener"`:'span'}>${esc(it.title)}</${link?'a':'span'}> · ${esc(it.e.artist)}`;
+}
+function radioStart(it){
+  if(!it)return;Radio.played.add(it.src);Radio.item=it;
+  const a=Radio.els[Radio.cur],b=Radio.els[1-Radio.cur];
+  b.onerror=()=>{if(Radio.on&&Radio.item===it)radioStart(radioPick())};
+  b.onended=null;b.src=it.src;b.volume=0;
+  b.play().then(()=>{Radio.cur=1-Radio.cur;if(!a.paused)radioFade(a,0,2400,()=>a.pause());radioFade(b,.9,1800);radioLabel()}).catch(()=>{if(Radio.on&&a.paused)Radio.on=false});
+}
+function songFor(){
+  if(!soundOn||!P.playing)return;Radio.on=true;
+  /* unlock both players on the press of play, which phones require */
+  if(!Radio.unlocked){Radio.unlocked=true;const other=Radio.els[1-Radio.cur];if(!other.src){other.src='data:audio/mp4;base64,';other.play().catch(()=>{})}}
+  const el=Radio.els[Radio.cur];
+  if(Radio.item&&el.src&&!el.ended&&el.paused){el.play().then(()=>{radioFade(el,.9,700);radioLabel()}).catch(()=>{})}
+  else if(!Radio.item||el.ended||el.paused)radioStart(radioPick());
+  clearInterval(Radio.timer);Radio.timer=setInterval(()=>{
+    if(!Radio.on)return;const c=Radio.els[Radio.cur];
+    if(c.duration&&c.currentTime>c.duration-2.6)radioStart(radioPick());else if(c.ended)radioStart(radioPick());
+  },400);
+}
+function stopSong(){Radio.on=false;clearInterval(Radio.timer);for(const e of Radio.els)if(!e.paused)radioFade(e,0,500,()=>e.pause());$('#radio').hidden=true}
+
 /* ---------- drawing ---------- */
 function curve(a,b){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),lift=Math.min(.16,14/Math.max(d,1));return{cx:(a.x+b.x)/2-dy*lift*.4,cy:(a.y+b.y)/2-d*lift}}
 /* A leg over the Pacific leaves one edge of the map and comes back at the other. */
@@ -434,13 +491,13 @@ function legPaths(a,b){const dx=b.x-a.x;if(Math.abs(dx)<=180)return[[a,b]];const
 /* Up close: a sharper coastline, loaded the first time someone gets near, and only the nearby part drawn each frame. */
 const Detail={state:0,rings:null,path:null,cx:1e9,cy:1e9};
 function detailPath(){
-  if(cam.z<60)return null;
+  if(cam.z<24)return null;
   if(!Detail.state){Detail.state=1;const sc=document.createElement('script');sc.src='coast.js';sc.onload=()=>{Detail.rings=(window.LIVECOAST||[]).map(r=>{let a=1e9,b=-1e9,c=1e9,d=-1e9;for(const q of r){a=Math.min(a,q[0]);b=Math.max(b,q[0]);c=Math.min(c,q[1]);d=Math.max(d,q[1])}return{r,a,b,c,d}});window.LIVECOAST=null;Detail.state=2;dirty=true};document.head.appendChild(sc)}
-  if(!Detail.rings)return null;
+  if(!Detail.rings||cam.z<60)return null;
   const span=Math.max(W,H)/cam.z;
   if(!Detail.path||Math.hypot(cam.x-Detail.cx,cam.y-Detail.cy)>span*.6+.5||span>Detail.span){
     const pad=span*2+1.5,lon=cam.x,lat=-cam.y/STRETCH,padLat=pad/STRETCH,path=new Path2D();
-    for(const k of Detail.rings){if(k.b<lon-pad||k.a>lon+pad||k.d<lat-padLat||k.c>lat+padLat)continue;const r=k.r,m=r.length,mid=(a,b)=>[(px(a[0])+px(b[0]))/2,(py(a[1])+py(b[1]))/2],st=mid(r[m-1],r[0]);path.moveTo(st[0],st[1]);for(let i=0;i<m;i++){const e=mid(r[i],r[(i+1)%m]);path.quadraticCurveTo(px(r[i][0]),py(r[i][1]),e[0],e[1])}path.closePath()}
+    for(const k of Detail.rings){if(k.b<lon-pad||k.a>lon+pad||k.d<lat-padLat||k.c>lat+padLat)continue;softRing(path,k.r)}
     Detail.path=path;Detail.cx=cam.x;Detail.cy=cam.y;Detail.span=span;
   }
   return Detail.path;
@@ -458,6 +515,23 @@ function drawField(){
 }
 /* Names to steer by when the view is wide. */
 const REF=[['North Atlantic',38,-40],['North Pacific',28,-150],['Pacific',8,170],['South Atlantic',-25,-20],['Indian Ocean',-22,80],['North America',46,-102],['South America',-14,-58],['Europe',49,14],['Africa',8,20],['Asia',50,90],['Australia',-25,134],['Greenland',72,-41],['Mediterranean',36,17],['Iceland',65,-18.5]];
+/* Some landmarks, not all: places to steer by at each scale, and never so many that they crowd out the road. */
+const MARKS=[
+ ['Hallgrímskirkja',64.1417,-21.9266,450,3000],['Harpa',64.1504,-21.9326,700,3000],['Perlan',64.1291,-21.9196,450,3000],['Esja',64.255,-21.63,300,2200],['Keflavík',64.0,-22.56,120,1800],['Snæfellsjökull',64.808,-23.776,40,800],['Hekla',63.99,-19.67,30,600],['Vatnajökull',64.4,-16.8,15,500],['Akureyri',65.68,-18.09,25,700],['Ísafjörður',66.07,-23.12,25,700],['Reykjavík',64.147,-21.94,14,420],
+ ['Brandenburg Gate',52.5163,13.3777,600,3000],['Tempelhof',52.474,13.403,400,3000],['Berlin',52.52,13.405,10,380],['London',51.51,-.13,10,300],['Paris',48.86,2.35,10,300],['Rome',41.9,12.5,10,300],['Madrid',40.42,-3.7,10,300],['Lisbon',38.72,-9.14,10,300],['Oslo',59.91,10.75,10,300],['Stockholm',59.33,18.07,10,300],['Copenhagen',55.68,12.57,10,300],['Helsinki',60.17,24.94,10,300],['Moscow',55.75,37.62,8,300],['Istanbul',41.01,28.98,8,300],['Athens',37.98,23.73,10,300],['Vienna',48.21,16.37,12,300],['Warsaw',52.23,21.01,10,300],['Prague',50.08,14.44,14,300],['Amsterdam',52.37,4.9,12,300],['Brussels',50.85,4.35,16,300],['Dublin',53.35,-6.26,10,300],['Edinburgh',55.95,-3.19,14,300],['New York',40.71,-74.01,8,300],['Chicago',41.88,-87.63,8,300],['Los Angeles',34.05,-118.24,8,300],['San Francisco',37.77,-122.42,8,300],['Seattle',47.61,-122.33,8,300],['Toronto',43.65,-79.38,10,300],['Montreal',45.5,-73.57,10,300],['Vancouver',49.28,-123.12,10,300],['Mexico City',19.43,-99.13,8,300],['Miami',25.76,-80.19,8,300],['Dallas',32.78,-96.8,8,300],['Denver',39.74,-104.99,8,300],['Tokyo',35.68,139.69,8,300],['Osaka',34.69,135.5,14,300],['Beijing',39.9,116.4,8,300],['Shanghai',31.23,121.47,8,300],['Hong Kong',22.32,114.17,8,300],['Singapore',1.35,103.82,8,300],['Sydney',-33.87,151.21,8,300],['Melbourne',-37.81,144.96,8,300],['Perth',-31.95,115.86,8,300],['Cairo',30.04,31.24,8,300],['Tel Aviv',32.08,34.78,12,300]
+];
+function drawMarks(){
+  g.font='italic 12.5px Newsreader,Georgia,serif';g.textBaseline='middle';const taken=[];
+  for(const[t,la,lo,z0,z1]of MARKS){
+    if(cam.z<z0*.8||cam.z>z1*1.25)continue;
+    const x=SX(px(lo)),y=SY(py(la));if(x<-40||x>W+40||y<CH.top||y>H-CH.bot)continue;
+    const w=g.measureText(t).width,box=[x-4,y-9,x+w+12,y+9];
+    if(taken.some(b=>b[0]<box[2]&&b[2]>box[0]&&b[1]<box[3]&&b[3]>box[1]))continue;taken.push(box);if(taken.length>18)break;
+    const a=Math.min(clamp((cam.z-z0*.8)/(z0*.2),0,1),clamp((z1*1.25-cam.z)/(z1*.25),0,1));
+    g.globalAlpha=a*.5;g.fillStyle='#9ea3b2';g.fillRect(x-1,y-1,2,2);g.globalAlpha=a*.72;g.fillText(t,x+6,y);
+  }
+  g.globalAlpha=1;
+}
 function drawRef(){
   if(cam.z>42)return;const a=clamp((42-cam.z)/14,0,1)*.62;
   g.font='italic 14px Newsreader,Georgia,serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#8b90a0';g.globalAlpha=a;
@@ -465,7 +539,7 @@ function drawRef(){
   g.globalAlpha=1;g.textAlign='left';
 }
 function drawVenues(cur,n){
-  if(cam.z<VENUE_Z)return;
+  const fade=clamp((cam.z-VENUE_Z*.75)/(VENUE_Z*.5),0,1);if(fade<=0)return;
   g.font='11px "IBM Plex Mono",monospace';g.textBaseline='middle';const boxes=[],labels=[];
   for(const c of CITIES){
     if(c.first>n&&c!==selCity)continue;
@@ -474,7 +548,7 @@ function drawVenues(cur,n){
       const x=SX(v.x),y=SY(v.y);if(x<-30||x>W+30||y<-30||y>H+30)continue;
       const r=clamp(3+Math.sqrt(v.shows.length),3.5,9),here=cur&&cur.venue===v&&!atEnd(),year=selYear&&c===selCity&&v.shows.some(s=>s.d.startsWith(selYear));
       v.sx=x;v.sy=y;v.r=r;
-      g.fillStyle=here||year?COL.tour[0]:COL.paper;g.globalAlpha=here||year?1:.82;g.beginPath();g.arc(x,y,r,0,7);g.fill();g.globalAlpha=1;
+      g.fillStyle=here||year?COL.tour[0]:COL.paper;g.globalAlpha=(here||year?1:.82)*fade;g.beginPath();g.arc(x,y,r,0,7);g.fill();g.globalAlpha=1;
       if(hoverCity===v){g.strokeStyle=COL.paper;g.lineWidth=1.5;g.beginPath();g.arc(x,y,r+3,0,7);g.stroke()}
       labels.push({v,x,y,r,rank:here?0:(year?1:2)});
     }
@@ -484,7 +558,7 @@ function drawVenues(cur,n){
     if(l.v.name==='Venue not known')continue;
     const name=l.v.name.length>30?l.v.name.slice(0,29)+'…':l.v.name,w=g.measureText(name).width,x=l.x+l.r+5,box=[x-2,l.y-8,x+w+2,l.y+8];
     if(x+w>W-4||boxes.some(b=>b[0]<box[2]&&b[2]>box[0]&&b[1]<box[3]&&b[3]>box[1]))continue;
-    boxes.push(box);g.fillStyle='#000a';g.fillRect(box[0],box[1]+2,box[2]-box[0],box[3]-box[1]-4);g.fillStyle=l.rank<2?COL.paper:COL.dim;g.fillText(name,x,l.y);
+    boxes.push(box);g.globalAlpha=fade;g.fillStyle='#000a';g.fillRect(box[0],box[1]+2,box[2]-box[0],box[3]-box[1]-4);g.fillStyle=l.rank<2?COL.paper:COL.dim;g.fillText(name,x,l.y);g.globalAlpha=1;
   }
 }
 function drawMap(now){
@@ -500,7 +574,7 @@ function drawMap(now){
   if(dots>0){const size=clamp(cam.z*.42,1,2.4),half=size/2;g.fillStyle='#2f3542';g.globalAlpha=dots;
     for(let i=0;i<LAND.length;i+=2){const x=SX(LAND[i]),y=SY(LAND[i+1]);if(x>-4&&x<W+4&&y>-4&&y<H+4)g.fillRect(x-half,y-half,size,size)}
     g.globalAlpha=1}
-  drawRef();
+  drawRef();drawMarks();
   const pos=P.pos,n=Math.floor(pos),frac=pos-n,cur=S[n],curTour=cur?cur.tour:-1;
   g.lineCap='round';
   /* routes */
@@ -508,15 +582,15 @@ function drawMap(now){
     const T=TOURS[t],live=t===curTour&&!atEnd();
     g.strokeStyle=T.col;g.globalAlpha=selCity?.035:(live?.78:(atEnd()?.2:.11));g.lineWidth=live?1.6:1;
     g.beginPath();
-    for(let i=T.a;i<T.b&&i<n;i++)for(const[a,b]of legPaths(S[i],S[i+1])){const c=curve(a,b);g.moveTo(SX(a.x),SY(a.y));g.quadraticCurveTo(SX(c.cx),SY(c.cy),SX(b.x),SY(b.y))}
+    for(let i=T.a;i<T.b&&i<n;i++){if(journey(i).home)continue;for(const[a,b]of legPaths(S[i],S[i+1])){const c=curve(a,b);g.moveTo(SX(a.x),SY(a.y));g.quadraticCurveTo(SX(c.cx),SY(c.cy),SX(b.x),SY(b.y))}}
     g.stroke();
   }
   if(P.hi>=0&&TOURS[P.hi]){const T=TOURS[P.hi];g.strokeStyle=T.col;g.globalAlpha=.85;g.lineWidth=1.6;g.beginPath();for(let i=T.a;i<T.b;i++)for(const[a,b]of legPaths(S[i],S[i+1])){const c=curve(a,b);g.moveTo(SX(a.x),SY(a.y));g.quadraticCurveTo(SX(c.cx),SY(c.cy),SX(b.x),SY(b.y))}g.stroke();g.globalAlpha=1}
   drawPins(now);
-  let homeShown=false;
+  let homeShown=null;
   /* home legs already travelled */
   g.setLineDash([2,5]);g.strokeStyle=COL.paper;g.lineWidth=1;g.globalAlpha=atEnd()?.1:.13;g.beginPath();
-  if(cam.z<VENUE_Z&&!selCity)for(let t=0;t<TOURS.length;t++){const T=TOURS[t];if(T.b>=n||!S[T.b+1])continue;const j=journey(T.b);for(const m of j.segs){if(!m.km)continue;const[x0,y0,x1,y1]=[SX(m.a.x),SY(m.a.y),SX(m.to.x),SY(m.to.y)];if(Math.max(x0,x1)<-400||Math.min(x0,x1)>W+400||Math.max(y0,y1)<-400||Math.min(y0,y1)>H+400)continue;g.moveTo(x0,y0);g.quadraticCurveTo(SX(m.c.cx),SY(m.c.cy),x1,y1)}}
+  if(cam.z<VENUE_Z&&!selCity)for(let i=0;i<n;i++){const j=journey(i);if(j.segs.every(m=>!m.km||m.kind==='leg'))continue;for(const m of j.segs){if(!m.km)continue;const[x0,y0,x1,y1]=[SX(m.a.x),SY(m.a.y),SX(m.to.x),SY(m.to.y)];if(Math.max(x0,x1)<-400||Math.min(x0,x1)>W+400||Math.max(y0,y1)<-400||Math.min(y0,y1)>H+400)continue;g.moveTo(x0,y0);g.quadraticCurveTo(SX(m.c.cx),SY(m.c.cy),x1,y1)}}
   g.stroke();g.setLineDash([]);g.globalAlpha=1;
   /* the journey under way, with its distance marked along the way */
   if(cur&&n+1<S.length&&!atEnd()&&frac>0){
@@ -534,7 +608,15 @@ function drawMap(now){
       }
     }
     const h=headPoint(),hx=SX(h.x),hy=SY(h.y);g.fillStyle=COL.paper;g.globalAlpha=1;g.beginPath();g.arc(hx,hy,3.4,0,7);g.fill();g.strokeStyle=COL.paper;g.globalAlpha=.35;g.lineWidth=1;g.beginPath();g.arc(hx,hy,8,0,7);g.stroke();
-    homeShown=seg.kind==='hold'||seg.kind==='home'||seg.kind==='away';if(homeShown){const x=SX(HOME.x),y=SY(HOME.y);g.globalAlpha=.9;g.strokeStyle=COL.tour[0];g.lineWidth=1.5;g.beginPath();g.arc(x,y,6,0,7);g.stroke();g.font='11px "IBM Plex Mono",monospace';g.textBaseline='middle';g.fillStyle=COL.paper;g.fillText('home',x+11,y)}
+    if(seg.kind==='hold'){
+      /* Home: a slow breath of light around the dot, with how long the break lasted beside it. */
+      const x=SX(j.home.x),y=SY(j.home.y),a=Math.min(1,Math.min(u,1-u)*5);
+      for(const off of [0,.33,.66]){const w=(u*1.6+off)%1;g.strokeStyle=COL.tour[0];g.globalAlpha=(1-w)*.55*a;g.lineWidth=1.5;g.beginPath();g.arc(x,y,10+w*58,0,7);g.stroke()}
+      const label=gapText(seg.days);g.globalAlpha=a;g.textBaseline='middle';g.font='italic 26px Newsreader,Georgia,serif';const w1=g.measureText('Home').width;g.font='500 13px "IBM Plex Mono",monospace';const w2=g.measureText(label).width;
+      const bx=Math.min(x+20,W-Math.max(w1,w2)-34),by=y-30;g.fillStyle='#11141bd9';g.fillRect(bx-4,by-4,Math.max(w1,w2)+24,56);g.fillStyle=COL.tour[0];g.fillRect(bx-4,by-4,2,56);
+      g.fillStyle='#fff';g.font='italic 26px Newsreader,Georgia,serif';g.fillText('Home',bx+8,by+13);g.fillStyle=COL.paper;g.font='500 13px "IBM Plex Mono",monospace';g.fillText(label,bx+8,by+37);g.globalAlpha=1;
+    }
+    homeShown=(seg.kind==='hold'||seg.kind==='home'||seg.kind==='away')?j.home.c:null;if(homeShown){const x=SX(j.home.x),y=SY(j.home.y);g.globalAlpha=.9;g.strokeStyle=COL.tour[0];g.lineWidth=1.5;g.beginPath();g.arc(x,y,6,0,7);g.stroke();g.font='11px "IBM Plex Mono",monospace';g.textBaseline='middle';g.fillStyle=COL.paper;if(seg.kind!=='hold')g.fillText('home',x+11,y)}
   }
   g.globalAlpha=1;
   /* cities: grow with the shows played there so far */
@@ -544,14 +626,16 @@ function drawMap(now){
   for(const[c,k]of counts){
     const x=SX(c.x),y=SY(c.y);if(x<-20||x>W+20||y<-20||y>H+20)continue;
     const r=clamp(1.7+Math.sqrt(k)*.95,2,9)*(W>700?1:.8);c.r=r;c.sx=x;c.sy=y;
-    if(cam.z>=VENUE_Z){c.sx=null;continue}
+    const cityA=1-clamp((cam.z-VENUE_Z*.75)/(VENUE_Z*.5),0,1);
+    if(cityA<=0){c.sx=null;continue}
+    if(cam.z>=VENUE_Z)c.sx=null;
     const inTour=cur&&!atEnd()&&c.shows.some(s=>s.tour===curTour&&s.i<=n);const recent=cur&&!atEnd()&&c.shows.some(s=>s.i<=n&&s.i>n-10);
-    g.globalAlpha=inTour?1:(atEnd()?.92:.55);
+    g.globalAlpha=(inTour?1:(atEnd()?.92:.55))*cityA;
     g.fillStyle=inTour?TOURS[curTour].col:COL.paper;
     g.beginPath();g.arc(x,y,r,0,7);g.fill();
     if(c.hasPhotos&&TOUR_PHOTOS){g.globalAlpha=.75;g.strokeStyle=COL.tour[0];g.lineWidth=1;g.beginPath();g.arc(x,y,r+2.2,0,7);g.stroke();g.globalAlpha=inTour?1:(atEnd()?.92:.55)}
     if(selCity===c||hoverCity===c){g.globalAlpha=1;g.strokeStyle=COL.paper;g.lineWidth=1.5;g.beginPath();g.arc(x,y,r+3,0,7);g.stroke()}
-    if(recent&&!(homeShown&&c.name==='Reykjavík'))labelled.push(c);
+    if(recent&&c.name!==homeShown)labelled.push(c);
   }
   g.globalAlpha=1;
   /* arrival */
@@ -583,6 +667,8 @@ function drawYears(){
     const bh=Math.max(2,list.length/max*(base-3)),past=list[0].i<=n;
     yg.fillStyle=past?TOURS[list[0].tour].col:'#3a3f4b';yg.globalAlpha=past?.95:1;yg.fillRect(x*cell,base-bh,Math.max(1,cell-.6),bh);
   }
+  yg.globalAlpha=.75;yg.fillStyle=COL.tour[0];
+  for(let i=0;i<LAST();i++){const j=journey(i);if(!j.home)continue;const x0=yearX(S[i].t),x1=yearX(S[i+1].t);if(x1-x0>=1.5)yg.fillRect(x0+1,base+1,x1-x0-1,1.5)}
   yg.globalAlpha=1;
   yg.font='10px "IBM Plex Mono",monospace';yg.textBaseline='alphabetic';yg.fillStyle=COL.faint;
   const y0=+S[0].d.slice(0,4),every=w<520?5:(w<900?2:1),ty=h-3;
@@ -598,7 +684,7 @@ function frame(now){
     const n=Math.floor(P.pos);
     /* within a tour it travels at show speed; between tours it holds a moment while the camera moves */
     P.rate+=((P.slow?SLOW_RATE:P.speed)-P.rate)*(1-Math.exp(-dt/.45));
-    const speed=P.hold>now?0:Math.max(P.rate/legSeconds(n),P.slow?1/40:0);
+    const inHome=segAt(n,P.pos-n);const speed=P.hold>now?0:Math.max((inHome&&inHome.seg.kind==='hold'?Math.min(P.rate,1):P.rate)/legSeconds(n),P.slow?1/40:0);
     tickLeg(dt);journeyCaption();
     if(P.pos>=LAST()){play(false);P.armed=false;syncSpeed();clearPins();Back.cur=Back.prev=null;$('#leg').classList.remove('on','caponly');P.scrubbed=false;cam.manual=false;fitWorld();showCaption()}
     else setPos(P.pos+dt*speed);
@@ -717,7 +803,7 @@ $('#doubt').onclick=ev=>{showDoubt=!showDoubt;ev.currentTarget.setAttribute('ari
 addEventListener('keydown',ev=>{if(!$('#view').hidden){if(ev.key==='Escape')closePhotos();else if(ev.key==='ArrowRight')stepPhoto(1);else if(ev.key==='ArrowLeft')stepPhoto(-1);return}if(ev.key===' '&&ev.target.tagName!=='BUTTON'){ev.preventDefault();play(!P.playing)}else if(ev.key==='Escape')closeCity();else if((ev.key==='s'||ev.key==='S')&&P.playing){setSlow(!P.slow);P.armed=P.slow}else if((ev.key==='+'||ev.key==='=')||ev.key==='-'){const L=[.5,1,2,4],i=L.indexOf(P.speed)+(ev.key==='-'?-1:1);if(L[i])setSpeed(L[i])}else if(ev.key==='ArrowRight'){P.scrubbed=true;setPos(Math.floor(P.pos)+1,true)}else if(ev.key==='ArrowLeft'){P.scrubbed=true;setPos(Math.floor(P.pos)-1,true)}});
 function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;if(atEnd()&&!cam.manual&&!P.scrubbed){fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz}else aim();if(!(cam.z>0)){cam.z=cam.tz>0?cam.tz:1;cam.x=cam.tx;cam.y=cam.ty}dirty=true}
 addEventListener('resize',()=>{resize();syncChrome()});
-window.__live={get TOURS(){return ()=>TOURS},runZoom,journey,segAt,HOME,followBase,legSeconds,followZoom,closeCity,focusCity,Pins,Back,headPoint,photoMode,setSpeed,setSlow,Leg,openPhotos,photosOf,P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,au,play,setPos,openCity,SX,SY};
+window.__live={redraw:()=>{dirty=true},radio:Radio,get TOURS(){return ()=>TOURS},runZoom,journey,segAt,followBase,legSeconds,followZoom,closeCity,focusCity,Pins,Back,headPoint,photoMode,setSpeed,setSlow,Leg,openPhotos,photosOf,P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,play,setPos,openCity,SX,SY};
 syncSound();syncMenus();syncSpeed();syncChrome();resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
 requestAnimationFrame(frame);
