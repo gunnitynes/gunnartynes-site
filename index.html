@@ -180,7 +180,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 <nav id="years" aria-label="Years"></nav>
 <div id="tip"></div>
 <button id="discPlay" type="button" aria-label="Play" hidden><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
-<div id="now" aria-live="polite"><em></em><b></b><span></span><small id="hint">Press play, then spin the record to scratch</small></div>
+<div id="now" aria-live="polite"><em></em><b></b><span></span><small id="hint"></small></div>
 
 <aside id="panel" aria-label="Release details">
   <button id="close" aria-label="Close">×</button>
@@ -497,28 +497,66 @@ async function urlOf(e){
   if(b.kind==='url')return b.url;
   if(b.kind==='file'){if(audio.url[e.id])return audio.url[e.id];const f=await getFile(e.id);if(!f)return null;return audio.url[e.id]=URL.createObjectURL(f)}
 }
-function preload(e){if(!e||audio.pre.has(e.id))return;urlOf(e).then(u=>{if(!u||audio.pre.has(e.id))return;const a=new Audio();a.preload='auto';a.src=u;a.load();audio.pre.set(e.id,a);if(audio.pre.size>10){const k=audio.pre.keys().next().value;audio.pre.delete(k)}})}
-function fadeOut(a,secs){
-  if(!a)return;const v0=a.volume,t0=performance.now();audio.fading.add(a);
-  const f=()=>{const t=(performance.now()-t0)/1000/secs;if(t>=1){a.pause();audio.fading.delete(a);return}a.volume=v0*(1-t);requestAnimationFrame(f)};f();
+function preload(e){if(!e||audio.pre.has(e.id))return;urlOf(e).then(u=>{if(!u||audio.pre.has(e.id))return;const a=newAudio(u);a.preload='auto';a.load();audio.pre.set(e.id,a);if(audio.pre.size>10){const k=audio.pre.keys().next().value;audio.pre.delete(k)}})}
+/* iPhones ignore an audio element's volume, so there each clip goes through a gain node instead. If that route turns out silent, playback falls back to plain elements. */
+let GAIN_ROUTE=(()=>{const a=new Audio();a.volume=.5;return a.volume!==.5||location.search.includes('webaudio')})();
+function newAudio(u){const a=new Audio();if(GAIN_ROUTE)a.crossOrigin='anonymous';a.src=u;return a}
+function wire(a){
+  if(!GAIN_ROUTE||a._g)return;
+  try{
+    if(!audio.ctx){const C=window.AudioContext||window.webkitAudioContext;audio.ctx=new C();try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(x){}}
+    const n=audio.ctx.createMediaElementSource(a),g=audio.ctx.createGain(),m=audio.ctx.createAnalyser();
+    n.connect(g);g.connect(m);m.connect(audio.ctx.destination);a._g=g;a._m=m;a._v=1;
+  }catch(x){GAIN_ROUTE=false}
 }
+const getV=a=>a._g?a._v:a.volume;
+function setV(a,v){if(a._g){a._v=v;a._g.gain.value=v}else a.volume=v}
+function checkRoute(a,e){
+  if(!a._g)return;
+  setTimeout(()=>{
+    if(audio.el!==a||a.paused||a.currentTime<1)return;
+    const d=new Float32Array(1024);a._m.getFloatTimeDomainData(d);
+    if(d.some(x=>Math.abs(x)>1e-5))return;
+    GAIN_ROUTE=false;audio.pre.clear();playBite(e,.1,.05);   /* the music must be heard, fades or not */
+  },2500);
+}
+/* Crossfades are equal-power, so the level does not dip in the middle. Timers rather than animation frames, so a hidden tab still finishes them. */
+function fade(a,to,secs,done){
+  a._f=(a._f||0)+1;const my=a._f,v0=getV(a),t0=performance.now();
+  const up=to>v0,step=()=>{
+    if(a._f!==my)return;
+    const t=Math.min(1,(performance.now()-t0)/1000/Math.max(secs,.001)),c=up?Math.sin(t*Math.PI/2):Math.cos(t*Math.PI/2);
+    setV(a,clamp(up?v0+(to-v0)*c:to+(v0-to)*c,0,1));
+    if(t<1)setTimeout(step,25);else if(done)done();
+  };step();
+}
+function fadeOut(a,secs){if(!a)return;audio.fading.add(a);fade(a,0,secs,()=>{a.pause();audio.fading.delete(a)})}
 async function playBite(e,fadeIn=.05,fadePrev=.15){
   const token=++audio.token;
-  const b=biteOf(e);stopAudio(fadePrev,true);
-  if(!b)return false;
+  const b=biteOf(e);
+  if(!b){audio.wantId=null;stopAudio(fadePrev,true);return false}
+  audio.wantId=e.id;
   const u=await urlOf(e);if(!u||token!==audio.token)return false;
   let a=audio.pre.get(e.id);audio.pre.delete(e.id);
-  if(!a){a=new Audio();a.src=u}
-  a.currentTime=b.start||0;a.volume=fadeIn>.01?0:1;
-  try{await a.play()}catch(x){if(x&&x.name==='NotAllowedError'){soundLive=false;syncPlay2()}return false}
+  if(!a)a=newAudio(u);
+  wire(a);if(audio.ctx&&audio.ctx.state!=='running')audio.ctx.resume().catch(()=>{});
+  a.currentTime=b.start||0;setV(a,fadeIn>.01?0:1);
+  try{await a.play()}catch(x){
+    if(token!==audio.token)return false;
+    audio.wantId=null;
+    if(x&&x.name==='NotAllowedError'){soundLive=false;syncPlay2()}else e._dead=true;   /* a file that will not play counts as no audio */
+    return false;
+  }
   soundLive=true;syncPlay2();
   if(token!==audio.token){a.pause();return false}   /* something newer was asked for while this one loaded */
-  audio.el=a;audio.id=e.id;
-  if(fadeIn>.01){const t0=performance.now();const f=()=>{if(audio.el!==a)return;const t=(performance.now()-t0)/1000/fadeIn;a.volume=Math.min(1,t);if(t<1)requestAnimationFrame(f)};f()}
-  a.onended=()=>{if(audio.el===a){audio.el=null;audio.id=null;syncPlay()}};
+  if(audio.el&&audio.el!==a)fadeOut(audio.el,fadePrev);   /* only now does the old one go, so nothing falls silent while the new one loads */
+  audio.el=a;audio.id=e.id;audio.wantId=null;
+  if(fadeIn>.01)fade(a,1,fadeIn);
+  checkRoute(a,e);
+  a.onended=()=>{if(audio.el===a){audio.el=null;audio.id=null;syncPlay();if(view.name==='disc'&&mode==='browse'&&discLive())discSkip()}};
   syncPlay();return true;
 }
-function stopAudio(secs=.15,keep){if(!keep)audio.token++;if(audio.el){fadeOut(audio.el,secs);audio.el=null;audio.id=null}syncPlay()}
+function stopAudio(secs=.15,keep){if(!keep){audio.token++;audio.wantId=null}if(audio.el){fadeOut(audio.el,secs);audio.el=null;audio.id=null}syncPlay()}
 function syncPlay(){const p=$('#play');if(p)p.textContent=(sel&&audio.id===sel.id)?'■':'▶'}
 
 /* ---------- browse: selection + panel ---------- */
@@ -540,7 +578,7 @@ function flyTo(e){
 }
 function select(e,opts={}){
   clearTimeout(soundTimer);sel=e;hover=null;dirty=true;$('#tip').style.display='none';
-  if(!e){$('#panel').classList.remove('open');stopAudio(.2);syncYears();return}
+  if(!e){$('#panel').classList.remove('open');if(view.name!=='disc')stopAudio(.2);syncYears();return}
   if(orient==='v'&&view.name==='line')setFocus(e);
   renderPanel(e);$('#panel').classList.add('open');flyTo(e);syncYears();
   items.slice(e.seq+1,e.seq+3).forEach(preload);
@@ -639,7 +677,8 @@ cv.addEventListener('pointermove',ev=>{
 });
 /* On the timelines a click or tap plays the album. This waits for the click itself, which every browser accepts as permission to play. */
 let tapped=null,tappedMouse=false;
-cv.addEventListener('click',()=>{
+cv.addEventListener('click',ev=>{
+  if(view.name==='disc'&&mode==='browse'){discClick(ev);return}
   const e=tapped;tapped=null;
   if(!e||sel!==e||view.name!=='line'||mode!=='browse')return;
   if(!soundOn){stopAudio(.2);return}
@@ -684,14 +723,15 @@ let soundOn=store.get('gt.sound',true),soundLive=false,soundTimer=0;
 function hoverSound(e,byMouse){
   if(view.name!=='disc'&&!byMouse)return;   /* on the timelines a mouse plays what it rests on; a finger plays what it taps */
   clearTimeout(soundTimer);
-  if(!soundOn||sel||mode!=='browse')return;
+  if(!soundOn||(sel&&view.name!=='disc')||mode!=='browse')return;
+  if(view.name==='disc'){if(e&&biteOf(e)&&audio.id!==e.id&&audio.wantId!==e.id){preload(e);soundTimer=setTimeout(()=>playBite(e,XF_IN,XF_OUT),170)}return}
   if(!e){stopAudio(.45);return}
   preload(e);
   soundTimer=setTimeout(()=>playBite(e,.18,.3),170);
 }
 function setSound(on){
   soundOn=on;store.set('gt.sound',on);$('#soundBtn').setAttribute('aria-pressed',on);
-  if(!on){clearTimeout(soundTimer);if(!sel)stopAudio(.3)}
+  if(!on){clearTimeout(soundTimer);if(!sel||view.name==='disc')stopAudio(.3)}
   syncPlay2();
 }
 function syncPlay2(){const b=$('#discPlay'),on=soundOn&&soundLive;b.classList.toggle('on',on);b.setAttribute('aria-label',on?'Pause':'Play')}
@@ -701,7 +741,11 @@ function wakeSound(ev){
   if(t&&t.closest&&t.closest('#discPlay,#soundBtn'))return;   /* those two buttons start or stop the sound themselves */
   if(ev.type==='keydown'&&ev.key===' ')return;
   if(!soundOn){return}
-  if(view.name==='disc'&&!sel&&mode==='browse'&&items[disc.cur]){if(biteOf(items[disc.cur])){disc.paused=false;playBite(items[disc.cur],.1,.2);return}soundLive=true;syncPlay2();unbindWake()}
+  if(view.name==='disc'&&!sel&&mode==='browse'&&items[disc.cur]){
+    /* A first press on a release: its own click will start it, so do not start another one for a split second. */
+    const p=ev.changedTouches?ev.changedTouches[0]:ev;
+    if(t===cv&&p&&discHit(p.clientX,p.clientY)){soundLive=true;syncPlay2();unbindWake();return}
+    if(biteOf(items[disc.cur])){disc.paused=false;playBite(items[disc.cur],XF_IN,.2);return}soundLive=true;syncPlay2();unbindWake()}
   else{soundLive=true;syncPlay2();unbindWake()}
 }
 const WAKE=['mousedown','touchend','click','keydown'];
@@ -711,7 +755,7 @@ $('#soundBtn').setAttribute('aria-pressed',soundOn);
 $('#soundBtn').onclick=()=>{soundLive=true;setSound(!soundOn);disc.paused=false;if(soundOn&&view.name==='disc'&&!sel)playBite(items[disc.cur],.1,.2)};
 $('#moreBtn').onclick=ev=>{showApp=!showApp;ev.currentTarget.setAttribute('aria-pressed',showApp);layout();select(null);syncFilter();fitAll()};
 $('#close').onclick=()=>{select(null);fitAll()};
-$('#play').onclick=()=>{if(!sel)return;if(audio.id===sel.id)stopAudio(.2);else playBite(sel)};
+$('#play').onclick=()=>{if(!sel)return;if(view.name==='disc'){discToggle();return}if(audio.id===sel.id)stopAudio(.2);else playBite(sel)};
 $('#startIn').onchange=ev=>{if(!sel)return;const b=Object.assign({},biteOf(sel));if(!b.kind)return;delete b.placeholder;b.start=+ev.target.value||0;setBite(sel,b)};
 $('#pin').onchange=ev=>{if(!sel)return;if(ev.target.checked)pins[sel.id]=1;else delete pins[sel.id];store.set('gt.pins',pins)};
 $('#file').onchange=ev=>takeFile(ev.target.files[0]);
@@ -886,7 +930,7 @@ $('#pin').closest('label').hidden=!TALK;
 /* ---------- the record: every release along one spiral groove, 1997 at the rim, the newest at the label ---------- */
 const view={name:'line',mix:0,to:0};
 const disc={s:0,target:null,vel:0,touched:-1e9,wheelAt:0,cur:0,prev:-1,labelT:1,stops:[],years:[],tile:.1,pitch:.02,R0:1,R:100,cx:0,cy:0,cxLive:null,drag:false,arm:false,dist:0,lastA:0,lastT:0,vinyl:null,vinylR:0,seen:false};
-const AUTOPLAY_SECONDS=20,SILENT_SECONDS=3;
+const AUTOPLAY_SECONDS=20,SILENT_SECONDS=3,XF_IN=.9,XF_OUT=1.7;
 const RIN=.27,PIVOT=1.35,BETA=-Math.PI/4,ARM=1.18;
 function discLayout(){
   /* A slot before each new year works like the gap between tracks. Solve the tile size so the groove ends at the label. */
@@ -910,12 +954,45 @@ function discPhi(){return discAlpha(discR(disc.s))+disc.s}
 function discPos(e,phi){const th=phi-e._da,r=e._dr*disc.R;return{x:disc.cx+r*Math.cos(th),y:disc.cy+r*Math.sin(th),rot:th+Math.PI/2,s:disc.tile*disc.R}}
 function discNearest(a){let b=0,d=1e9;disc.stops.forEach((v,i)=>{const k=Math.abs(v-a);if(k<d){d=k;b=i}});return b}
 /* The play button: sound and turning together. Paused, the record stays put until spun or played again. */
+function discLive(){return soundOn&&soundLive&&!disc.paused}
+function audible(e){return !!e&&!e._dead&&!!biteOf(e)}
+function nextAudible(c){const N=items.length;for(let k=1;k<N;k++){const i=(c+k)%N;if(audible(items[i])&&matches(items[i]))return i}return -1}
 function discToggle(){
   discTouch();
-  if(soundOn&&soundLive){setSound(false);disc.paused=true;return}
+  if(soundOn&&soundLive){if(audio.el)audio.held={a:audio.el,id:audio.id};setSound(false);disc.paused=true;return}
   soundLive=true;setSound(true);disc.paused=false;disc.vel=0;disc.target=null;disc.touched=-1e9;
-  if(sel)select(null);
-  playBite(items[disc.cur],.1,.2);
+  const e=items[disc.cur],h=audio.held;audio.held=null;
+  if(h&&h.id===e.id){audio.token++;audio.fading.delete(h.a);audio.el=h.a;audio.id=h.id;h.a.play().then(()=>fade(h.a,1,.5)).catch(()=>playBite(e,XF_IN,.2));syncPlay();return}
+  if(audible(e))playBite(e,XF_IN,.2);
+}
+/* A click goes to the release and plays it, crossfading straight away while the record turns there. A second click opens its details. */
+function discClick(ev){
+  const tap=disc.tap;disc.tap=null;if(!tap)return;
+  const now=performance.now(),l=disc.lastClick;
+  if(l&&now-l.t<400&&Math.hypot(ev.clientX-l.x,ev.clientY-l.y)<14){disc.lastClick=null;select(l.e);return}   /* the release has moved by now, so go by where the first click was */
+  if(tap.e){disc.lastClick={e:tap.e,t:now,x:ev.clientX,y:ev.clientY};discChoose(tap.e);return}
+  disc.lastClick=null;
+  if(tap.label)select(items[disc.cur]);else if(sel)select(null);
+}
+function discChoose(e){
+  discTouch();disc.vel=0;disc.target=e._da;dirty=true;clearTimeout(soundTimer);
+  if(sel){sel=e;renderPanel(e);syncPlay()}
+  if(soundOn&&!disc.paused&&audible(e)&&audio.id!==e.id&&audio.wantId!==e.id)playBite(e,XF_IN,XF_OUT);
+}
+/* Nothing to hear here: on to the next release that has audio, which starts as the record turns towards it. */
+function discSkip(){
+  const i=nextAudible(disc.cur);if(i<0)return false;
+  disc.target=disc.stops[i];disc.skipAt=0;preload(items[i]);
+  if(audio.id!==items[i].id&&audio.wantId!==items[i].id)playBite(items[i],XF_IN,XF_OUT);
+  return true;
+}
+/* The record has come to rest on a release. If it is not the one sounding, cross over to it; the same one just carries on. */
+function discRest(now){
+  const e=items[discNearest(disc.s)];
+  if(sel&&sel!==e){sel=e;renderPanel(e);syncPlay()}
+  if(!discLive())return;
+  if(!audible(e)){disc.skipAt=now+900;return}
+  if(audio.id!==e.id&&audio.wantId!==e.id)playBite(e,XF_IN,XF_OUT);
 }
 function discTouch(){disc.touched=performance.now();if(!disc.seen){disc.seen=true;$('#hint').classList.add('off')}}
 function discMetrics(dt){
@@ -936,30 +1013,42 @@ function tickDisc(dt,now){
   if(view.name!=='disc')return busy;
   discMetrics(dt);
   const first=disc.stops[0],lastS=disc.stops[disc.stops.length-1];
-  if(disc.drag){busy=true}
+  if(disc.drag){busy=true;if(now-disc.lastT>70)disc.vel*=Math.exp(-dt/.07)}
   else if(disc.target!=null){
     disc.s+=(disc.target-disc.s)*(1-Math.exp(-dt/(Math.abs(disc.target-disc.s)>12?.5:.2)));
-    if(Math.abs(disc.target-disc.s)<.0015){disc.s=disc.target;disc.target=null}
+    if(Math.abs(disc.target-disc.s)<.0015){disc.s=disc.target;disc.target=null;discRest(now)}
     busy=true;
   }else if(Math.abs(disc.vel)>.05){
     disc.s=clamp(disc.s+disc.vel*dt,first,lastS);disc.vel*=Math.exp(-dt/.75);busy=true;
     if(Math.abs(disc.vel)<=.05){disc.vel=0;disc.target=disc.stops[discNearest(disc.s)]}
   }else if(disc.wheelAt&&now-disc.wheelAt>170){
     disc.wheelAt=0;disc.target=disc.stops[discNearest(disc.s)];busy=true;
-  }else if(!sel&&!disc.paused&&(!hover||soundOn)&&!REDUCED&&view.mix===1&&now-disc.touched>3500){
-    /* Left alone it plays, one release every AUTOPLAY_SECONDS, then the arm returns to the start. */
-    /* While playing, a release with no audio passes quickly instead of sitting silent. */
-    const secs=soundOn&&soundLive&&!biteOf(items[disc.cur])?SILENT_SECONDS:AUTOPLAY_SECONDS;
-    disc.s+=(disc.tile*1.08/secs)/Math.max(.1,discR(disc.s))*dt;busy=true;
-    if(disc.s>=lastS){disc.s=lastS;disc.target=first;disc.touched=now}
+  }else if((!sel||discLive())&&!disc.paused&&(!hover||soundOn)&&!REDUCED&&view.mix===1&&now-disc.touched>(discLive()?400:3500)){
+    /* Left alone it plays. While sounding, the needle times itself to reach the next release as this clip ends; a release with no audio is skipped. */
+    const e=items[disc.cur],live=discLive(),a=audio.el;busy=true;
+    if(live&&!audible(e)&&now>=(disc.skipAt||0)&&discSkip()){}
+    else if(live&&a&&audio.id===e.id&&isFinite(a.duration)&&a.duration>0){
+      const mid=disc.cur+1<disc.stops.length?(disc.stops[disc.cur]+disc.stops[disc.cur+1])/2:lastS;
+      const rem=Math.max(.3,a.duration-a.currentTime-XF_OUT*.6);
+      disc.s=Math.min(lastS,disc.s+Math.max(0,mid-disc.s+.004)/rem*dt);
+    }else if(!live||nextAudible(disc.cur)<0)disc.s+=(disc.tile*1.08/(live?SILENT_SECONDS:AUTOPLAY_SECONDS))/Math.max(.1,discR(disc.s))*dt;
+    if(disc.s>=lastS){disc.s=lastS;if(!(live&&discSkip())){disc.target=first}disc.touched=now}
   }
   const c=discNearest(disc.s);
   if(c!==disc.cur||disc.fresh){
     disc.prev=disc.cur===c?-1:disc.cur;disc.fresh=false;disc.cur=c;disc.labelT=0;busy=true;
     const e=items[c],n=$('#now');
     n.querySelector('em').textContent=e.title;n.querySelector('b').textContent=e.artist;n.querySelector('span').textContent=e.year;
-    preload(e);preload(items[c+1]);preload(items[c-1]);
-    if(!disc.drag)hoverSound(e);
+    preload(e);const na=nextAudible(c);if(na>=0)preload(items[na]);preload(items[c-1]);
+    /* Only the record's own turning changes the song here; a hand or a glide decides when it comes to rest. */
+    if(!disc.drag&&disc.target==null&&Math.abs(disc.vel)<=.05){if(sel&&sel!==e){sel=e;renderPanel(e);syncPlay()}hoverSound(e)}
+  }
+  /* The sound follows the hand, then eases back to speed from exactly where it was. */
+  {
+    const v=Math.abs(disc.vel),want=disc.drag&&!disc.arm&&disc.dist>6?clamp(v/2.2,.35,2.5):(!disc.drag&&v>.05?clamp(v/2.2,.6,2.5):1);
+    disc.rate=(disc.rate||1)+(want-(disc.rate||1))*(1-Math.exp(-dt/(disc.drag?.05:.25)));
+    if(!disc.drag&&Math.abs(disc.rate-1)<.01)disc.rate=1;else busy=busy||disc.rate!==1;
+    const a=audio.el;if(a&&a.playbackRate!==disc.rate){try{a.preservesPitch=disc.rate===1;a.playbackRate=disc.rate}catch(x){}}
   }
   if(disc.labelT<1){disc.labelT=Math.min(1,disc.labelT+dt/.28);busy=true}
   return busy||dirty;
@@ -1043,7 +1132,7 @@ function armNear(mx,my){
   return Math.hypot(mx-(nx+dx*t),my-(ny+dy*t))<(W<=700?16:11);
 }
 function discDown(ev){
-  discTouch();disc.vel=0;disc.target=null;disc.wheelAt=0;disc.dist=0;
+  discTouch();disc.vel=0;disc.target=null;disc.wheelAt=0;disc.dist=0;disc.downCur=disc.cur;
   const dx=ev.clientX-disc.cx,dy=ev.clientY-disc.cy;
   disc.arm=armNear(ev.clientX,ev.clientY);
   disc.drag=true;disc.lastA=Math.atan2(dy,dx);disc.lastT=performance.now();cv.classList.add('drag');
@@ -1063,8 +1152,6 @@ function discMove(ev){
     const tn=performance.now(),ms=Math.max(4,tn-disc.lastT);disc.lastT=tn;
     disc.s=clamp(disc.s+da,first,lastS);
     disc.vel=lerp(disc.vel,da/(ms/1000),.35);
-    /* scratching: the sound follows your hand */
-    if(audio.el){try{audio.el.preservesPitch=false;audio.el.playbackRate=clamp(Math.abs(disc.vel)/2.2,.3,2.5)}catch(x){}}
     return;
   }
   const h=discHit(ev.clientX,ev.clientY),overLabel=r<disc.R*RIN*.86,overArm=armNear(ev.clientX,ev.clientY);
@@ -1076,17 +1163,19 @@ function discMove(ev){
 function discUp(ev){
   const wasArm=disc.arm,dist=disc.dist;
   disc.drag=false;disc.arm=false;cv.classList.remove('drag');discTouch();
-  if(audio.el){try{audio.el.playbackRate=1;audio.el.preservesPitch=true}catch(x){}}
-  if(dist<6&&!wasArm){
+  if(dist<6){   /* no movement is a tap, even on a cover lying under the arm */
     disc.vel=0;
     const r=Math.hypot(ev.clientX-disc.cx,ev.clientY-disc.cy),h=discHit(ev.clientX,ev.clientY);
-    if(h)select(h);else if(r<disc.R*RIN*.86)select(items[disc.cur]);else if(sel)select(null);
+    disc.tap={e:h,label:!h&&r<disc.R*RIN*.86};   /* the click that follows decides what this means */
     disc.target=disc.target==null?disc.stops[discNearest(disc.s)]:disc.target;
     return;
   }
   disc.vel=clamp(disc.vel,-12,12);
-  if(wasArm||performance.now()-disc.lastT>90||Math.abs(disc.vel)<.25){disc.vel=0;disc.target=disc.stops[discNearest(disc.s)]}
-  hoverSound(items[discNearest(disc.s)]);
+  if(wasArm||performance.now()-disc.lastT>90||Math.abs(disc.vel)<.25){
+    disc.vel=0;const near=discNearest(disc.s),own=items[disc.downCur];
+    /* A scratch that ends within a release of where it started goes back to its song, which never stopped. */
+    disc.target=disc.stops[!wasArm&&own&&audio.id===own.id&&Math.abs(near-disc.downCur)<=1?disc.downCur:near];
+  }
 }
 function discWheel(ev){
   discTouch();disc.vel=0;disc.target=null;
@@ -1119,7 +1208,7 @@ function syncLayout(){
   const vert=view.name==='line'&&orient==='v',n=$('#now'),o=$('#vOrient');
   document.body.classList.toggle('vert',vert);
   n.classList.toggle('dock',vert);
-  $('#hint').textContent=vert?'':'Press play, then spin the record to scratch';
+  $('#hint').textContent=vert?'':(matchMedia('(hover: none)').matches?'Tap a release to play it, double tap for info, spin to scratch':'Click a release to play it, double click for info, spin to scratch');
   $('#discPlay').hidden=view.name!=='disc'||view.mix<1;
   o.hidden=view.name!=='line';
   o.setAttribute('aria-pressed',orient==='v');
@@ -1140,7 +1229,7 @@ $('#vLine').onclick=()=>setView('line');
 $('#vDisc').onclick=()=>setView('disc');
 $('#discPlay').onclick=discToggle;
 
-window.__cat={sound:()=>soundOn,view,disc,setView,talk,cam,audio,items:()=>items,select,startTalk,next,plan,cfg,state:()=>({mode,finished,sel:sel&&sel.id})};
+window.__cat={sound:()=>soundOn,live:()=>discLive(),discPos,discPhi,view,disc,setView,talk,cam,audio,items:()=>items,select,startTalk,next,plan,cfg,state:()=>({mode,finished,sel:sel&&sel.id})};
 layout();
 addEventListener('resize',resize);resize();fitAll(true);
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
