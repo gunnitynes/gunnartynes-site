@@ -21,6 +21,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 .quiet:hover{color:var(--paper)}.quiet[aria-pressed=true],.quiet.on{color:var(--paper);border-color:var(--paper)}
 #tag{font:11px var(--mono);color:var(--p)}
 #foot{position:fixed;left:0;right:0;bottom:0;padding:0 max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141b00,#11141bf0 26%,#11141bfa);z-index:2;padding-top:26px;pointer-events:none}
+#kmBox{align-self:end;justify-self:end;text-align:right}#km{font:500 14px var(--mono);color:#fff;margin-bottom:3px;white-space:nowrap}#snd{margin-left:6px}
 #speed{pointer-events:auto;display:flex;gap:1px;align-self:end;justify-self:end;font:12px var(--mono)}#speed button{padding:4px 7px;color:var(--faint);border-bottom:1px solid transparent}#speed button:hover{color:var(--paper)}#speed button[aria-pressed=true]{color:var(--paper);border-color:var(--paper)}
 #now{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:4px 14px;align-items:center;pointer-events:none;min-height:66px}
 #play{pointer-events:auto;width:44px;height:44px;border-radius:50%;background:var(--paper);color:var(--ground);display:grid;place-items:center;box-shadow:0 2px 14px #000a;transition:transform .15s}
@@ -42,7 +43,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #pins{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
 .pin{position:absolute;left:0;top:0;padding:0;width:var(--pw,170px);aspect-ratio:3/2;pointer-events:auto;cursor:zoom-in;background:var(--ground);border:3px solid var(--paper);border-radius:1px;box-shadow:0 8px 26px #000b;opacity:0;transition:opacity .9s;will-change:transform}.pin.on{opacity:1}.pin.on.old{opacity:0}.pin img{width:100%;height:100%;object-fit:cover;display:block}
 #leg.caponly .frame{display:none}#leg.caponly.on .frame{pointer-events:none}
-#attr{position:fixed;right:16px;bottom:calc(var(--foot,120px) + 3px);font:10px var(--mono);color:var(--faint);z-index:2}#attr a{color:var(--dim)}
 #hint{position:fixed;left:50%;top:calc(var(--bar,60px) + 8px);transform:translateX(-50%);font:12px var(--mono);color:var(--dim);opacity:0;transition:opacity .7s;pointer-events:none;z-index:2;white-space:nowrap;text-shadow:0 1px 6px #000}#hint.on{opacity:1}
 #more{font:13px var(--sans);color:#c5c7cd;max-height:0;overflow:hidden;opacity:0;transition:opacity .8s,max-height .8s;white-space:nowrap;text-overflow:ellipsis}#more.on{opacity:1;max-height:1.6em}
 #leg{position:fixed;right:max(16px,env(safe-area-inset-right,0px));top:12px;width:min(30vw,380px);z-index:4;opacity:0;transition:opacity .9s;pointer-events:none}#leg.on{opacity:1}
@@ -63,7 +63,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #view .nav{position:absolute;top:50%;transform:translateY(-50%);width:50px;height:70px;font-size:30px;color:var(--paper);opacity:.8}#view .nav:hover{opacity:1}#vPrev{left:4px}#vNext{right:4px}
 #vClose{position:absolute;top:10px;right:14px;font-size:26px;color:var(--paper);padding:6px 10px;z-index:1}
 @media(max-width:700px){
-  #now{grid-template-columns:44px minmax(0,1fr)}#speed{grid-column:2;justify-self:start;margin-left:-7px}
+  #now{grid-template-columns:44px minmax(0,1fr)}#kmBox{grid-column:2;justify-self:start;text-align:left}#km{font-size:13px}#speed{margin-left:-7px}
   #leg{top:calc(var(--bar,84px) + 4px);width:62vw;right:16px}#leg .frame{aspect-ratio:3/2}
   #view .nav{width:40px}#view em{font-size:17px}
   #panel{top:auto;left:0;right:0;width:auto;height:58%;transform:translateY(102%);box-shadow:0 -12px 40px #0006}
@@ -79,7 +79,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
     <a class="quiet" href="../?view=timeline&amp;layout=vertical">Vertical</a>
     <a class="quiet" href="../?view=record">Record</a>
     <span class="quiet on" aria-current="page">Live</span>
-    <button class="quiet" id="photoBtn" aria-haspopup="menu" aria-expanded="false" title="Show tour photos during play">Tour photos</button>
+    <button class="quiet" id="photoBtn" hidden aria-haspopup="menu" aria-expanded="false" title="Show tour photos during play">Tour photos</button>
     <button class="quiet" id="viewBtn" aria-haspopup="menu" aria-expanded="false" title="How the camera moves during play">View</button>
   </nav>
   <span id="tag" hidden>draft list, not published</span>
@@ -94,7 +94,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
   <div id="now">
     <button id="play" type="button" aria-label="Play the tours"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
     <div id="cap" aria-live="off"><em></em><b></b><span class="when"></span><span class="also"></span><div id="more"></div></div>
-    <div id="speed" role="group" aria-label="Speed"><button type="button" data-speed="slow" title="Slow, with photos and more about each show">Slow</button><button type="button" data-speed=".5">½×</button><button type="button" data-speed="1">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="4">4×</button></div>
+    <div id="kmBox"><div id="km" title="Straight-line distance between the shows and home"></div><div id="speed" role="group" aria-label="Speed"><button type="button" data-speed="slow" title="Slow, with photos and more about each show">Slow</button><button type="button" data-speed=".5">½×</button><button type="button" data-speed="1">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="4">4×</button><button type="button" id="snd" aria-pressed="true" title="Music on or off">Sound</button></div></div>
   </div>
   <canvas id="years" aria-label="Scrub through the years"></canvas>
 </footer>
@@ -102,7 +102,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 <div id="pins" aria-hidden="false"></div>
 <div id="pop" role="menu" hidden></div>
 <div id="hint" aria-live="polite"></div>
-<div id="attr" hidden>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
+
 <div id="leg" aria-hidden="true"><button class="frame" type="button" id="legFrame" aria-label="Open this photo"><img alt=""><img alt=""></button><div id="legCap"></div></div>
 <div id="view" hidden role="dialog" aria-label="Photos"><button id="vClose" aria-label="Close photos">×</button><figure><img id="vImg" alt=""></figure><button class="nav" id="vPrev" aria-label="Previous photo">‹</button><button class="nav" id="vNext" aria-label="Next photo">›</button><div class="meta"><em id="vCap"></em><small id="vBy"></small></div></div>
 <aside id="panel" aria-label="Shows in this city"><button id="close" aria-label="Close">×</button><div id="pBody"></div></aside>
@@ -114,11 +114,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 const $=s=>document.querySelector(s),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const COL={paper:css('--paper'),dim:css('--dim'),faint:css('--faint'),tour:[css('--p'),css('--r'),css('--m'),css('--b')]};
-const ZMAX=30000,VENUE_Z=220,TILE_Z=150,STRETCH=1.22,SHOW_SECONDS=1.24,SLOW_RATE=.32,PHOTO_SECONDS=4.2,TOUR_GAP=21,REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ZMAX=8000,VENUE_Z=220,KM_PER_SECOND=420,STRETCH=1.22,SHOW_SECONDS=1.24,SLOW_RATE=.32,PHOTO_SECONDS=4.2,TOUR_GAP=21,REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const px=lon=>lon,py=lat=>-lat*STRETCH;
 const cv=$('#map'),g=cv.getContext('2d'),yc=$('#years'),yg=yc.getContext('2d');
-/* Music is off for now. The code stays, ready for when audio is worked on: set soundOn to true and bring back a Sound button. */
-let W=0,H=0,DPR=1,dirty=true,showDoubt=false,soundOn=false;
+let W=0,H=0,DPR=1,dirty=true,showDoubt=false,soundOn=true;
+try{if(localStorage.getItem('gt.live.sound')==='off')soundOn=false}catch(e){}
 const LIVE={shows:SHOWS.shows,land:LIVEMAP.land,outline:LIVEMAP.coast};
 if(SHOWS.draft){$('#tag').hidden=false;$('#doubt').hidden=false}
 const LAND=[];for(const[lat,row]of LIVE.land)for(const lon of row)LAND.push(px(lon),py(lat));
@@ -133,7 +133,7 @@ function build(){
   S=LIVE.shows.filter(s=>showDoubt||s.s!=='doubtful').slice().sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
   const map=new Map();TOURS=[];
   S.forEach((s,i)=>{
-    s.i=i;s.t=day(s.d);
+    s.i=i;s.t=day(s.d);s._j=null;s.la=s.vlat!=null?s.vlat:s.lat;s.lo=s.vlon!=null?s.vlon:s.lon;
     if(!i||s.t-S[i-1].t>TOUR_GAP)TOURS.push({a:i,b:i,col:COL.tour[TOURS.length%4]});
     const T=TOURS[TOURS.length-1];T.b=i;s.tour=TOURS.length-1;
     const key=s.c+'|'+s.k;let c=map.get(key);if(!c){c={key,name:s.c,k:s.k,x:px(s.lon),y:py(s.lat),shows:[],first:i,venues:new Map()};map.set(key,c)}
@@ -163,7 +163,7 @@ function stepPhoto(d){V.i=(V.i+d+V.list.length)%V.list.length;viewShow()}
 
 /* ---------- camera ---------- */
 const cam={x:0,y:-40,z:3,tx:0,ty:-40,tz:3,manual:false};
-function chrome(){return{top:$('#bar').offsetHeight,bot:$('#foot').offsetHeight}}
+const CH={top:60,bot:120};function chrome(){return CH}
 function fitBox(x0,x1,y0,y1,pad,minSpan,maxZ){
   const{top,bot:foot}=chrome(),bot=$('#panel').classList.contains('open')&&W<=700?H*.58:foot,w=Math.max(minSpan||8,x1-x0),h=Math.max(minSpan?minSpan*.6:5,y1-y0);
   const panelOpen=$('#panel').classList.contains('open');
@@ -193,38 +193,60 @@ try{const v=parseFloat(localStorage.getItem('gt.live.speed'));if([.5,1,2,4].incl
 const LAST=()=>S.length-1;
 P.pos=LAST();
 function legFrom(i){return i>=0&&i+1<S.length&&S[i+1].tour===S[i].tour}
-function legDeg(a,b){let dx=Math.abs(b.x-a.x);if(dx>180)dx=360-dx;return Math.hypot(dx,b.y-a.y)}
-/* Time for a leg grows with the distance, so a long flight can be followed by eye. */
-function legSeconds(n){
-  const a=S[n],b=S[n+1];if(!b)return SHOW_SECONDS;
-  const t=SHOW_SECONDS*(1+legDeg(a,b)/18);
-  return clamp(a.tour===b.tour?t:Math.max(t,SHOW_SECONDS*1.9),SHOW_SECONDS,8.5);
+/* Every journey in the order it happened. Time is real distance, so the world feels its size. After a long gap the band goes home first. */
+const HOME={x:px(-21.94),y:py(64.147),la:64.147,lo:-21.94,name:'Reykjavík',c:'Reykjavík',home:true};
+function kmBetween(a,b){const r=Math.PI/180,dl=(b.la-a.la)*r,dn=(b.lo-a.lo)*r,h=Math.sin(dl/2)**2+Math.cos(a.la*r)*Math.cos(b.la*r)*Math.sin(dn/2)**2;return 6371*2*Math.asin(Math.min(1,Math.sqrt(h)))}
+function moveSeg(a,b,kind){const km=kmBetween(a,b),to=legPaths(a,b)[0][1];return{kind,a,b,to,c:curve(a,to),km,deg:legDeg(a,b),t:clamp(SHOW_SECONDS+km/KM_PER_SECOND,SHOW_SECONDS,26)}}
+function journey(n){
+  const a=S[n],b=S[n+1];if(!b)return null;if(a._j)return a._j;
+  const segs=[],km=kmBetween(a,b);
+  if(a.tour===b.tour){if(km>600)segs.push({kind:'stay',t:1.1});segs.push(moveSeg(a,b,'leg'))}
+  else{
+    const days=Math.round(b.t-a.t);
+    segs.push({kind:'stay',t:1.1});
+    if(kmBetween(a,HOME)>25)segs.push(moveSeg(a,HOME,'home'));
+    segs.push({kind:'hold',days,t:1.6+Math.min(2.4,days/90)});
+    if(kmBetween(HOME,b)>25)segs.push(moveSeg(HOME,b,'away'));
+  }
+  let T=0;for(const g2 of segs){g2.from=T;T+=g2.t}
+  return a._j={segs,T,km:segs.reduce((m,g2)=>m+(g2.km||0),0)};
 }
+function segAt(n,f){const j=journey(n);if(!j)return null;const t=f*j.T;let g2=j.segs[j.segs.length-1];for(const x of j.segs)if(t<x.from+x.t){g2=x;break}return{seg:g2,u:clamp((t-g2.from)/g2.t,0,1),j}}
+const easeJ=u=>u*u*(3-2*u);
+function segPoint(g2,q){const a=g2.a,b=g2.to,c=g2.c,r=1-q;return{x:r*r*a.x+2*r*q*c.cx+q*q*b.x,y:r*r*a.y+2*r*q*c.cy+q*q*b.y}}
+function legDeg(a,b){let dx=Math.abs(b.x-a.x);if(dx>180)dx=360-dx;return Math.hypot(dx,b.y-a.y)}
+function legSeconds(n){const j=journey(n);return j?j.T:SHOW_SECONDS}
 function setPos(v,fromUser){
   const before=Math.floor(P.pos);
   P.pos=clamp(v,0,LAST());
   const now=Math.floor(P.pos);
-  if(now!==before){if(now>before||fromUser){P.pulse=now;P.pulseT=performance.now()}showCaption();aim();if(P.playing)songFor(S[now])}
+  if(now!==before){if(now>before||fromUser){P.pulse=now;P.pulseT=performance.now()}showCaption();aim()}
   dirty=true;
 }
 function aim(){const n=Math.floor(P.pos);if(S[n]&&!atEnd()&&P.view==='overview')aimAhead(n)}
 /* Follow: the view stays on the moving dot, at whatever zoom the visitor has set. */
 const defaultZoom=()=>clamp(W/70,9,22);
+/* Each run keeps one steady zoom, set from how far apart its stops usually are. The camera does not breathe from stop to stop. */
+function runZoom(T){
+  if(T.z&&T.zw===W)return T.z;
+  const hops=[];for(let i=T.a;i<T.b;i++)hops.push(legDeg(S[i],S[i+1]));hops.sort((x,y)=>x-y);
+  const mid=hops.length?hops[hops.length>>1]:0,top=hops.length?hops[Math.floor(hops.length*.85)]:0,cap=W/14;
+  T.z=mid<.3?clamp(W*.5/Math.max(top,.25),cap,W>700?700:460):clamp(W*.5/Math.max(top,mid*2),defaultZoom(),cap);
+  T.zw=W;return T.z;
+}
 function followBase(){
-  const n=Math.floor(P.pos),a=S[n];let z=cam.userZ;
-  if(!z){
-    /* How spread out are the next few stops? A tight cluster earns a closer look, right down to the streets. */
-    let d=0;for(let i=n;i<Math.min(n+3,LAST());i++){if(S[i+1].tour!==a.tour)break;d=Math.max(d,legDeg(a,S[i+1]))}
-    const cap=W/14;
-    z=d<.6?clamp(W*.5/Math.max(d,.015),cap,W>700?7000:4500):clamp(W*.55/d,defaultZoom(),cap);
-  }
-  return z;
+  if(cam.userZ)return cam.userZ;
+  const a=S[Math.floor(P.pos)];return runZoom(TOURS[a.tour]);
 }
 function followZoom(){
-  const n=Math.floor(P.pos),a=S[n];let z=followBase();
-  /* A long leg pulls back in mid-air, so both ends stay in sight, then settles again on arrival. */
-  const b=S[n+1];
-  if(b){const dl=legDeg(a,b),lim=dl>0?Math.max(W/345,W*.62/dl):z;if(lim<z)z=Math.exp(Math.log(z)+(Math.log(lim)-Math.log(z))*Math.sin(Math.PI*(P.pos-n)))}
+  const n=Math.floor(P.pos),st=segAt(n,P.pos-n);let z=followBase();if(!st)return z;
+  const{seg,u}=st;
+  /* Home is a pause between runs: the wide view, unless you have set your own zoom. */
+  if(seg.kind==='hold'||seg.kind==='home'||seg.kind==='away'){const wide=cam.userZ||defaultZoom();z=seg.kind==='away'?Math.exp(Math.log(wide)+(Math.log(runZoom(TOURS[S[n+1].tour]))-Math.log(wide))*easeJ(u)):(seg.kind==='home'?Math.exp(Math.log(z)+(Math.log(wide)-Math.log(z))*easeJ(u)):wide)}
+  if(!seg.km)return z;
+  /* Only a journey too long for the screen eases back, and only as far as it needs. */
+  const lim=Math.max(W/345,W*.7/seg.deg);
+  if(lim<z)z=Math.exp(Math.log(z)+(Math.log(lim)-Math.log(z))*Math.sin(Math.PI*u));
   return z;
 }
 function viewOffset(z){
@@ -233,9 +255,11 @@ function viewOffset(z){
   return{x:pw/2/z,y:-(top+extra-bot)/2/z};
 }
 function headPoint(){
-  const n=Math.floor(P.pos),f=P.pos-n,a=S[n];if(!a)return{x:cam.x,y:cam.y};if(n+1>=S.length||f<=0)return a;
-  const b=legPaths(a,S[n+1])[0][1],c=curve(a,b),q=f<.5?2*f*f:1-Math.pow(-2*f+2,2)/2;
-  return{x:(1-q)*(1-q)*a.x+2*(1-q)*q*c.cx+q*q*b.x,y:(1-q)*(1-q)*a.y+2*(1-q)*q*c.cy+q*q*b.y};
+  const n=Math.floor(P.pos),f=P.pos-n,a=S[n];if(!a)return{x:cam.x,y:cam.y};if(n+1>=S.length)return a;
+  const{seg,u,j}=segAt(n,f);
+  if(seg.kind==='hold')return HOME;
+  if(seg.kind==='stay'){const prev=j.segs[j.segs.indexOf(seg)-1];return prev?prev.b:a}
+  return segPoint(seg,easeJ(u));
 }
 function followCam(){
   if(P.view!=='follow'||cam.manual||atEnd())return;
@@ -247,7 +271,7 @@ function atEnd(){return P.pos>=LAST()&&!P.playing}
 function play(on){
   if(!on){P.armed=P.slow||P.armed;setSlow(false)}else flashHint();
   P.playing=on;$('#play').classList.toggle('on',on);$('#play').setAttribute('aria-label',on?'Pause':'Play the tours');
-  if(on){cam.manual=P.view==='free';if(P.pos>=LAST()){setPos(0,true);if(!cam.manual&&P.view==='follow'&&!REDUCED)P.hold=performance.now()+3200}else aim();P.pulse=Math.floor(P.pos);P.pulseT=performance.now();showCaption();if(soundOn)songFor(S[Math.floor(P.pos)],true);if(P.armed)setSlow(true)}
+  if(on){cam.manual=P.view==='free';if(P.pos>=LAST()){setPos(0,true);if(!cam.manual&&P.view==='follow'&&!REDUCED)P.hold=performance.now()+4200}else aim();P.pulse=Math.floor(P.pos);P.pulseT=performance.now();showCaption();if(soundOn)songFor();if(P.armed)setSlow(true)}
   else stopSong();
   dirty=true;
 }
@@ -255,7 +279,7 @@ function play(on){
 const TOUCH=matchMedia('(hover: none)').matches,VERB=TOUCH?'Tap':'Click';
 let hintTimer=0;
 function flashHint(text,ms=3800){const h=$('#hint');h.textContent=text||(TOUCH?'Tap anywhere to pause':'Click anywhere to slow down');h.classList.add('on');clearTimeout(hintTimer);hintTimer=setTimeout(()=>h.classList.remove('on'),ms)}
-function syncSpeed(){document.querySelectorAll('#speed button').forEach(b=>b.setAttribute('aria-pressed',P.slow?b.dataset.speed==='slow':+b.dataset.speed===P.speed))}
+function syncSpeed(){document.querySelectorAll('#speed [data-speed]').forEach(b=>b.setAttribute('aria-pressed',P.slow?b.dataset.speed==='slow':+b.dataset.speed===P.speed))}
 function setSpeed(v){if(v==='slow'){P.armed=true;if(P.playing)setSlow(true);syncSpeed();return}P.speed=+v;P.armed=false;try{localStorage.setItem('gt.live.speed',v)}catch(e){}if(P.slow)setSlow(false);syncSpeed();dirty=true}
 function setSlow(on){
   if(P.slow===on)return;P.slow=on;syncSpeed();
@@ -264,7 +288,9 @@ function setSlow(on){
   restartPhotos();syncChrome();if(P.playing)aim();showMore();dirty=true;
 }
 /* Photos during play. Off by default; Slow always brings up the side photo, as it is the point of slowing down. */
-const photoMode=()=>P.photos!=='off'?P.photos:(P.slow?'side':'off');
+/* On hold at Gunnar's request while the journey gets finished. Set to true, and unhide the button, to bring them back. */
+const TOUR_PHOTOS=false;
+const photoMode=()=>!TOUR_PHOTOS?'off':(P.photos!=='off'?P.photos:(P.slow?'side':'off'));
 const Leg={list:[],i:0,t:0,key:null,side:0,cur:null};
 function restartPhotos(){
   Leg.key=null;Leg.list=[];Leg.cur=null;Leg.t=0;
@@ -349,85 +375,94 @@ function showMore(){
   el.textContent=count>1?`Show ${s.i-T.a+1} of ${count} on this run · ${fmt(S[T.a].d)} – ${fmt(S[T.b].d)}`:`A single show · ${fmt(s.d)}`;
 }
 function syncChrome(){
+  CH.top=$('#bar').offsetHeight;CH.bot=$('#foot').offsetHeight;
   const r=document.documentElement.style;r.setProperty('--bar',$('#bar').offsetHeight+'px');r.setProperty('--foot',$('#foot').offsetHeight+'px');
 }
+/* While a real journey is under way the caption tells you about it. */
+const nf=v=>Math.round(v).toLocaleString('en-GB');
+function gapText(d){if(d<60)return Math.round(d/7)+' weeks';const m=Math.round(d/30.4);return m<24?m+' months':(Math.round(d/365)+' years')}
+let capKey='';
+function journeyCaption(){
+  const n=Math.floor(P.pos),st=segAt(n,P.pos-n),cap=$('#cap');
+  drawKm(n,st);
+  if(!st)return;
+  const{seg,u}=st,next=S[n+1];
+  const long=seg.kind==='hold'||(seg.km>=500&&seg.kind!=='stay');
+  if(!long){if(capKey){capKey='';showCaption()}return}
+  const done=seg.km?easeJ(u)*seg.km:0,key=seg.kind+n+Math.round(done/20);if(key===capKey)return;capKey=key;
+  const set=(q,t)=>{cap.querySelector(q).textContent=t};
+  if(seg.kind==='hold'){set('em','Home');set('b','Reykjavík, Iceland');set('.when',`${gapText(seg.days)} until the next show`);set('.also',`Next: ${next.c}, ${fmt(next.d)}`);return}
+  const fromName=seg.a.home?'Reykjavík':seg.a.c,toName=seg.kind==='home'?'Home':next.c;
+  set('em',`${fromName} → ${toName}`);set('b',`${nf(done)} of ${nf(seg.km)} km`);
+  set('.when',seg.kind==='home'?`Going home after ${fmt(S[n].d)}`:`To play ${fmt(next.d)}`);
+  set('.also',seg.kind==='home'?'':(next.v&&!/unknown/i.test(next.v)?next.v:(next.n||'')));
+}
+function drawKm(n,st){
+  const el=$('#km');let so=0;for(let i=0;i<n;i++){const j=journey(i);if(j)so+=j.km}
+  if(st&&st.j){for(const m of st.j.segs){if(!m.km)continue;if(m===st.seg){so+=easeJ(st.u)*m.km;break}if(m.from<st.seg.from)so+=m.km}}
+  const t=nf(so/100)*1;el.textContent=`${nf(Math.round(so/100)*100)} km travelled`;
+}
 function showCaption(){
-  showMore();
+  capKey='';showMore();
   const cap=$('#cap'),em=cap.querySelector('em'),b=cap.querySelector('b'),sp=cap.querySelector('.when'),also=cap.querySelector('.also');also.textContent='';
   if(atEnd()&&!P.scrubbed){
     const countries=new Set(S.map(s=>s.k)).size;
-    em.textContent=`${S.length} concerts`;b.textContent=`${CITIES.length} cities, ${countries} countries, ${S[0].d.slice(0,4)}–${S[LAST()].d.slice(0,4)}`;sp.textContent='Press play to follow the tours in order';return;
+    em.textContent=`${S.length} concerts`;b.textContent=`${CITIES.length} cities, ${countries} countries, ${S[0].d.slice(0,4)}–${S[LAST()].d.slice(0,4)}`;sp.textContent='Press play to follow the tours in order';let total=0;for(let i=0;i<LAST();i++)total+=journey(i).km;$('#km').textContent=`${nf(Math.round(total/1000)*1000)} km travelled`;return;
   }
   const s=S[Math.floor(P.pos)];if(!s)return;
   em.textContent=s.v&&!/unknown/i.test(s.v)?s.v:(s.n||s.c);
   b.textContent=`${s.c}, ${s.k}`;
   sp.textContent=fmt(s.d,s.e);
   also.textContent=[s.v&&s.n&&s.n!==s.v?s.n:'',s.w?'with '+s.w:''].filter(Boolean).join(' · ');
-  const n=photosOf(s).length;
+  const n=TOUR_PHOTOS?photosOf(s).length:0;
   if(n){const c=document.createElement('button');c.id='cam';c.type='button';c.textContent=n===1?'1 photo':n+' photos';c.onclick=()=>openPhotos(s);b.appendChild(c)}
 }
 
-/* ---------- sound: múm's release of the period, from the catalogue ---------- */
-const music=(window.CATALOGUE||[]).filter(e=>/múm/.test(e.artist)&&e.tier==='core'&&!e.screen&&(e.tracks||[]).some(t=>t.p)).sort((a,b)=>a.year-b.year);
-const au={el:null,key:null};
-function pick(year){const pool=music.filter(e=>e.year<=year);const e=pool.length?pool[pool.length-1]:music[0];if(!e)return null;const tr=e.tracks.filter(t=>t.p);const t=e.dt!=null&&e.tracks[e.dt]&&e.tracks[e.dt].p?e.tracks[e.dt]:tr[0];return{e,t,tr}}
-function songFor(s,force){
-  if(!soundOn||!P.playing||!s)return;
-  const p=pick(+s.d.slice(0,4));if(!p)return;
-  const key=p.e.id;if(key===au.key&&!force&&au.el&&!au.el.paused)return;
-  fade(au.el);au.key=key;
-  const a=new Audio(p.t.p);let idx=p.tr.indexOf(p.t);a.volume=0;
-  a.onended=()=>{idx=(idx+1)%p.tr.length;a.src=p.tr[idx].p;a.play().catch(()=>{})};
-  a.play().then(()=>{if(au.el!==a){a.pause();return}const t0=performance.now();const f=()=>{if(au.el!==a)return;const v=(performance.now()-t0)/700;a.volume=Math.min(.85,v);if(v<.85)requestAnimationFrame(f)};f()}).catch(()=>{});
-  au.el=a;
+/* ---------- sound: Gunnar's song, looping while the journey plays ---------- */
+const au={el:null,fade:0};
+function fadeTo(v,ms,done){const a=au.el;if(!a)return;const my=++au.fade,v0=a.volume,t0=performance.now();const f=()=>{if(my!==au.fade)return;const t=clamp((performance.now()-t0)/ms,0,1);a.volume=v0+(v-v0)*t;if(t<1)requestAnimationFrame(f);else if(done)done()};f()}
+function songFor(){
+  if(!soundOn||!P.playing)return;
+  if(!au.el){const a=new Audio('audio/avignon.m4a');a.loop=true;a.preload='auto';a.volume=0;au.el=a}
+  if(au.el.paused){au.el.play().then(()=>fadeTo(.9,900)).catch(()=>{})}else if(au.el.volume<.9)fadeTo(.9,600);
 }
-function fade(a){if(!a)return;const v0=a.volume,t0=performance.now();const f=()=>{const t=(performance.now()-t0)/500;if(t>=1){a.pause();a.onended=null;return}a.volume=v0*(1-t);requestAnimationFrame(f)};f()}
-function stopSong(){fade(au.el);au.el=null;au.key=null}
-
+function stopSong(){if(au.el&&!au.el.paused)fadeTo(0,500,()=>au.el.pause())}
 /* ---------- drawing ---------- */
 function curve(a,b){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),lift=Math.min(.16,14/Math.max(d,1));return{cx:(a.x+b.x)/2-dy*lift*.4,cy:(a.y+b.y)/2-d*lift}}
 /* A leg over the Pacific leaves one edge of the map and comes back at the other. */
 function legPaths(a,b){const dx=b.x-a.x;if(Math.abs(dx)<=180)return[[a,b]];const w=dx>0?-360:360;return[[a,{x:b.x+w,y:b.y}],[{x:a.x-w,y:a.y},b]]}
-/* Up close the world map hands over to a street map: OpenStreetMap's own tiles, darkened here to sit in the page. Tiles are Mercator and our map is not, so each tile is placed by its own corners, which is exact enough at this scale. */
-const TILES=new Map();
-const merc=y=>{const k=Math.PI-2*Math.PI*y;return 180/Math.PI*Math.atan(.5*(Math.exp(k)-Math.exp(-k)))};
-function tile(z,x,y){
-  const key=z+'/'+x+'/'+y;let t=TILES.get(key);
-  if(!t){
-    t=new Image();
-    t.onload=()=>{
-      const c=document.createElement('canvas');c.width=c.height=256;const k=c.getContext('2d');
-      k.drawImage(t,0,0);
-      k.globalCompositeOperation='saturation';k.fillStyle='#000';k.fillRect(0,0,256,256);
-      k.globalCompositeOperation='difference';k.fillStyle='#fff';k.fillRect(0,0,256,256);
-      k.globalCompositeOperation='multiply';k.fillStyle='#b9c0d0';k.fillRect(0,0,256,256);
-      k.globalCompositeOperation='lighten';k.fillStyle='#14181f';k.fillRect(0,0,256,256);
-      t.canvas=c;t.ok=true;dirty=true;
-    };
-    t.src=`https://tile.openstreetmap.org/${z}/${x}/${y}.png`;TILES.set(key,t);
-    if(TILES.size>260)TILES.delete(TILES.keys().next().value);
+/* Up close: a sharper coastline, loaded the first time someone gets near, and only the nearby part drawn each frame. */
+const Detail={state:0,rings:null,path:null,cx:1e9,cy:1e9};
+function detailPath(){
+  if(cam.z<60)return null;
+  if(!Detail.state){Detail.state=1;const sc=document.createElement('script');sc.src='coast.js';sc.onload=()=>{Detail.rings=(window.LIVECOAST||[]).map(r=>{let a=1e9,b=-1e9,c=1e9,d=-1e9;for(const q of r){a=Math.min(a,q[0]);b=Math.max(b,q[0]);c=Math.min(c,q[1]);d=Math.max(d,q[1])}return{r,a,b,c,d}});window.LIVECOAST=null;Detail.state=2;dirty=true};document.head.appendChild(sc)}
+  if(!Detail.rings)return null;
+  const span=Math.max(W,H)/cam.z;
+  if(!Detail.path||Math.hypot(cam.x-Detail.cx,cam.y-Detail.cy)>span*.6+.5||span>Detail.span){
+    const pad=span*2+1.5,lon=cam.x,lat=-cam.y/STRETCH,padLat=pad/STRETCH,path=new Path2D();
+    for(const k of Detail.rings){if(k.b<lon-pad||k.a>lon+pad||k.d<lat-padLat||k.c>lat+padLat)continue;const r=k.r,m=r.length,mid=(a,b)=>[(px(a[0])+px(b[0]))/2,(py(a[1])+py(b[1]))/2],st=mid(r[m-1],r[0]);path.moveTo(st[0],st[1]);for(let i=0;i<m;i++){const e=mid(r[i],r[(i+1)%m]);path.quadraticCurveTo(px(r[i][0]),py(r[i][1]),e[0],e[1])}path.closePath()}
+    Detail.path=path;Detail.cx=cam.x;Detail.cy=cam.y;Detail.span=span;
   }
-  return t;
+  return Detail.path;
 }
-function drawTiles(){
-  const a=clamp((cam.z-TILE_Z)/380,0,1),attr=$('#attr');
-  if(attr.hidden!==(a<=0))attr.hidden=a<=0;
-  if(a<=0)return;
-  const tz=clamp(Math.round(Math.log2(cam.z*360/256)+(DPR>1?.5:0)),3,19),N=2**tz;
-  const lonL=cam.x-W/2/cam.z,lonR=cam.x+W/2/cam.z,latT=-(cam.y-H/2/cam.z)/STRETCH,latB=-(cam.y+H/2/cam.z)/STRETCH;
-  const my=lat=>{const r=clamp(lat,-85,85)*Math.PI/180;return(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2};
-  const x0=Math.floor((lonL+180)/360*N),x1=Math.floor((lonR+180)/360*N),y0=Math.floor(my(latT)*N),y1=Math.floor(my(latB)*N);
-  if((x1-x0+1)*(y1-y0+1)>64)return;
-  g.globalAlpha=a;
-  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
-    if(x<0||y<0||x>=N||y>=N)continue;
-    const L=SX(x/N*360-180),R=SX((x+1)/N*360-180),T=SY(py(merc(y/N))),B=SY(py(merc((y+1)/N)));
-    const settled=Math.abs(Math.log(cam.tz/cam.z))<.35,key=tz+'/'+x+'/'+y,t=settled?tile(tz,x,y):(TILES.get(key)||{});
-    if(t.ok){g.drawImage(t.canvas,Math.floor(L),Math.floor(T),Math.ceil(R-L)+1,Math.ceil(B-T)+1);continue}
-    /* until it arrives, stretch whatever coarser tile we already have */
-    for(let up=1;up<=4&&tz-up>=3;up++){const px0=x>>up,py0=y>>up,pt=TILES.get((tz-up)+'/'+px0+'/'+py0);if(pt&&pt.ok){const sz=256/(1<<up),sx=(x-(px0<<up))*sz,sy=(y-(py0<<up))*sz;g.drawImage(pt.canvas,sx,sy,sz,sz,Math.floor(L),Math.floor(T),Math.ceil(R-L)+1,Math.ceil(B-T)+1);break}}
-  }
+/* A quiet field of points fixed to the ground, so you can feel the movement even over open sea or empty land. */
+function drawField(){
+  if(cam.z<16)return;
+  const steps=[10,5,2,1,.5,.2,.1,.05,.02,.01];let st=steps[steps.length-1];for(const v of steps){if(v*cam.z<130){st=v;break}st=v}
+  for(const v of steps)if(v*cam.z>=46)st=v;
+  const a=clamp((cam.z-16)/20,0,1),lonL=cam.x-W/2/cam.z,lonR=cam.x+W/2/cam.z,yT=cam.y-H/2/cam.z,yB=cam.y+H/2/cam.z,sy=st*STRETCH;
+  if((lonR-lonL)/st*(yB-yT)/sy>2600)return;
+  g.fillStyle='#ffffff';g.globalAlpha=.07*a;
+  for(let x=Math.floor(lonL/st)*st;x<=lonR;x+=st)for(let y=Math.floor(yT/sy)*sy;y<=yB;y+=sy)g.fillRect(SX(x)-.8,SY(y)-.8,1.6,1.6);
   g.globalAlpha=1;
+}
+/* Names to steer by when the view is wide. */
+const REF=[['North Atlantic',38,-40],['North Pacific',28,-150],['Pacific',8,170],['South Atlantic',-25,-20],['Indian Ocean',-22,80],['North America',46,-102],['South America',-14,-58],['Europe',49,14],['Africa',8,20],['Asia',50,90],['Australia',-25,134],['Greenland',72,-41],['Mediterranean',36,17],['Iceland',65,-18.5]];
+function drawRef(){
+  if(cam.z>42)return;const a=clamp((42-cam.z)/14,0,1)*.62;
+  g.font='italic 14px Newsreader,Georgia,serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#8b90a0';g.globalAlpha=a;
+  for(const[t,la,lo]of REF){const x=SX(px(lo)),y=SY(py(la));if(x>-60&&x<W+60&&y>-20&&y<H+20)g.fillText(t,x,y)}
+  g.globalAlpha=1;g.textAlign='left';
 }
 function drawVenues(cur,n){
   if(cam.z<VENUE_Z)return;
@@ -446,6 +481,7 @@ function drawVenues(cur,n){
   }
   labels.sort((a,b)=>a.rank-b.rank||b.v.shows.length-a.v.shows.length);
   for(const l of labels){
+    if(l.v.name==='Venue not known')continue;
     const name=l.v.name.length>30?l.v.name.slice(0,29)+'…':l.v.name,w=g.measureText(name).width,x=l.x+l.r+5,box=[x-2,l.y-8,x+w+2,l.y+8];
     if(x+w>W-4||boxes.some(b=>b[0]<box[2]&&b[2]>box[0]&&b[1]<box[3]&&b[3]>box[1]))continue;
     boxes.push(box);g.fillStyle='#000a';g.fillRect(box[0],box[1]+2,box[2]-box[0],box[3]-box[1]-4);g.fillStyle=l.rank<2?COL.paper:COL.dim;g.fillText(name,x,l.y);
@@ -455,32 +491,50 @@ function drawMap(now){
   g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle='#11141b';g.fillRect(0,0,W,H);
   const backed=drawBack(now);
   /* land: real shapes under a field of dots; close in, the shapes take over from the dots */
-  g.save();g.setTransform(cam.z*DPR,0,0,cam.z*DPR,(W/2-cam.x*cam.z)*DPR,(H/2-cam.y*cam.z)*DPR);
-  g.fillStyle=backed?'#171b2466':'#171b24';g.fill(COAST);g.strokeStyle='#2b303c';g.lineWidth=1/cam.z;g.stroke(COAST);g.restore();
-  drawTiles();
+  const land=detailPath()||COAST,fill=backed?'#171b2466':'#1a1f29',edge='#343a47';
+  /* draw the world again either side when the view runs over the edge of the map, so a flight never leaves it */
+  const wrap=[0];if(cam.x-W/2/cam.z<-170)wrap.push(-360);if(cam.x+W/2/cam.z>180)wrap.push(360);
+  for(const off of wrap){g.save();g.setTransform(cam.z*DPR,0,0,cam.z*DPR,(W/2+(off-cam.x)*cam.z)*DPR,(H/2-cam.y*cam.z)*DPR);g.fillStyle=fill;g.fill(land);g.strokeStyle=edge;g.lineWidth=1/cam.z;g.stroke(land);g.restore()}
+  drawField();
   const dots=clamp(1-(cam.z-7)/9,0,1);
   if(dots>0){const size=clamp(cam.z*.42,1,2.4),half=size/2;g.fillStyle='#2f3542';g.globalAlpha=dots;
     for(let i=0;i<LAND.length;i+=2){const x=SX(LAND[i]),y=SY(LAND[i+1]);if(x>-4&&x<W+4&&y>-4&&y<H+4)g.fillRect(x-half,y-half,size,size)}
     g.globalAlpha=1}
+  drawRef();
   const pos=P.pos,n=Math.floor(pos),frac=pos-n,cur=S[n],curTour=cur?cur.tour:-1;
   g.lineCap='round';
   /* routes */
   for(let t=0;t<=curTour;t++){
     const T=TOURS[t],live=t===curTour&&!atEnd();
-    g.strokeStyle=T.col;g.globalAlpha=live?.78:(atEnd()?.2:.11);g.lineWidth=live?1.6:1;
+    g.strokeStyle=T.col;g.globalAlpha=selCity?.035:(live?.78:(atEnd()?.2:.11));g.lineWidth=live?1.6:1;
     g.beginPath();
     for(let i=T.a;i<T.b&&i<n;i++)for(const[a,b]of legPaths(S[i],S[i+1])){const c=curve(a,b);g.moveTo(SX(a.x),SY(a.y));g.quadraticCurveTo(SX(c.cx),SY(c.cy),SX(b.x),SY(b.y))}
     g.stroke();
   }
   if(P.hi>=0&&TOURS[P.hi]){const T=TOURS[P.hi];g.strokeStyle=T.col;g.globalAlpha=.85;g.lineWidth=1.6;g.beginPath();for(let i=T.a;i<T.b;i++)for(const[a,b]of legPaths(S[i],S[i+1])){const c=curve(a,b);g.moveTo(SX(a.x),SY(a.y));g.quadraticCurveTo(SX(c.cx),SY(c.cy),SX(b.x),SY(b.y))}g.stroke();g.globalAlpha=1}
   drawPins(now);
-  /* the leg under way, and the point travelling along it */
-  if(cur&&n+1<S.length&&frac>0&&!atEnd()){
-    const a=cur,b=legPaths(cur,S[n+1])[0][1],c=curve(a,b),T=TOURS[curTour],q=frac<.5?2*frac*frac:1-Math.pow(-2*frac+2,2)/2;
-    const pt=u=>({x:(1-u)*(1-u)*a.x+2*(1-u)*u*c.cx+u*u*b.x,y:(1-u)*(1-u)*a.y+2*(1-u)*u*c.cy+u*u*b.y});
-    g.strokeStyle=T.col;g.globalAlpha=.9;g.lineWidth=1.8;g.setLineDash(legFrom(n)?[]:[3,5]);g.beginPath();
-    for(let k=0;k<=18;k++){const p=pt(q*k/18);k?g.lineTo(SX(p.x),SY(p.y)):g.moveTo(SX(p.x),SY(p.y))}
-    g.stroke();g.setLineDash([]);const h=pt(q);g.fillStyle=COL.paper;g.globalAlpha=1;g.beginPath();g.arc(SX(h.x),SY(h.y),3,0,7);g.fill();
+  let homeShown=false;
+  /* home legs already travelled */
+  g.setLineDash([2,5]);g.strokeStyle=COL.paper;g.lineWidth=1;g.globalAlpha=atEnd()?.1:.13;g.beginPath();
+  if(cam.z<VENUE_Z&&!selCity)for(let t=0;t<TOURS.length;t++){const T=TOURS[t];if(T.b>=n||!S[T.b+1])continue;const j=journey(T.b);for(const m of j.segs){if(!m.km)continue;const[x0,y0,x1,y1]=[SX(m.a.x),SY(m.a.y),SX(m.to.x),SY(m.to.y)];if(Math.max(x0,x1)<-400||Math.min(x0,x1)>W+400||Math.max(y0,y1)<-400||Math.min(y0,y1)>H+400)continue;g.moveTo(x0,y0);g.quadraticCurveTo(SX(m.c.cx),SY(m.c.cy),x1,y1)}}
+  g.stroke();g.setLineDash([]);g.globalAlpha=1;
+  /* the journey under way, with its distance marked along the way */
+  if(cur&&n+1<S.length&&!atEnd()&&frac>0){
+    const{seg,u,j}=segAt(n,frac),T=TOURS[curTour];
+    for(const m of j.segs){
+      if(!m.km||m.from>seg.from)continue;
+      const q=m===seg?easeJ(u):1,sameTour=m.kind==='leg';
+      g.strokeStyle=sameTour?T.col:COL.paper;g.globalAlpha=sameTour?.92:.7;g.lineWidth=1.8;g.setLineDash(sameTour?[]:[4,5]);g.beginPath();
+      for(let k=0;k<=30;k++){const p=segPoint(m,q*k/30);k?g.lineTo(SX(p.x),SY(p.y)):g.moveTo(SX(p.x),SY(p.y))}
+      g.stroke();g.setLineDash([]);
+      if(m.km>=1200&&m===seg){
+        const every=m.km>=6000?2000:1000;g.font='10px "IBM Plex Mono",monospace';g.textBaseline='bottom';
+        for(let d=every;d<m.km;d+=every){const v=d/m.km;if(v>q)break;const p=segPoint(m,v),x=SX(p.x),y=SY(p.y);g.fillStyle=COL.paper;g.globalAlpha=.85;g.beginPath();g.arc(x,y,1.8,0,7);g.fill();g.globalAlpha=.75;g.fillText(d.toLocaleString('en-GB')+' km',x+5,y-3)}
+        g.globalAlpha=1;
+      }
+    }
+    const h=headPoint(),hx=SX(h.x),hy=SY(h.y);g.fillStyle=COL.paper;g.globalAlpha=1;g.beginPath();g.arc(hx,hy,3.4,0,7);g.fill();g.strokeStyle=COL.paper;g.globalAlpha=.35;g.lineWidth=1;g.beginPath();g.arc(hx,hy,8,0,7);g.stroke();
+    homeShown=seg.kind==='hold'||seg.kind==='home'||seg.kind==='away';if(homeShown){const x=SX(HOME.x),y=SY(HOME.y);g.globalAlpha=.9;g.strokeStyle=COL.tour[0];g.lineWidth=1.5;g.beginPath();g.arc(x,y,6,0,7);g.stroke();g.font='11px "IBM Plex Mono",monospace';g.textBaseline='middle';g.fillStyle=COL.paper;g.fillText('home',x+11,y)}
   }
   g.globalAlpha=1;
   /* cities: grow with the shows played there so far */
@@ -495,9 +549,9 @@ function drawMap(now){
     g.globalAlpha=inTour?1:(atEnd()?.92:.55);
     g.fillStyle=inTour?TOURS[curTour].col:COL.paper;
     g.beginPath();g.arc(x,y,r,0,7);g.fill();
-    if(c.hasPhotos){g.globalAlpha=.75;g.strokeStyle=COL.tour[0];g.lineWidth=1;g.beginPath();g.arc(x,y,r+2.2,0,7);g.stroke();g.globalAlpha=inTour?1:(atEnd()?.92:.55)}
+    if(c.hasPhotos&&TOUR_PHOTOS){g.globalAlpha=.75;g.strokeStyle=COL.tour[0];g.lineWidth=1;g.beginPath();g.arc(x,y,r+2.2,0,7);g.stroke();g.globalAlpha=inTour?1:(atEnd()?.92:.55)}
     if(selCity===c||hoverCity===c){g.globalAlpha=1;g.strokeStyle=COL.paper;g.lineWidth=1.5;g.beginPath();g.arc(x,y,r+3,0,7);g.stroke()}
-    if(recent)labelled.push(c);
+    if(recent&&!(homeShown&&c.name==='Reykjavík'))labelled.push(c);
   }
   g.globalAlpha=1;
   /* arrival */
@@ -514,15 +568,16 @@ function drawMap(now){
   }
 }
 function yearX(t){const a=day(S[0].d.slice(0,4)+'-01-01'),b=day('2027-01-01');return 8+(t-a)/(b-a)*(yc.clientWidth-16)}
+const YC={w:0,s:null,col:null,max:0};
 function drawYears(){
   const w=yc.clientWidth,h=yc.clientHeight,d=Math.min(2,devicePixelRatio||1);
   if(yc.width!==Math.round(w*d)||yc.height!==Math.round(h*d)){yc.width=Math.round(w*d);yc.height=Math.round(h*d)}
   yg.setTransform(d,0,0,d,0,0);yg.clearRect(0,0,w,h);
-  const base=h-16,ticks=new Map();
-  /* one column per fortnight of touring */
-  const cell=Math.max(2,w/320);const col=new Map();
-  for(const s of S){const x=Math.round(yearX(s.t)/cell);col.set(x,(col.get(x)||[]).concat(s))}
-  const max=Math.max(...[...col.values()].map(c=>c.length));
+  const base=h-16;
+  /* one column per fortnight of touring, worked out once for each width */
+  const cell=Math.max(2,w/320);
+  if(YC.w!==w||YC.s!==S){YC.w=w;YC.s=S;YC.col=new Map();for(const s of S){const x=Math.round(yearX(s.t)/cell);let c=YC.col.get(x);if(!c)YC.col.set(x,c=[]);c.push(s)}YC.max=0;for(const c of YC.col.values())YC.max=Math.max(YC.max,c.length)}
+  const col=YC.col,max=YC.max;
   const n=Math.floor(P.pos);
   for(const[x,list]of col){
     const bh=Math.max(2,list.length/max*(base-3)),past=list[0].i<=n;
@@ -543,17 +598,17 @@ function frame(now){
     const n=Math.floor(P.pos);
     /* within a tour it travels at show speed; between tours it holds a moment while the camera moves */
     P.rate+=((P.slow?SLOW_RATE:P.speed)-P.rate)*(1-Math.exp(-dt/.45));
-    const speed=P.hold>now?0:Math.max(P.rate/legSeconds(n),P.slow?1/10:0);
-    tickLeg(dt);
+    const speed=P.hold>now?0:Math.max(P.rate/legSeconds(n),P.slow?1/40:0);
+    tickLeg(dt);journeyCaption();
     if(P.pos>=LAST()){play(false);P.armed=false;syncSpeed();clearPins();Back.cur=Back.prev=null;$('#leg').classList.remove('on','caponly');P.scrubbed=false;cam.manual=false;fitWorld();showCaption()}
     else setPos(P.pos+dt*speed);
     dirty=true;
   }
   followCam();
-  const k=1-Math.exp(-dt/(P.cityBack?.6:P.view==='follow'&&!cam.manual&&!atEnd()?(P.slow?.45:clamp(.2/P.rate,.08,.4)):(P.slow?1.1:(P.playing?.55:.28))));
+  const k=1-Math.exp(-dt/(P.cityBack?.6:P.view==='follow'&&!cam.manual&&!atEnd()?(P.slow?.5:clamp(.3/P.rate,.1,.45)):(P.slow?1.1:(P.playing?.55:.28))));
   const near=.25/cam.z;if(Math.abs(cam.x-cam.tx)>near||Math.abs(cam.y-cam.ty)>near||Math.abs(cam.z-cam.tz)>cam.z*.0008){
     const following=P.view==='follow'&&!cam.manual&&!atEnd();
-    const kz=P.cityBack?1-Math.exp(-dt/.75):(following?1-Math.exp(-dt/(P.hold>now?.8:(cam.tz<cam.z?.3:.9))):k);
+    const kz=P.cityBack?1-Math.exp(-dt/.75):(following?1-Math.exp(-dt/1.6):k);
     const lz=Math.log(cam.z)+(Math.log(cam.tz)-Math.log(cam.z))*kz;cam.z=Math.exp(lz);cam.x+=(cam.tx-cam.x)*k;cam.y+=(cam.ty-cam.y)*k;dirty=true;
   }
   if(dirty){dirty=false;drawMap(now);drawYears()}
@@ -615,7 +670,7 @@ function focusCity(c,year){
   let vs=[...c.venues.values()];if(year){const inYear=vs.filter(v=>v.shows.some(s=>s.d.startsWith(year)));if(inYear.length)vs=inYear}
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(const v of vs){x0=Math.min(x0,v.x);x1=Math.max(x1,v.x);y0=Math.min(y0,v.y);y1=Math.max(y1,v.y)}
   cam.manual=true;
-  fitBox(x0,x1,y0,y1,W>700?110:46,.03,W>700?7000:4500);
+  fitBox(x0,x1,y0,y1,W>700?110:46,.1,W>700?2400:1600);
 }
 function closeCity(){
   const open=$('#panel').classList.contains('open');selCity=null;selYear=null;P.hi=-1;$('#panel').classList.remove('open');
@@ -643,8 +698,10 @@ $('#pop').addEventListener('click',ev=>{
 addEventListener('pointerdown',ev=>{if(!$('#pop').hidden&&!ev.target.closest('#pop,#viewBtn,#photoBtn'))closeMenu()});
 function syncMenus(){$('#photoBtn').classList.toggle('on',P.photos!=='off')}
 $('#close').onclick=closeCity;
-$('#speed').addEventListener('click',ev=>{const b=ev.target.closest('[data-speed]');if(!b)return;if(b.dataset.speed==='slow'&&!P.playing){P.armed=!P.armed;b.setAttribute('aria-pressed',P.armed);if(P.armed)document.querySelectorAll('#speed button:not([data-speed=slow])').forEach(x=>x.setAttribute('aria-pressed',false));else syncSpeed();return}setSpeed(b.dataset.speed)});
-if(window.ResizeObserver)new ResizeObserver(()=>{syncChrome();dirty=true}).observe($('#foot'));
+function syncSound(){$('#snd').setAttribute('aria-pressed',soundOn)}
+$('#snd').onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('gt.live.sound',soundOn?'on':'off')}catch(e){}syncSound();if(soundOn)songFor();else stopSong()};
+$('#speed').addEventListener('click',ev=>{const b=ev.target.closest('[data-speed]');if(!b)return;if(b.dataset.speed==='slow'&&!P.playing){P.armed=!P.armed;b.setAttribute('aria-pressed',P.armed);if(P.armed)document.querySelectorAll('#speed [data-speed]:not([data-speed=slow])').forEach(x=>x.setAttribute('aria-pressed',false));else syncSpeed();return}setSpeed(b.dataset.speed)});
+if(window.ResizeObserver){const ro=new ResizeObserver(()=>{syncChrome();dirty=true});ro.observe($('#foot'));ro.observe($('#bar'))}
 $('#pBody').addEventListener('click',ev=>{
   const b=ev.target.closest('[data-ph]');if(b){openPhotos(S[+b.dataset.show],+b.dataset.ph);return}
   const y=ev.target.closest('[data-year]');if(y){openCity(selCity,y.dataset.year);return}
@@ -660,8 +717,8 @@ $('#doubt').onclick=ev=>{showDoubt=!showDoubt;ev.currentTarget.setAttribute('ari
 addEventListener('keydown',ev=>{if(!$('#view').hidden){if(ev.key==='Escape')closePhotos();else if(ev.key==='ArrowRight')stepPhoto(1);else if(ev.key==='ArrowLeft')stepPhoto(-1);return}if(ev.key===' '&&ev.target.tagName!=='BUTTON'){ev.preventDefault();play(!P.playing)}else if(ev.key==='Escape')closeCity();else if((ev.key==='s'||ev.key==='S')&&P.playing){setSlow(!P.slow);P.armed=P.slow}else if((ev.key==='+'||ev.key==='=')||ev.key==='-'){const L=[.5,1,2,4],i=L.indexOf(P.speed)+(ev.key==='-'?-1:1);if(L[i])setSpeed(L[i])}else if(ev.key==='ArrowRight'){P.scrubbed=true;setPos(Math.floor(P.pos)+1,true)}else if(ev.key==='ArrowLeft'){P.scrubbed=true;setPos(Math.floor(P.pos)-1,true)}});
 function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;if(atEnd()&&!cam.manual&&!P.scrubbed){fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz}else aim();if(!(cam.z>0)){cam.z=cam.tz>0?cam.tz:1;cam.x=cam.tx;cam.y=cam.ty}dirty=true}
 addEventListener('resize',()=>{resize();syncChrome()});
-window.__live={followBase,legSeconds,followZoom,TILES,closeCity,focusCity,Pins,Back,headPoint,photoMode,setSpeed,setSlow,Leg,openPhotos,photosOf,P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,au,play,setPos,openCity,SX,SY};
-syncMenus();syncSpeed();syncChrome();resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
+window.__live={get TOURS(){return ()=>TOURS},runZoom,journey,segAt,HOME,followBase,legSeconds,followZoom,closeCity,focusCity,Pins,Back,headPoint,photoMode,setSpeed,setSlow,Leg,openPhotos,photosOf,P,cam,S:()=>S,CITIES:()=>CITIES,TOURS:()=>TOURS,au,play,setPos,openCity,SX,SY};
+syncSound();syncMenus();syncSpeed();syncChrome();resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
 requestAnimationFrame(frame);
 </script>
