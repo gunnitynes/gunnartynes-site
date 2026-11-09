@@ -122,6 +122,8 @@ section>h3{font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;c
           <option value="nosound">No sound at all</option>
           <option value="nocover">No cover</option>
           <option value="norole">No role marked</option>
+          <option value="film">On the Film &amp; TV page</option>
+          <option value="filmtodo">Film &amp; TV: credit to describe</option>
           <option value="hidden">Other appearances</option>
         </select>
         <button id="addBtn">Add a release</button>
@@ -242,6 +244,8 @@ function visible(){
     if(show==='nosound')return !hasSound(e);
     if(show==='nocover')return !e.cover;
     if(show==='norole')return !(e.roles||[]).length;
+    if(show==='film')return (e.roles||[]).includes('F');
+    if(show==='filmtodo')return (e.roles||[]).includes('F')&&filmGroup(e)==='more';
     return true;
   });
 }
@@ -253,6 +257,19 @@ function renderList(){
 $('#q').addEventListener('input',renderList);$('#show').addEventListener('change',renderList);
 $('#list').addEventListener('click',ev=>{const b=ev.target.closest('[data-id]');if(b)openEditor(b.dataset.id)});
 $('#addBtn').onclick=()=>openEditor(null);
+
+/* ---------- Film & TV ---------- */
+/* The same grouping the Film & TV page uses; a group chosen here wins over the automatic one. */
+const FILM_GROUPS=[['','Automatic, from the credit'],['composer','Composer'],['score','Score production, programming, editing and mixing'],['assist','Assistant to the composer'],['songs','Songs in films'],['more','On screen and more']];
+const FILM_KINDS=['film','documentary','series','miniseries','short','video game','podcast','live score','theatre','radio play','concert'];
+function filmGroup(e){
+  const f=e.film||{};if(f.group)return f.group;const r=f.role||'';
+  if(/perform|wrote|writer/i.test(r))return'songs';
+  if(/assistant/i.test(r))return'assist';
+  if(/^composer|composer of|theme music|original score|composer,/i.test(r))return'composer';
+  if(/editor|mix|producer|production|additional|programmer|recordist|engineer|editing/i.test(r))return'score';
+  return'more';
+}
 
 /* ---------- editor ---------- */
 const lines=a=>(a||[]).join('\n');
@@ -299,13 +316,21 @@ function openEditor(id){
     ${field('Places, one per line','places',lines(e.places),{area:3,full:1})}
     ${field('Other credits, one per line','others',lines(e.others),{area:3,full:1})}
   </div></section>
-  <section><h3>Film and screen</h3><div class="checks" style="margin-bottom:12px"><label><input type="checkbox" name="screen"${e.screen?' checked':''}> This is a screen work with no record of its own</label></div><div class="grid">
-    ${field('Kind','f_kind',f.kind||'',{ph:'film, series, documentary'})}
-    ${field('Your screen credit','f_role',f.role||'')}
+  <section><h3>Film &amp; TV</h3>
+    <p class="hint" style="color:var(--dim);margin:-4px 0 12px;max-width:62ch">Tick <b>Film &amp; screen</b> under roles to show this on the Film &amp; TV page. ${(e.roles||[]).includes('F')&&!isNew?`It is there now, in <b>${esc((FILM_GROUPS.find(g=>g[0]===filmGroup(e))||['',''])[1])}</b>. <a href="../film/#${esc(e.id)}" target="_blank" rel="noopener" style="color:var(--paper)">See it on the page</a>`:''}</p>
+    <div class="checks" style="margin-bottom:12px"><label><input type="checkbox" name="screen"${e.screen?' checked':''}> This is a screen work with no record of its own</label></div><div class="grid">
+    ${field('Kind','f_kind',f.kind||'',{select:[['','Choose'],...FILM_KINDS.map(k=>[k,k[0].toUpperCase()+k.slice(1)]),...(f.kind&&!FILM_KINDS.includes(f.kind)?[[f.kind,f.kind]]:[])]})}
+    ${field('Group on the Film &amp; TV page','f_group',f.group||'',{select:FILM_GROUPS})}
+    ${field('Your screen credit, as shown on the page','f_role',f.role||'',{full:1,ph:'composer · music editor, 5 episodes · performed “Song”, with múm'})}
     ${field('Director, commas between names','f_director',(f.director||[]).join(', '))}
     ${field('Music by','f_composer',f.composer||'')}
-    ${field('Credited as','f_as',f.creditedAs||'')}
-    ${field('Nomination','f_nom',f.nomination||'')}
+    ${field('Genre, commas between','f_genres',(f.genres||[]).join(', '))}
+    ${field('Length in minutes','f_minutes',f.minutes==null?'':String(f.minutes),{ph:'e.g. 104'})}
+    ${field('Country','f_country',f.country||'')}
+    ${field('Language, commas between','f_languages',(f.languages||[]).join(', '))}
+    ${field('Production companies, commas between','f_production',(f.production||[]).join(', '),{full:1})}
+    ${field('Credited as','f_as',f.creditedAs||'',{ph:'only if not Gunnar Tynes'})}
+    ${field('Nomination or award','f_nom',f.nomination||'')}
   </div></section>
   <section><h3>Links</h3><div class="grid">${Object.keys(LINKS).map(k=>field(LINKS[k],'link_'+k,(e.links||{})[k]||'',{type:'url'})).join('')}</div></section>
   <div id="saveBar">
@@ -512,8 +537,13 @@ $('#form').addEventListener('submit',async ev=>{
       e.labels=fromComma(v('labels'));e.formats=fromComma(v('formats'));e.styles=fromComma(v('styles'));
       e.places=fromLines(v('places'));e.others=fromLines(v('others'));
       const links={...(e.links||{})};Object.keys(LINKS).forEach(k=>{if(v('link_'+k))links[k]=v('link_'+k);else delete links[k]});e.links=links;
-      const fk=v('f_kind'),fr=v('f_role'),fdir=fromComma(v('f_director')),fc=v('f_composer'),fa=v('f_as'),fn=v('f_nom');
-      if(fk||fr||fdir.length||fc||fa||fn)e.film={...(e.film||{}),kind:fk,role:fr,director:fdir,composer:fc||null,creditedAs:fa||null,nomination:fn||null};else delete e.film;
+      const fk=v('f_kind'),fr=v('f_role'),fdir=fromComma(v('f_director')),fc=v('f_composer'),fa=v('f_as'),fn=v('f_nom'),fg=v('f_group'),
+        fgen=fromComma(v('f_genres')),fmin=parseInt(v('f_minutes'),10),fco=v('f_country'),flang=fromComma(v('f_languages')),fprod=fromComma(v('f_production'));
+      if(fk||fr||fdir.length||fc||fa||fn||fg||fgen.length||fmin||fco||flang.length||fprod.length||e.roles.includes('F')){
+        e.film={...(e.film||{}),kind:fk,role:fr,director:fdir,composer:fc||null,creditedAs:fa||null,nomination:fn||null,genres:fgen,minutes:fmin>0?fmin:null,languages:flang,production:fprod};
+        if(fco)e.film.country=fco;else delete e.film.country;
+        if(fg)e.film.group=fg;else delete e.film.group;
+      }else delete e.film;
       if(d.get('screen'))e.screen=true;else delete e.screen;
       if(coverPath)e.cover=coverPath;
       const song=v('song');

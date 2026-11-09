@@ -104,7 +104,7 @@ section.g header p{flex-basis:100%;margin:2px 0 0;color:var(--dim);font-size:14p
 'use strict';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 if(window.BOOKING&&BOOKING.endpoint)$('#bookLink').hidden=false;
-const ALL=(window.CATALOGUE||[]).filter(e=>e.tier==='core'&&(e.roles||[]).includes('F')&&e.film);
+const ALL=(window.CATALOGUE||[]).filter(e=>e.tier==='core'&&(e.roles||[]).includes('F'));ALL.forEach(e=>{if(!e.film)e.film={}});
 const KIND={film:'Film',documentary:'Documentary',series:'Series',miniseries:'Miniseries',short:'Short film','video game':'Video game',podcast:'Podcast'};
 const kind=e=>KIND[e.film.kind]||(e.film.kind?e.film.kind[0].toUpperCase()+e.film.kind.slice(1):'');
 /* What Gunnar did, read from the credit itself. The order matters: songs before score, assistant before composer. */
@@ -116,6 +116,7 @@ const GROUPS=[
   ['more','On screen and more','Appearances, and work still to be described.'],
 ];
 function groupOf(e){
+  if(e.film.group&&GROUPS.some(g=>g[0]===e.film.group))return e.film.group;
   const r=e.film.role||'';
   if(/perform|wrote|writer/i.test(r))return'songs';
   if(/assistant/i.test(r))return'assist';
@@ -123,7 +124,7 @@ function groupOf(e){
   if(/editor|mix|producer|production|additional|programmer|recordist|engineer|editing/i.test(r))return'score';
   return'more';
 }
-const roleText=e=>{const r=e.film.role||'';return /^film and tv work$/i.test(r)?'':r[0].toUpperCase()+r.slice(1)};
+const roleText=e=>{const r=e.film.role||'';return !r||/^film and tv work$/i.test(r)?'':r[0].toUpperCase()+r.slice(1)};
 const years=ALL.map(e=>e.year);$('#years').textContent=`${Math.min(...years)} – ${Math.max(...years)}`;
 {const c={};for(const e of ALL){const k=kind(e).toLowerCase();c[k]=(c[k]||0)+1}
  const words={film:['film','films'],documentary:['documentary','documentaries'],series:['series','series'],miniseries:['miniseries','miniseries'],'short film':['short film','short films'],'video game':['video game','video games'],podcast:['podcast','podcasts']};
