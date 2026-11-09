@@ -152,6 +152,53 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
   #panel{top:auto;left:0;right:0;width:auto;height:calc(58% - 34px);border-left:0;border-top:1px solid var(--rule);transform:translateY(102%)}
   #full{left:6%;right:6%;top:auto;bottom:14%;transform:none}
 }
+
+/* The welcome: a quiet front door before the timeline. Shown once per visit; the name in the bar brings it back. */
+#welcome{position:fixed;inset:0;z-index:20;display:grid;place-items:center;overflow:auto;padding:max(24px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));
+  background:radial-gradient(120% 90% at 50% 30%,#181c27 0%,#11141b 62%);transition:opacity .8s ease,visibility 0s linear .8s,transform 1s cubic-bezier(.2,.7,.2,1)}
+#welcome.out{opacity:0;visibility:hidden;transform:scale(1.03);pointer-events:none}
+#welcome .wk{width:min(1060px,100%)}
+#welcome .eyebrow{font:500 12px/1 var(--mono);letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
+#welcome h2{margin:16px 0 0;font:400 clamp(52px,9vw,124px)/.95 var(--serif);letter-spacing:-.015em;color:#fff}
+#welcome .lede{margin:22px 0 0;max-width:34em;font:400 clamp(16px,1.5vw,19px)/1.5 var(--sans);color:var(--dim)}
+#welcome .doors{list-style:none;margin:clamp(36px,7vh,72px) 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--rule)}
+#welcome .doors li+li .door{border-left:1px solid var(--rule)}
+#welcome .door{display:grid;grid-template-rows:auto auto 1fr auto;gap:6px;width:100%;height:100%;text-align:left;padding:20px 22px 22px;position:relative;transition:background .35s;outline:none}
+#welcome .door:hover,#welcome .door:focus-visible{background:#ffffff07}
+#welcome .door .n{font:500 11px/1 var(--mono);letter-spacing:.14em;color:var(--faint)}
+#welcome .door .t{font:italic 400 clamp(30px,3.2vw,42px)/1.05 var(--serif);color:#fff;transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+#welcome .door .t::after{content:" →";font-style:normal;font-family:var(--sans);font-size:.6em;opacity:0;margin-left:2px;transition:opacity .35s}
+#welcome .door:hover .t,#welcome .door:focus-visible .t{transform:translateX(6px)}
+#welcome .door:hover .t::after,#welcome .door:focus-visible .t::after{opacity:.8}
+#welcome .door .d{font:14.5px/1.4 var(--sans);color:var(--dim)}
+#welcome .door .pv{height:46px;margin-top:16px;display:flex;align-items:center;overflow:hidden}
+#welcome .door::before{content:"";position:absolute;left:0;right:0;top:-1px;height:1px;background:var(--paper);transform:scaleX(0);transform-origin:left;transition:transform .55s cubic-bezier(.2,.7,.2,1)}
+#welcome .door:hover::before,#welcome .door:focus-visible::before{transform:none}
+#welcome .strip{display:flex;gap:5px;animation:drift 38s linear infinite;will-change:transform}
+#welcome .strip img{width:40px;height:40px;object-fit:cover;flex:none;border-radius:1px;opacity:.9}
+@keyframes drift{to{transform:translateX(-50%)}}
+#welcome .disc{width:46px;height:46px;border-radius:50%;flex:none;background:repeating-radial-gradient(circle at 50% 50%,#0b0d12 0 1.4px,#1d212c 1.6px 2.6px);position:relative;animation:spin 7s linear infinite;box-shadow:0 0 0 1px #ffffff14}
+#welcome .disc img{position:absolute;inset:30%;width:40%;height:40%;border-radius:50%;object-fit:cover}
+@keyframes spin{to{transform:rotate(360deg)}}
+#welcome .route{width:150px;height:46px;overflow:visible}
+#welcome .note{margin:26px 0 0;font:12px var(--mono);color:var(--faint)}
+#welcome .rise{opacity:0;transform:translateY(14px);animation:rise 1s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--d,0s)}
+@keyframes rise{to{opacity:1;transform:none}}
+#enterHint{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translate(-50%,8px);z-index:6;font:12px var(--mono);color:var(--paper);background:var(--plate2);box-shadow:0 6px 24px #000a;padding:8px 13px;border-radius:2px;opacity:0;transition:opacity .7s,transform .7s;pointer-events:none;white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
+#enterHint.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:700px){
+  #welcome .doors{grid-template-columns:1fr}
+  #welcome .doors li+li .door{border-left:0;border-top:1px solid var(--rule)}
+  #welcome .door{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:16px;padding:16px 4px 16px 0;align-items:center}
+  #welcome .door .n{display:none}
+  #welcome .door .t{font-size:30px}
+  #welcome .door .d{grid-row:2;font-size:13.5px}
+  #welcome .door .pv{grid-column:2;grid-row:1/3;margin:0;width:92px;justify-content:flex-end}
+  #welcome .strip img{width:30px;height:30px}#welcome .route{width:92px}
+  #enterHint{white-space:normal;text-align:center;width:max-content}
+}
+@media (max-height:640px){#welcome h2{font-size:clamp(44px,8vw,84px)}#welcome .lede{margin-top:12px;font-size:15px}#welcome .doors{margin-top:22px}#welcome .door{padding-top:12px;padding-bottom:12px}#welcome .door .t{font-size:27px}}
+@media (prefers-reduced-motion:reduce){#welcome .rise{animation:none;opacity:1;transform:none}#welcome .strip,#welcome .disc{animation:none}#welcome{transition:none}}
 </style>
 </head>
 <body>
@@ -224,6 +271,19 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
   </div>
 </div>
 
+<section id="welcome" aria-label="Welcome" hidden>
+  <div class="wk">
+    <div class="eyebrow rise" style="--d:.05s" id="wYears"></div>
+    <h2 class="rise" style="--d:.15s">gunnar tynes</h2>
+    <p class="lede rise" style="--d:.35s">Recordings, film, stage and radio work, and concerts, from 1997 to now.</p>
+    <ul class="doors">
+      <li class="rise" style="--d:.55s"><button type="button" class="door" data-go="line"><span class="n">01</span><span class="t">Timeline</span><span class="d">Every release, year by year</span><span class="pv"><span class="strip" id="wStrip"></span></span></button></li>
+      <li class="rise" style="--d:.68s"><button type="button" class="door" data-go="disc"><span class="n">02</span><span class="t">Record</span><span class="d">Play the catalogue like a record</span><span class="pv"><span class="disc"><img id="wDisc" alt=""></span></span></button></li>
+      <li class="rise" style="--d:.81s"><button type="button" class="door" data-go="live"><span class="n">03</span><span class="t">Live</span><span class="d">The concerts, tour by tour, on a map</span><span class="pv"><svg class="route" viewBox="0 0 150 46" aria-hidden="true"><path id="wPath" d="M6 36 Q34 4 62 24 T118 16 Q132 12 144 30" fill="none" stroke="#ffffff38" stroke-width="1.2" stroke-dasharray="3 4"/><circle cx="6" cy="36" r="2.2" fill="#a3a6ad"/><circle cx="62" cy="24" r="2.2" fill="#a3a6ad"/><circle cx="118" cy="16" r="2.2" fill="#a3a6ad"/><circle cx="144" cy="30" r="2.2" fill="#a3a6ad"/><circle r="3.6" fill="#e6b450"><animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines=".45 0 .55 1"><mpath href="#wPath"/></animateMotion></circle></svg></span></button></li>
+    </ul>
+  </div>
+</section>
+<div id="enterHint" aria-live="polite"></div>
 <script src="catalogue.js"></script>
 <script>
 'use strict';
@@ -734,7 +794,7 @@ Object.keys(ROLE).forEach(k=>{const b=document.createElement('button');b.classNa
   if(active.size===Object.keys(ROLE).length){active.clear();active.add(k)}else if(active.has(k)){active.delete(k);if(!active.size)Object.keys(ROLE).forEach(r=>active.add(r))}else active.add(k);
   [...rb.children].forEach((c,i)=>c.setAttribute('aria-pressed',active.has(Object.keys(ROLE)[i])));syncFilter();dirty=true};rb.appendChild(b)});
 $('#q').addEventListener('input',ev=>{query=ev.target.value.trim().toLowerCase();dirty=true});
-$('#bar').querySelector('h1').onclick=()=>{select(null);if(orient==='v'&&view.name==='line'){cam.ty=-1e9;clampCam();cam.tau=.45;dirty=true}else fitAll();if(view.name==='disc'){disc.target=disc.stops[0];discTouch()}};
+$('#bar').querySelector('h1').onclick=()=>{if(mode==='browse'){openWelcome();return}select(null);if(orient==='v'&&view.name==='line'){cam.ty=-1e9;clampCam();cam.tau=.45;dirty=true}else fitAll();if(view.name==='disc'){disc.target=disc.stops[0];discTouch()}};
 $('#filterBtn').onclick=()=>{const f=$('#filters');f.hidden=!f.hidden;$('#filterBtn').setAttribute('aria-expanded',!f.hidden)};
 function syncFilter(){const on=active.size<Object.keys(ROLE).length||showApp;$('#filterBtn').classList.toggle('on',on);$('#filterBtn').textContent=on?'Filter on':'Filter'}
 /* Sound starts on. Browsers keep a page silent until the visitor's first click, tap or key, so soundLive says whether it can really be heard yet. */
@@ -1249,22 +1309,70 @@ $('#vLine').onclick=()=>setView('line');
 $('#vDisc').onclick=()=>setView('disc');
 $('#discPlay').onclick=discToggle;
 
-window.__cat={sound:()=>soundOn,live:()=>discLive(),discPos,discPhi,view,disc,setView,talk,cam,audio,items:()=>items,select,startTalk,next,plan,cfg,state:()=>({mode,finished,sel:sel&&sel.id})};
+window.__cat={openWelcome,enterFrom,sound:()=>soundOn,live:()=>discLive(),discPos,discPhi,view,disc,setView,talk,cam,audio,items:()=>items,select,startTalk,next,plan,cfg,state:()=>({mode,finished,sel:sel&&sel.id})};
 layout();
 addEventListener('resize',resize);resize();fitAll(true);
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
 const wantedView=(location.search.match(/[?&]view=(record|timeline)/)||[])[1];
 const startDisc=wantedView?wantedView==='record':store.get('gt.view2','line')==='disc';
-if(!REDUCED&&!startDisc){
+/* The covers fly in once they have loaded, or after a moment regardless. */
+function startIntro(){
+  if(REDUCED)return;
   intro.t0=performance.now()+1e7;
-  const go=()=>{if(intro.t0>performance.now())intro.t0=performance.now()};
+  const go=()=>{if(intro.t0>performance.now())intro.t0=performance.now()+120};
   const pending=ALL.filter(e=>e.cover&&items.includes(e));
-  let n=0;const tick=()=>{n=pending.filter(e=>e.img).length;if(n>=pending.length*.9)go();else if(mode==='browse'&&intro.t0>performance.now())setTimeout(tick,60)};
+  const tick=()=>{if(pending.filter(e=>e.img).length>=pending.length*.9)go();else if(mode==='browse'&&intro.t0>performance.now())setTimeout(tick,60)};
   tick();setTimeout(go,1100);
+}
+/* ---------- the welcome ---------- */
+let seenWelcome=false;try{seenWelcome=sessionStorage.getItem('gt.welcomed')==='1'}catch(e){}
+(function buildWelcome(){
+  $('#wYears').textContent=`${Y0} – ${Y1}`;
+  const covers=ALL.filter(e=>e.tier==='core'&&e.cover).sort((a,b)=>a.year-b.year),pick=[];
+  for(let i=0;i<12;i++){const e=covers[Math.round(i*(covers.length-1)/11)];if(e&&!pick.includes(e))pick.push(e)}
+  $('#wStrip').innerHTML=[...pick,...pick].map(e=>`<img src="${esc(e.cover)}" alt="" loading="eager" decoding="async">`).join('');
+  const rec=covers.find(e=>/finally we are no one/i.test(e.title))||covers[0];if(rec)$('#wDisc').src=rec.cover;
+})();
+function openWelcome(){
+  const w=$('#welcome');select(null);stopAudio(.4);hover=null;$('#tip').style.display='none';hideEnterHint();
+  w.hidden=false;w.classList.remove('out');
+  /* replay the entrance */
+  w.querySelectorAll('.rise').forEach(el=>{el.style.animation='none';void el.offsetWidth;el.style.animation=''});
+  setTimeout(()=>{const d=w.querySelector('.door');if(d)d.focus({preventScroll:true})},REDUCED?0:700);
+}
+let hintTimer=0;
+function hideEnterHint(){$('#enterHint').classList.remove('on')}
+function showEnterHint(){
+  const t=matchMedia('(hover: none)').matches;
+  $('#enterHint').textContent=t?'Tap a cover to play it · tap again for more':'Click a cover to hear it, click it again to read about it · drag to move through the years';
+  /* In the vertical layout the bottom belongs to the docked title, so the hint sits under the header. */
+  const h=$('#enterHint'),vert=document.body.classList.contains('vert');h.style.top=vert?($('#bar').offsetHeight+6)+'px':'';h.style.bottom=vert?'auto':'';
+  $('#enterHint').classList.add('on');clearTimeout(hintTimer);hintTimer=setTimeout(hideEnterHint,6500);
+}
+cv.addEventListener('pointerdown',()=>{if($('#enterHint').classList.contains('on'))setTimeout(hideEnterHint,1200)});
+function enterFrom(go){
+  if(go==='live'){location.href='live/';return}
+  try{sessionStorage.setItem('gt.welcomed','1')}catch(e){}
+  const w=$('#welcome');w.classList.add('out');setTimeout(()=>{if(w.classList.contains('out'))w.hidden=true},REDUCED?0:900);
+  if(go==='disc'){focus=null;if(view.name!=='disc')setView('disc');else{disc.target=disc.stops[0];discTouch()}return}
+  if(view.name!=='line')setView('line');
+  if(orient==='v'){cam.ty=-1e9;clampCam();cam.y=cam.ty}else fitAll(true);
+  items.forEach(e=>{e._iy=0});startIntro();dirty=true;
+  setTimeout(showEnterHint,REDUCED?0:1500);
+}
+$('#welcome').addEventListener('click',ev=>{const d=ev.target.closest('[data-go]');if(d)enterFrom(d.dataset.go)});
+addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!$('#welcome').hidden&&!$('#welcome').classList.contains('out')){ev.stopPropagation();enterFrom('line')}},true);
+if(!wantedView&&!seenWelcome){
+  /* Behind the welcome the covers wait in their places, unseen, until a door is chosen. */
+  if(!REDUCED)intro.t0=performance.now()+1e7;
+  $('#welcome').hidden=false;
+  setTimeout(()=>{const d=$('#welcome .door');if(d)d.focus({preventScroll:true})},REDUCED?0:900);
+}else{
+  if(!startDisc)startIntro();
 }
 syncLayout();
 /* Opening on the record always starts at the beginning of the career. */
-if(startDisc){setTimeout(()=>{focus=null;setView('disc')},REDUCED?0:500)}
+if(startDisc&&(wantedView||seenWelcome)){setTimeout(()=>{focus=null;setView('disc')},REDUCED?0:500)}
 requestAnimationFrame(frame);
 </script>
 </body>
