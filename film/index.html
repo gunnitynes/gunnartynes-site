@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gunnar Tynes: Film &amp; TV</title>
+<meta name="description" content="Film, television and other screen work: scores, score production, editing and mixing, and songs in films.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{color-scheme:dark;--ground:#11141b;--plate:#1a1e28;--plate2:#242936;--rule:#ffffff1c;--paper:#ece8dc;--dim:#a3a6ad;--faint:#6f747f;--p:#e6b450;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;--sans:"Instrument Sans","Helvetica Neue",Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html{background:var(--ground)}
+body{margin:0;min-height:100vh;background:radial-gradient(120% 60% at 50% 0%,#181c27 0%,#11141b 55%);color:var(--paper);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+body.sheet{overflow:hidden}
+a{color:inherit}button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+#bar{position:sticky;top:0;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:14px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141b 72%,#11141b00);z-index:5}
+#bar h1{margin:0;font:400 20px/1 var(--serif);white-space:nowrap}#bar h1 a{text-decoration:none}
+#views{display:flex;flex-wrap:wrap;gap:6px 12px}
+.quiet{font-size:13px;color:var(--dim);padding:3px 2px;border-bottom:1px solid transparent;text-decoration:none;transition:color .15s}.quiet:hover{color:var(--paper)}.quiet.on,.quiet[aria-pressed=true]{color:var(--paper);border-color:var(--paper)}
+main{width:min(1240px,100%);margin:0 auto;padding:clamp(24px,6vh,64px) max(20px,env(safe-area-inset-right,0px)) 100px max(20px,env(safe-area-inset-left,0px))}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
+h2{margin:14px 0 0;font:400 clamp(52px,8vw,108px)/.95 var(--serif);letter-spacing:-.015em;color:#fff}
+.lede{margin:18px 0 0;color:var(--dim);max-width:36em;font-size:clamp(15px,1.4vw,17px)}
+.tools{display:flex;gap:16px;align-items:center;margin:34px 0 0;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+.tools small{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+section.g{margin-top:clamp(36px,6vh,64px)}
+section.g header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin-bottom:18px}
+section.g h3{margin:0;font:italic 400 clamp(26px,2.6vw,34px)/1.1 var(--serif);color:#fff}
+section.g header span{font:12px var(--mono);color:var(--faint)}
+section.g header p{flex-basis:100%;margin:2px 0 0;color:var(--dim);font-size:14px;max-width:44em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:28px 20px}
+.card{display:block;width:100%;text-align:left;opacity:0;transform:translateY(16px);transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
+.card.in{opacity:1;transform:none}
+.card .fr{display:block;position:relative;aspect-ratio:2/3;background:var(--plate);overflow:hidden;border-radius:1px;box-shadow:0 10px 30px #0007;transition:transform .45s cubic-bezier(.2,.7,.2,1),box-shadow .45s}
+.card .fr img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.card .fr img.fill{object-fit:cover}
+.card:hover .fr,.card:focus-visible .fr{transform:translateY(-4px);box-shadow:0 18px 40px #000a}
+.card:hover .fr img{transform:scale(1.03)}
+.card .tag{position:absolute;left:8px;top:8px;font:500 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ground);background:var(--p);padding:4px 6px;border-radius:1px}
+.card b{display:block;margin-top:11px;font:italic 400 18px/1.15 var(--serif);color:#fff}
+.card .m{display:block;margin-top:4px;font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.card .r{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:4px;font-size:13px;line-height:1.35;color:var(--dim)}
+.card:focus-visible{outline:none}.card:focus-visible .fr{outline:2px solid var(--paper);outline-offset:3px}
+/* the details sheet */
+#scrim{position:fixed;inset:0;background:#0b0d12a6;opacity:0;pointer-events:none;transition:opacity .35s;z-index:8}#scrim.on{opacity:1;pointer-events:auto}
+#panel{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--plate);z-index:9;transform:translateX(102%);transition:transform .38s cubic-bezier(.2,.7,.2,1);overflow:auto;padding:22px 26px 48px;box-shadow:-14px 0 50px #0008}
+#panel.on{transform:none}
+#close{position:absolute;top:12px;right:14px;font-size:26px;line-height:1;color:var(--dim);padding:6px 8px}#close:hover{color:var(--paper)}
+#panel .pp{width:62%;max-height:46vh;aspect-ratio:2/3;object-fit:contain;display:block;margin:6px 0 18px;background:var(--ground);box-shadow:0 14px 40px #000a}
+#panel h4{margin:0 30px 0 0;font:italic 400 32px/1.08 var(--serif);color:#fff}
+#panel .meta{margin-top:7px;font:12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+#panel .role{margin:16px 0 0;font:400 17px/1.4 var(--sans);color:var(--paper)}
+#panel .nom{margin-top:12px;font-size:13.5px;color:var(--p)}
+#panel dl{margin:20px 0 0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px}
+#panel dt{font:500 10.5px/1.9 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
+#panel dd{margin:0;color:var(--dim)}
+#panel .links{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+#panel .links a,#listen{font:12.5px var(--mono);border:1px solid #ffffff38;border-radius:2px;padding:5px 10px;text-decoration:none;color:var(--paper)}
+#panel .links a:hover,#listen:hover{border-color:var(--paper)}
+#listen{display:inline-flex;gap:8px;align-items:center;margin-top:18px}#listen.on{background:var(--paper);color:var(--ground)}
+#listen small{font-size:11px;opacity:.75}
+@media (max-width:700px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 14px}
+  .card b{font-size:16px}.card .r{font-size:12.5px}
+  #panel{top:auto;left:0;width:auto;height:84%;transform:translateY(102%);border-radius:6px 6px 0 0;padding:18px 20px 40px;box-shadow:0 -14px 50px #0008}
+  #panel .pp{width:46%}
+}
+@media (prefers-reduced-motion:reduce){.card{opacity:1;transform:none;transition:none}#panel,#scrim{transition:none}}
+</style>
+</head>
+<body>
+<header id="bar">
+  <h1><a href="../" title="Back to the start">gunnar tynes</a></h1>
+  <nav id="views" aria-label="Pages">
+    <a class="quiet" href="../?view=timeline">Timeline</a>
+    <a class="quiet" href="../?view=record">Record</a>
+    <span class="quiet on" aria-current="page">Film &amp; TV</span>
+    <a class="quiet" href="../live/">Live</a>
+    <a class="quiet" id="bookLink" href="../booking/" hidden>Booking</a>
+  </nav>
+</header>
+
+<main>
+  <div class="eyebrow" id="years"></div>
+  <h2>Film &amp; TV</h2>
+  <p class="lede" id="lede"></p>
+  <div class="tools" role="group" aria-label="Order">
+    <small>Order</small>
+    <button class="quiet" id="byRole" aria-pressed="true">By role</button>
+    <button class="quiet" id="byYear" aria-pressed="false">By year</button>
+  </div>
+  <div id="list"></div>
+</main>
+
+<div id="scrim"></div>
+<aside id="panel" role="dialog" aria-modal="true" aria-label="Details" tabindex="-1"><button id="close" aria-label="Close">×</button><div id="pBody"></div></aside>
+
+<script src="../booking/config.js"></script>
+<script src="../catalogue.js"></script>
+<script>
+'use strict';
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+if(window.BOOKING&&BOOKING.endpoint)$('#bookLink').hidden=false;
+const ALL=(window.CATALOGUE||[]).filter(e=>e.tier==='core'&&(e.roles||[]).includes('F')&&e.film);
+const KIND={film:'Film',documentary:'Documentary',series:'Series',miniseries:'Miniseries',short:'Short film','video game':'Video game',podcast:'Podcast'};
+const kind=e=>KIND[e.film.kind]||(e.film.kind?e.film.kind[0].toUpperCase()+e.film.kind.slice(1):'');
+/* What Gunnar did, read from the credit itself. The order matters: songs before score, assistant before composer. */
+const GROUPS=[
+  ['composer','Composer','Scores written alone or with others.'],
+  ['score','Score production, programming, editing and mixing','Inside the score: programming, recording, editing, producing and mixing the music.'],
+  ['assist','Assistant to the composer','Working alongside the composer through the scoring.'],
+  ['songs','Songs in films','Songs written or performed, mostly with múm, used in films and series.'],
+  ['more','On screen and more','Appearances, and work still to be described.'],
+];
+function groupOf(e){
+  const r=e.film.role||'';
+  if(/perform|wrote|writer/i.test(r))return'songs';
+  if(/assistant/i.test(r))return'assist';
+  if(/^composer|composer of|theme music|original score|composer,/i.test(r))return'composer';
+  if(/editor|mix|producer|production|additional|programmer|recordist|engineer|editing/i.test(r))return'score';
+  return'more';
+}
+const roleText=e=>{const r=e.film.role||'';return /^film and tv work$/i.test(r)?'':r[0].toUpperCase()+r.slice(1)};
+const years=ALL.map(e=>e.year);$('#years').textContent=`${Math.min(...years)} – ${Math.max(...years)}`;
+{const c={};for(const e of ALL){const k=kind(e).toLowerCase();c[k]=(c[k]||0)+1}
+ const words={film:['film','films'],documentary:['documentary','documentaries'],series:['series','series'],miniseries:['miniseries','miniseries'],'short film':['short film','short films'],'video game':['video game','video games'],podcast:['podcast','podcasts']};
+ const parts=Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`${n===1?'a':n} ${(words[k]||[k,k+'s'])[n===1?0:1]}`);
+ $('#lede').textContent=`${ALL.length} pieces of screen work: ${parts.slice(0,-1).join(', ')} and ${parts.at(-1)}.`}
+
+function card(e){
+  const img=e.cover?`<img src="../${esc(e.cover)}" alt="" loading="lazy" decoding="async">`:'';
+  return `<button class="card" type="button" data-id="${esc(e.id)}"><span class="fr">${img}${e.film.nomination?'<span class="tag">Edda nomination</span>':''}</span><b>${esc(e.title.replace(/ - The Original Soundtrack$/,''))}</b><span class="m">${e.year} · ${esc(kind(e))}</span>${roleText(e)?`<span class="r">${esc(roleText(e))}</span>`:''}</button>`;
+}
+let order='role';
+function render(){
+  const by=(a,b)=>b.year-a.year||a.title.localeCompare(b.title);
+  let html='';
+  if(order==='role'){for(const[k,name,blurb]of GROUPS){const list=ALL.filter(e=>groupOf(e)===k).sort(by);if(!list.length)continue;html+=`<section class="g"><header><h3>${esc(name)}</h3><span>${list.length}</span><p>${esc(blurb)}</p></header><div class="grid">${list.map(card).join('')}</div></section>`}}
+  else{const ys=[...new Set(ALL.map(e=>e.year))].sort((a,b)=>b-a);html=`<section class="g"><div class="grid">${ys.map(y=>ALL.filter(e=>e.year===y).sort(by).map(card).join('')).join('')}</div></section>`}
+  $('#list').innerHTML=html;
+  /* square album covers sit inside the poster frame; real posters fill it */
+  document.querySelectorAll('.card img').forEach(im=>{const f=()=>{if(im.naturalHeight>im.naturalWidth*1.2)im.classList.add('fill')};if(im.complete)f();else im.onload=f});
+  reveal();
+}
+let io=null;
+function reveal(){
+  if(io)io.disconnect();const cards=[...document.querySelectorAll('.card')];
+  if(!('IntersectionObserver' in window)||matchMedia('(prefers-reduced-motion: reduce)').matches){cards.forEach(c=>c.classList.add('in'));return}
+  io=new IntersectionObserver(es=>{let i=0;for(const x of es)if(x.isIntersecting){const c=x.target;setTimeout(()=>c.classList.add('in'),(i++)*55);io.unobserve(c)}},{rootMargin:'0px 0px -6% 0px'});
+  cards.forEach(c=>io.observe(c));
+}
+function setOrder(o){order=o;$('#byRole').setAttribute('aria-pressed',o==='role');$('#byYear').setAttribute('aria-pressed',o==='year');try{localStorage.setItem('gt.film.order',o)}catch(e){}render()}
+$('#byRole').onclick=()=>setOrder('role');$('#byYear').onclick=()=>setOrder('year');
+try{if(localStorage.getItem('gt.film.order')==='year')order='year'}catch(e){}
+setOrder(order);
+
+/* details */
+const audio=new Audio();let lastFocus=null;
+function stopAudio(){audio.pause();const b=$('#listen');if(b){b.classList.remove('on');b.firstChild.textContent='▶ Listen '}}
+audio.onended=stopAudio;
+function open(e){
+  lastFocus=document.activeElement;const f=e.film,rows=[];
+  if(f.director&&f.director.length)rows.push(['Directed by',f.director.join(', ')]);
+  if(f.composer)rows.push(['Music by',f.composer]);
+  if(f.genres&&f.genres.length)rows.push(['Genre',f.genres.join(', ')]);
+  if(f.minutes)rows.push(['Length',f.minutes+' min']);
+  if(f.country)rows.push(['Country',f.country]);
+  if(f.languages&&f.languages.length)rows.push(['Language',f.languages.join(', ')]);
+  if(f.production&&f.production.length)rows.push(['Production',f.production.join(', ')]);
+  if(f.creditedAs)rows.push(['Credited as',f.creditedAs]);
+  const L={imdb:'IMDb',apple:'Apple Music',spotify:'Spotify',discogs:'Discogs',bandcamp:'Bandcamp'};
+  const links=Object.keys(L).filter(k=>e.links&&e.links[k]).map(k=>`<a href="${esc(e.links[k])}" target="_blank" rel="noopener">${L[k]}</a>`).join('');
+  const t=(e.tracks||[]).find(x=>x.p);
+  $('#pBody').innerHTML=`${e.cover?`<img class="pp" src="../${esc(e.cover)}" alt="${esc(e.title)}">`:''}<h4>${esc(e.title.replace(/ - The Original Soundtrack$/,''))}</h4>
+    <div class="meta">${e.year} · ${esc(kind(e))}</div>${roleText(e)?`<p class="role">${esc(roleText(e))}</p>`:''}${f.nomination?`<div class="nom">${esc(f.nomination)}</div>`:''}
+    ${t?`<button id="listen" type="button">▶ Listen <small>${esc(t.t)}</small></button>`:''}
+    ${rows.length?`<dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>`:''}${links?`<div class="links">${links}</div>`:''}`;
+  if(t)$('#listen').onclick=()=>{if(!audio.paused&&audio.src===t.p){stopAudio();return}audio.src=t.p;audio.volume=.9;audio.play().then(()=>{$('#listen').classList.add('on');$('#listen').firstChild.textContent='■ Stop '}).catch(()=>{})};
+  $('#panel').classList.add('on');$('#scrim').classList.add('on');document.body.classList.add('sheet');$('#panel').scrollTop=0;
+  history.replaceState(null,'','#'+e.id);setTimeout(()=>$('#panel').focus({preventScroll:true}),50);
+}
+function close(){stopAudio();$('#panel').classList.remove('on');$('#scrim').classList.remove('on');document.body.classList.remove('sheet');history.replaceState(null,'',location.pathname+location.search);if(lastFocus&&lastFocus.focus)lastFocus.focus({preventScroll:true})}
+$('#list').addEventListener('click',ev=>{const c=ev.target.closest('.card');if(!c)return;const e=ALL.find(x=>x.id===c.dataset.id);if(e)open(e)});
+$('#close').onclick=close;$('#scrim').onclick=close;
+addEventListener('keydown',ev=>{if(ev.key==='Escape'&&$('#panel').classList.contains('on'))close()});
+/* a link to film/#id opens that title */
+{const id=decodeURIComponent(location.hash.slice(1));const e=id&&ALL.find(x=>x.id===id);if(e)setTimeout(()=>open(e),300)}
+addEventListener('hashchange',()=>{const id=decodeURIComponent(location.hash.slice(1));const e=id&&ALL.find(x=>x.id===id);if(e)open(e)});
+window.__film={ALL,groupOf,open,close,setOrder};
+</script>
+</body>
+</html>

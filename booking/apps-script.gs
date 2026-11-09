@@ -23,7 +23,9 @@ const MAX_PER_HOUR = 20;      // all requests together
 const MAX_PER_SENDER = 3;     // from one email address, per hour
 
 function setup() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const book = SpreadsheetApp.getActiveSpreadsheet();
+  if (!book) throw new Error('This script must be opened from inside the Google Sheet: Extensions > Apps Script.');
+  const sheet = book.getSheets()[0];
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);
     sheet.setFrozenRows(1);
@@ -102,7 +104,8 @@ function doPost(e) {
     });
     return json({ ok: true, ref: id });
   } catch (err) {
-    return json({ ok: false, error: 'server' });
+    // The short reason helps when setting it up; the page itself only shows a friendly message.
+    return json({ ok: false, error: 'server', detail: String(err && err.message || err).slice(0, 200) });
   }
 }
 

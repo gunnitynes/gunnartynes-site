@@ -148,7 +148,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 
 @media (max-width:700px){
-  #bar h1 small{display:none}#q{width:120px}
+  #bar h1 small{display:none}#q{width:74px}#q:focus{width:120px}#right{order:1;margin-left:auto;gap:12px}#views{order:2;flex-basis:100%}#bookLink{display:none}
   #panel{top:auto;left:0;right:0;width:auto;height:calc(58% - 34px);border-left:0;border-top:1px solid var(--rule);transform:translateY(102%)}
   #full{left:6%;right:6%;top:auto;bottom:14%;transform:none}
 }
@@ -161,7 +161,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 #welcome .eyebrow{font:500 12px/1 var(--mono);letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
 #welcome h2{margin:16px 0 0;font:400 clamp(52px,9vw,124px)/.95 var(--serif);letter-spacing:-.015em;color:#fff}
 #welcome .lede{margin:22px 0 0;max-width:34em;font:400 clamp(16px,1.5vw,19px)/1.5 var(--sans);color:var(--dim)}
-#welcome .doors{list-style:none;margin:clamp(36px,7vh,72px) 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--rule)}
+#welcome .doors{list-style:none;margin:clamp(36px,7vh,72px) 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--rule)}
 #welcome .doors li+li .door{border-left:1px solid var(--rule)}
 #welcome .door{display:grid;grid-template-rows:auto auto 1fr auto;gap:6px;width:100%;height:100%;text-align:left;padding:20px 22px 22px;position:relative;transition:background .35s;outline:none}
 #welcome .door:hover,#welcome .door:focus-visible{background:#ffffff07}
@@ -181,6 +181,11 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 #welcome .disc img{position:absolute;inset:30%;width:40%;height:40%;border-radius:50%;object-fit:cover}
 @keyframes spin{to{transform:rotate(360deg)}}
 #welcome .route{width:150px;height:46px;overflow:visible}
+#welcome .reel{display:block;width:150px;height:46px;overflow:hidden;position:relative;background:#0b0d12;border-radius:1px;-webkit-mask:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);mask:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent)}
+#welcome .reel::before,#welcome .reel::after{content:"";position:absolute;left:0;right:0;height:5px;z-index:1;background:repeating-linear-gradient(90deg,transparent 0 4px,#3a3f4c 4px 8px)}
+#welcome .reel::before{top:1px}#welcome .reel::after{bottom:1px}
+#welcome .frames{display:flex;gap:3px;height:100%;padding:8px 0;animation:drift 30s linear infinite;will-change:transform}
+#welcome .frames img{height:30px;width:22px;object-fit:cover;flex:none;opacity:.88}
 #welcome .note{margin:26px 0 0;font:12px var(--mono);color:var(--faint)}
 #welcome .rise{opacity:0;transform:translateY(14px);animation:rise 1s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--d,0s)}
 @keyframes rise{to{opacity:1;transform:none}}
@@ -197,9 +202,10 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
   #welcome .door .t{font-size:30px}
   #welcome .door .d{grid-row:2;font-size:13.5px}
   #welcome .door .pv{grid-column:2;grid-row:1/3;margin:0;width:92px;justify-content:flex-end}
-  #welcome .strip img{width:30px;height:30px}#welcome .route{width:92px}
+  #welcome .strip img{width:30px;height:30px}#welcome .route{width:92px}#welcome .reel{width:92px}
   #enterHint{white-space:normal;text-align:center;width:max-content}
 }
+@media (max-height:740px) and (max-width:700px){#welcome .door{padding-top:11px;padding-bottom:11px}#welcome .door .t{font-size:26px}#welcome .door .d{font-size:13px}#welcome .doors{margin-top:26px}}
 @media (max-height:640px){#welcome h2{font-size:clamp(44px,8vw,84px)}#welcome .lede{margin-top:12px;font-size:15px}#welcome .doors{margin-top:22px}#welcome .door{padding-top:12px;padding-bottom:12px}#welcome .door .t{font-size:27px}}
 @media (prefers-reduced-motion:reduce){#welcome .rise{animation:none;opacity:1;transform:none}#welcome .strip,#welcome .disc{animation:none}#welcome{transition:none}}
 </style>
@@ -213,6 +219,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
     <button class="quiet" id="vLine" aria-pressed="true">Timeline</button>
     <button class="quiet" id="vOrient" aria-pressed="false" title="Switch the timeline between horizontal and vertical">Vertical</button>
     <button class="quiet" id="vDisc" aria-pressed="false">Record</button>
+    <a class="quiet" id="vFilm" href="film/" style="text-decoration:none">Film &amp; TV</a>
     <a class="quiet" id="vLive" href="live/" style="text-decoration:none">Live</a>
   </div>
   <div id="right">
@@ -281,9 +288,10 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
     <ul class="doors">
       <li class="rise" style="--d:.55s"><button type="button" class="door" data-go="line"><span class="n">01</span><span class="t">Timeline</span><span class="d">Every release, year by year</span><span class="pv"><span class="strip" id="wStrip"></span></span></button></li>
       <li class="rise" style="--d:.68s"><button type="button" class="door" data-go="disc"><span class="n">02</span><span class="t">Record</span><span class="d">Play the catalogue like a record</span><span class="pv"><span class="disc"><img id="wDisc" alt=""></span></span></button></li>
-      <li class="rise" style="--d:.81s"><button type="button" class="door" data-go="live"><span class="n">03</span><span class="t">Live</span><span class="d">The concerts, tour by tour, on a map</span><span class="pv"><svg class="route" viewBox="0 0 150 46" aria-hidden="true"><path id="wPath" d="M6 36 Q34 4 62 24 T118 16 Q132 12 144 30" fill="none" stroke="#ffffff38" stroke-width="1.2" stroke-dasharray="3 4"/><circle cx="6" cy="36" r="2.2" fill="#a3a6ad"/><circle cx="62" cy="24" r="2.2" fill="#a3a6ad"/><circle cx="118" cy="16" r="2.2" fill="#a3a6ad"/><circle cx="144" cy="30" r="2.2" fill="#a3a6ad"/><circle r="3.6" fill="#e6b450"><animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines=".45 0 .55 1"><mpath href="#wPath"/></animateMotion></circle></svg></span></button></li>
+      <li class="rise" style="--d:.81s"><button type="button" class="door" data-go="film"><span class="n">03</span><span class="t">Film &amp; TV</span><span class="d">Scores and screen work</span><span class="pv"><span class="reel"><span class="frames" id="wFilm"></span></span></span></button></li>
+      <li class="rise" style="--d:.94s"><button type="button" class="door" data-go="live"><span class="n">04</span><span class="t">Live</span><span class="d">The concerts, tour by tour, on a map</span><span class="pv"><svg class="route" viewBox="0 0 150 46" aria-hidden="true"><path id="wPath" d="M6 36 Q34 4 62 24 T118 16 Q132 12 144 30" fill="none" stroke="#ffffff38" stroke-width="1.2" stroke-dasharray="3 4"/><circle cx="6" cy="36" r="2.2" fill="#a3a6ad"/><circle cx="62" cy="24" r="2.2" fill="#a3a6ad"/><circle cx="118" cy="16" r="2.2" fill="#a3a6ad"/><circle cx="144" cy="30" r="2.2" fill="#a3a6ad"/><circle r="3.6" fill="#e6b450"><animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines=".45 0 .55 1"><mpath href="#wPath"/></animateMotion></circle></svg></span></button></li>
     </ul>
-    <a class="book rise" id="wBook" href="booking/" style="--d:.95s" hidden>Booking requests <span>→</span></a>
+    <a class="book rise" id="wBook" href="booking/" style="--d:1.05s" hidden>Booking requests <span>→</span></a>
   </div>
 </section>
 <div id="enterHint" aria-live="polite"></div>
@@ -1355,6 +1363,8 @@ let seenWelcome=false;try{seenWelcome=sessionStorage.getItem('gt.welcomed')==='1
   for(let i=0;i<12;i++){const e=covers[Math.round(i*(covers.length-1)/11)];if(e&&!pick.includes(e))pick.push(e)}
   $('#wStrip').innerHTML=[...pick,...pick].map(e=>`<img src="${esc(e.cover)}" alt="" loading="eager" decoding="async">`).join('');
   const rec=covers.find(e=>/finally we are no one/i.test(e.title))||covers[0];if(rec)$('#wDisc').src=rec.cover;
+  const films=ALL.filter(e=>e.tier==='core'&&e.cover&&(e.roles||[]).includes('F')).sort((a,b)=>a.year-b.year);
+  const fr=films.filter((e,i)=>i%2===0).slice(0,10);$('#wFilm').innerHTML=[...fr,...fr].map(e=>`<img src="${esc(e.cover)}" alt="" decoding="async">`).join('');
 })();
 function openWelcome(){
   const w=$('#welcome');select(null);stopAudio(.4);hover=null;$('#tip').style.display='none';hideEnterHint();
@@ -1375,6 +1385,7 @@ function showEnterHint(){
 cv.addEventListener('pointerdown',()=>{if($('#enterHint').classList.contains('on'))setTimeout(hideEnterHint,1200)});
 function enterFrom(go){
   if(go==='live'){location.href='live/';return}
+  if(go==='film'){location.href='film/';return}
   try{sessionStorage.setItem('gt.welcomed','1')}catch(e){}
   const w=$('#welcome');w.classList.add('out');setTimeout(()=>{if(w.classList.contains('out'))w.hidden=true},REDUCED?0:900);
   if(go==='disc'){focus=null;if(view.name!=='disc')setView('disc');else{disc.target=disc.stops[0];discTouch()}return}
