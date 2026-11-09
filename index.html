@@ -520,14 +520,14 @@ function updateLens(dt){
     if(!sel)setFocus(best);
     return busy;
   }
-  const s0=T*cam.z,A=lens.on&&!sel&&!REDUCED?clamp(118/s0-1,0,1.35):0,R=s0*1.75,k=1-Math.exp(-dt/(performance.now()<morphUntil?.26:.075));
+  const s0=T*cam.z,A=lens.on&&!sel&&!REDUCED?clamp(136/s0-1,0,1.75):0,R=s0*1.6,k=1-Math.exp(-dt/(performance.now()<morphUntil?.26:.075));
   let busy=false;
   for(const e of items){
     let tg=1,tdx=0,tdy=0;
     if(A){
       const dx=sx(e.cx)-lens.x,dy=sy(e.cy)-lens.y,d=Math.hypot(dx,dy)||1,f=Math.exp(-(d*d)/(R*R));
       const fp=Math.exp(-Math.pow(d/(R*1.6),2));   /* the push reaches further than the swell, so neighbours part rather than pile up */
-      tg=1+A*f;const push=s0*A*.62*(d/R)*fp;tdx=dx/d*push;tdy=dy/d*push;
+      tg=1+A*f;const push=s0*A*.7*(d/R)*fp;tdx=dx/d*push;tdy=dy/d*push;
     }
     const g0=e._g||1,x0=e._dx||0,y0=e._dy||0;
     e._g=g0+(tg-g0)*k;e._dx=x0+(tdx-x0)*k;e._dy=y0+(tdy-y0)*k;
