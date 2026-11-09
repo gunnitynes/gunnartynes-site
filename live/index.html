@@ -65,6 +65,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #rel{position:fixed;top:14px;right:max(16px,env(safe-area-inset-right,0px));width:clamp(150px,15vw,216px);z-index:4;padding:9px;background:#11141bec;border-radius:2px;box-shadow:0 10px 36px #000a;opacity:0;transition:opacity .45s;pointer-events:none}#rel.on{opacity:1}
 #rel small{display:block;font:500 10.5px/1.25 var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--p);margin-bottom:7px}
 #rel .cov{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:var(--plate);margin-bottom:8px}#rel .cov[hidden]{display:none}
+#rel .ph{display:flex;align-items:flex-end;width:100%;aspect-ratio:1;margin-bottom:8px;padding:9%;background:repeating-linear-gradient(-45deg,#ffffff0b 0 1px,transparent 1px 9px),var(--plate);outline:1px dashed #ece8dc48;outline-offset:-7%}#rel .ph[hidden]{display:none}#rel .ph i{font:500 10px/1.2 var(--mono);font-style:normal;letter-spacing:.08em;text-transform:uppercase;color:var(--p)}
 #rel em{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font:italic 400 18px/1.15 var(--serif);color:#fff}
 #rel b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:400 12.5px/1.3 var(--sans);color:var(--dim);margin-top:3px}
 #view{position:fixed;inset:0;background:#0b0d12f7;z-index:8;display:grid;grid-template-rows:1fr auto;touch-action:pan-y}
@@ -74,7 +75,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #vClose{position:absolute;top:10px;right:14px;font-size:26px;color:var(--paper);padding:6px 10px;z-index:1}
 @media(max-width:700px){
   #kmBox{justify-content:space-between}#speed{margin-right:-7px}#cap{display:block}#more{display:none}#info{grid-template-columns:minmax(0,21fr) minmax(0,29fr);grid-template-rows:26px 48px;gap:5px 14px;height:87px;min-height:0;padding-top:7px;overflow:hidden;align-content:start}.f:empty{display:none}.f.big{grid-column:1/-1;order:-1;display:flex;align-items:baseline;gap:9px}.f.big small{flex:none;margin:0}.f small{margin-bottom:2px;font-size:10px}.f span{font-size:13.5px;line-height:17px}.f.date span{font-size:12.5px;line-height:17px}.f.big span{display:block;flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;font-size:21px;line-height:26px}
-  #rel{top:auto;left:0;right:0;bottom:calc(var(--foot,262px) - 20px);width:auto;display:grid;grid-template-columns:52px minmax(0,1fr);column-gap:10px;align-items:center;align-content:center;height:64px;padding:6px max(16px,env(safe-area-inset-right,0px)) 6px max(16px,env(safe-area-inset-left,0px));background:var(--ground);border-top:1px solid var(--rule);border-radius:0;box-shadow:none}#rel .cov{grid-column:1;grid-row:1/4;width:52px;margin:0}#rel small,#rel em,#rel b{grid-column:2;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#rel.nocov small,#rel.nocov em,#rel.nocov b{grid-column:1/-1}#rel small{font-size:9.5px;margin:0}#rel em{font-size:16px;line-height:1.2}#rel b{font-size:11.5px;line-height:1.25;margin:0}
+  #rel{top:auto;left:0;right:0;bottom:calc(var(--foot,262px) - 20px);width:auto;display:grid;grid-template-columns:52px minmax(0,1fr);column-gap:10px;align-items:center;align-content:center;height:64px;padding:6px max(16px,env(safe-area-inset-right,0px)) 6px max(16px,env(safe-area-inset-left,0px));background:var(--ground);border-top:1px solid var(--rule);border-radius:0;box-shadow:none}#rel .cov{grid-column:1;grid-row:1/4;width:52px;margin:0}#rel small,#rel em,#rel b{grid-column:2;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#rel .ph{grid-column:1;grid-row:1/4;width:52px;margin:0;padding:5px;outline-offset:-4px}#rel .ph i{font-size:7.5px;letter-spacing:.04em}#rel small{font-size:9.5px;margin:0}#rel em{font-size:16px;line-height:1.2}#rel b{font-size:11.5px;line-height:1.25;margin:0}
   #leg{top:calc(var(--bar,84px) + 4px);width:62vw;right:16px}#leg .frame{aspect-ratio:3/2}
   #view .nav{width:40px}#view em{font-size:17px}
   #panel{top:auto;left:0;right:0;width:auto;height:58%;transform:translateY(102%);box-shadow:0 -12px 40px #0006}
@@ -115,7 +116,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 <div id="pop" role="menu" hidden></div>
 <div id="hint" aria-live="polite"></div>
 
-<aside id="rel" aria-live="off"><small></small><img class="cov" alt=""><em></em><b></b></aside>
+<aside id="rel" aria-live="off"><small></small><img class="cov" alt=""><span class="ph" hidden><i>Cover coming</i></span><em></em><b></b></aside>
 <div id="leg" aria-hidden="true"><button class="frame" type="button" id="legFrame" aria-label="Open this photo"><img alt=""><img alt=""></button><div id="legCap"></div></div>
 <div id="view" hidden role="dialog" aria-label="Photos"><button id="vClose" aria-label="Close photos">×</button><figure><img id="vImg" alt=""></figure><button class="nav" id="vPrev" aria-label="Previous photo">‹</button><button class="nav" id="vNext" aria-label="Next photo">›</button><div class="meta"><em id="vCap"></em><small id="vBy"></small></div></div>
 <aside id="panel" aria-label="Shows in this city"><button id="close" aria-label="Close">×</button><div id="pBody"></div></aside>
@@ -821,7 +822,7 @@ function relPreload(r){if(r&&r.e.cover&&!r.im){r.im=new Image();r.im.src='../'+r
 function relShow(r){
   const el=$('#rel'),c=el.querySelector('.cov');Rel.cur=r;$('#hint').classList.remove('on');
   el.querySelector('small').textContent=r.label;el.querySelector('em').textContent=r.e.title;el.querySelector('b').textContent=r.e.artist;
-  c.hidden=!r.e.cover;el.classList.toggle('nocov',!r.e.cover);c.onerror=()=>{c.hidden=true;el.classList.add('nocov')};if(r.e.cover){c.src='../'+r.e.cover;c.alt=`Cover of ${r.e.title}`}else c.removeAttribute('src');
+  const ph=el.querySelector('.ph');c.hidden=!r.e.cover;ph.hidden=!!r.e.cover;el.classList.toggle('nocov',!r.e.cover);c.onerror=()=>{c.hidden=true;ph.hidden=false;el.classList.add('nocov')};if(r.e.cover){c.src='../'+r.e.cover;c.alt=`Cover of ${r.e.title}`}else c.removeAttribute('src');
   const slowdown=Math.sqrt(Math.max(1,P.rate/2)),n=Math.floor(P.pos),st=segAt(n,P.pos-n);
   Rel.t=(st&&st.seg.kind==='hold'?3.2:4.2)/slowdown*(Rel.queue.length>2?.7:1);
   el.classList.add('on');

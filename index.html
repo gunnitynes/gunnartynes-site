@@ -275,7 +275,6 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
   <div class="wk">
     <div class="eyebrow rise" style="--d:.05s" id="wYears"></div>
     <h2 class="rise" style="--d:.15s">gunnar tynes</h2>
-    <p class="lede rise" style="--d:.35s">Recordings, film, stage and radio work, and concerts, from 1997 to now.</p>
     <ul class="doors">
       <li class="rise" style="--d:.55s"><button type="button" class="door" data-go="line"><span class="n">01</span><span class="t">Timeline</span><span class="d">Every release, year by year</span><span class="pv"><span class="strip" id="wStrip"></span></span></button></li>
       <li class="rise" style="--d:.68s"><button type="button" class="door" data-go="disc"><span class="n">02</span><span class="t">Record</span><span class="d">Play the catalogue like a record</span><span class="pv"><span class="disc"><img id="wDisc" alt=""></span></span></button></li>
@@ -292,7 +291,7 @@ const ALL=window.CATALOGUE;
 const ROLE={P:['Produced','--p'],R:['Recorded','--r'],M:['Mixed','--m'],B:['Band, performed, wrote','--b'],F:['Film & screen','--f']};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const C={};for(const k in ROLE)C[k]=css(ROLE[k][1]);
-const COL={ground:css('--ground'),plate:css('--plate'),plate2:css('--plate2'),paper:css('--paper'),dim:css('--dim'),faint:css('--faint')};
+const COL={p:css('--p'),ground:css('--ground'),plate:css('--plate'),plate2:css('--plate2'),paper:css('--paper'),dim:css('--dim'),faint:css('--faint')};
 const $=s=>document.querySelector(s);
 const cv=$('#world'),g=cv.getContext('2d');
 const REDUCED=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -395,6 +394,21 @@ const matches=e=>{
 
 /* ---------- drawing ---------- */
 function wrap(ctx,text,maxW,maxLines){const words=text.split(/\s+/),lines=[];let l='';for(const w of words){const t=l?l+' '+w:w;if(ctx.measureText(t).width>maxW&&l){lines.push(l);l=w}else l=t}if(l)lines.push(l);if(lines.length>maxLines){lines.length=maxLines;lines[maxLines-1]=lines[maxLines-1].replace(/\s*\S*$/,'')+'…'}return lines}
+/* A release with no cover yet: an empty, hatched slot with a dashed frame, saying the cover is on its way. */
+function drawMissing(x,y,s,e,round){
+  g.fillStyle=COL.plate;g.fillRect(x,y,s,s);
+  g.save();g.beginPath();g.rect(x,y,s,s);g.clip();
+  g.strokeStyle='rgba(255,255,255,.045)';g.lineWidth=Math.max(1,s*.006);const st=Math.max(5,s/10);
+  g.beginPath();for(let d=-s;d<s;d+=st){g.moveTo(x+d,y+s);g.lineTo(x+d+s,y)}g.stroke();g.restore();
+  const pad=s*.07;g.setLineDash([Math.max(2,s*.035),Math.max(2,s*.028)]);g.strokeStyle='rgba(236,232,220,.28)';g.lineWidth=Math.max(1,s*.008);
+  g.strokeRect(x+pad,y+pad,s-pad*2,s-pad*2);g.setLineDash([]);
+  if(s<=34)return;
+  const ip=pad+s*.06;g.textBaseline='top';g.textAlign=round?'center':'left';const tx=round?x+s/2:x+ip;
+  const fs=s*.1;g.fillStyle=COL.paper;g.font=`italic 400 ${fs}px Newsreader,Georgia,serif`;
+  wrap(g,e.title,s-ip*2,s>90?4:3).forEach((l,i)=>g.fillText(l,tx,y+ip+i*fs*1.12));
+  if(s>64){const ls=Math.max(7,s*.052);g.font=`500 ${ls}px "IBM Plex Mono",monospace`;g.fillStyle=COL.p;g.globalAlpha*=.9;g.fillText('COVER COMING',tx,y+s-ip-ls*1.1)}
+  g.textAlign='left';
+}
 function drawTileAt(e,cxs,cys,s,rot,alpha,outline){
   if(alpha<=.003)return;
   g.save();g.translate(cxs,cys);if(rot)g.rotate(rot);
@@ -402,6 +416,7 @@ function drawTileAt(e,cxs,cys,s,rot,alpha,outline){
   g.globalAlpha=alpha;
   const src=s<=128&&e.thumb?e.thumb:e.img;
   if(src){g.imageSmoothingQuality='high';g.drawImage(src,x,y,s,s)}
+  else if(!e.cover)drawMissing(x,y,s,e);
   else{
     g.fillStyle=e.screen?COL.plate2:COL.plate;g.fillRect(x,y,s,s);
     if(s>34){
@@ -505,14 +520,14 @@ function updateLens(dt){
     if(!sel)setFocus(best);
     return busy;
   }
-  const s0=T*cam.z,A=lens.on&&!sel&&!REDUCED?clamp(150/s0-1,0,2.2):0,R=s0*1.25,k=1-Math.exp(-dt/(performance.now()<morphUntil?.26:.075));
+  const s0=T*cam.z,A=lens.on&&!sel&&!REDUCED?clamp(118/s0-1,0,1.35):0,R=s0*1.75,k=1-Math.exp(-dt/(performance.now()<morphUntil?.26:.075));
   let busy=false;
   for(const e of items){
     let tg=1,tdx=0,tdy=0;
     if(A){
       const dx=sx(e.cx)-lens.x,dy=sy(e.cy)-lens.y,d=Math.hypot(dx,dy)||1,f=Math.exp(-(d*d)/(R*R));
-      const fp=Math.exp(-Math.pow(d/(R*1.9),2));   /* the push reaches further than the swell, so neighbours part rather than pile up */
-      tg=1+A*f;const push=s0*A*.8*(d/R)*fp;tdx=dx/d*push;tdy=dy/d*push;
+      const fp=Math.exp(-Math.pow(d/(R*1.6),2));   /* the push reaches further than the swell, so neighbours part rather than pile up */
+      tg=1+A*f;const push=s0*A*.62*(d/R)*fp;tdx=dx/d*push;tdy=dy/d*push;
     }
     const g0=e._g||1,x0=e._dx||0,y0=e._dy||0;
     e._g=g0+(tg-g0)*k;e._dx=x0+(tdx-x0)*k;e._dy=y0+(tdy-y0)*k;
@@ -1145,6 +1160,7 @@ function vinylCanvas(){
 function drawLabel(e,alpha,rl){
   g.globalAlpha=alpha;
   if(e.img){g.imageSmoothingQuality='high';g.drawImage(e.img,disc.cx-rl,disc.cy-rl,rl*2,rl*2)}
+  else if(!e.cover)drawMissing(disc.cx-rl,disc.cy-rl,rl*2,e,true);
   else{
     g.fillStyle=COL.plate2;g.fillRect(disc.cx-rl,disc.cy-rl,rl*2,rl*2);
     const fs=Math.max(11,rl*.2);g.fillStyle=COL.paper;g.font=`italic 400 ${fs}px Newsreader,Georgia,serif`;g.textAlign='center';g.textBaseline='top';
