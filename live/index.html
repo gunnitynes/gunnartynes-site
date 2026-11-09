@@ -34,7 +34,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 .f span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:400 19px/1.25 var(--sans);color:#fff}
 .f.date span{font:500 19px/1.25 var(--mono)}.f.big span{font:400 28px/1.14 var(--serif)}.f.none span{color:var(--dim)}
 @media(max-width:1100px){#now{grid-template-columns:44px minmax(0,1fr)}#cap{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 12px}#cap em{max-width:100%}#more{flex-basis:100%}#info{grid-column:1/-1;padding:9px 0 0;border-left:0;border-top:1px solid var(--rule);min-height:91px}}
-#years{display:block;width:100%;height:46px;margin-top:6px;pointer-events:auto;touch-action:none;cursor:ew-resize}
+#years{display:block;width:100%;height:58px;margin-top:6px;pointer-events:auto;touch-action:none;cursor:ew-resize}
 #tip{position:fixed;pointer-events:none;background:var(--plate2);padding:6px 9px;font-size:13px;z-index:6;max-width:300px;border-radius:2px;display:none}
 #tip em{font:italic 16px var(--serif);display:block}#tip span{font:11px var(--mono);color:var(--dim)}
 #panel{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:100%;background:var(--plate);z-index:5;transform:translateX(102%);transition:transform .26s cubic-bezier(.2,.7,.2,1);overflow:auto;padding:22px 24px 40px;box-shadow:-12px 0 40px #0006}
@@ -777,28 +777,76 @@ function drawEarly(n){
 }
 function yearX(t){const a=day(S[0].d.slice(0,4)+'-01-01'),b=day('2027-01-01');return 8+(t-a)/(b-a)*(yc.clientWidth-16)}
 const YC={w:0,s:null,col:null,max:0};
+/* The strip under the map: how busy each stretch of the career was. A smooth curve on a square-root scale, so a quiet
+   year still shows next to a festival summer; one tick per concert along the bottom; each year in its own faint band
+   with its count where there is room. */
+function yearCache(w){
+  if(YC.w===w&&YC.s===S)return YC;
+  YC.w=w;YC.s=S;
+  const n=Math.ceil(w)+1,dens=new Float32Array(n),tour=new Int16Array(n).fill(-1),near=new Float32Array(n).fill(1e9);
+  const a=day(S[0].d.slice(0,4)+'-01-01'),b=day('2027-01-01'),pxPerDay=(w-16)/(b-a),sig=Math.max(2.4,21*pxPerDay);
+  const xs=S.map(s=>yearX(s.t));
+  for(let i=0;i<S.length;i++){
+    const x=xs[i],lo=Math.max(0,Math.floor(x-sig*3)),hi=Math.min(n-1,Math.ceil(x+sig*3));
+    for(let p=lo;p<=hi;p++){const d=(p-x)/sig;dens[p]+=Math.exp(-d*d);const ad=Math.abs(p-x);if(ad<near[p]){near[p]=ad;tour[p]=S[i].tour}}
+  }
+  let mx=0;for(const v of dens)mx=Math.max(mx,v);
+  YC.dens=dens;YC.tour=tour;YC.max=mx;YC.xs=xs;
+  YC.years={};for(const s of S){const y=+s.d.slice(0,4);YC.years[y]=(YC.years[y]||0)+1}
+  return YC;
+}
 function drawYears(){
   const w=yc.clientWidth,h=yc.clientHeight,d=Math.min(2,devicePixelRatio||1);
   if(yc.width!==Math.round(w*d)||yc.height!==Math.round(h*d)){yc.width=Math.round(w*d);yc.height=Math.round(h*d)}
   yg.setTransform(d,0,0,d,0,0);yg.clearRect(0,0,w,h);
-  const base=h-16;
-  /* one column per fortnight of touring, worked out once for each width */
-  const cell=Math.max(2,w/320);
-  if(YC.w!==w||YC.s!==S){YC.w=w;YC.s=S;YC.col=new Map();for(const s of S){const x=Math.round(yearX(s.t)/cell);let c=YC.col.get(x);if(!c)YC.col.set(x,c=[]);c.push(s)}YC.max=0;for(const c of YC.col.values())YC.max=Math.max(YC.max,c.length)}
-  const col=YC.col,max=YC.max;
-  const n=Math.floor(P.pos);
-  for(const[x,list]of col){
-    const bh=Math.max(2,list.length/max*(base-3)),past=list[0].i<=n;
-    yg.fillStyle=past?TOURS[list[0].tour].col:'#3a3f4b';yg.globalAlpha=past?.95:1;yg.fillRect(x*cell,base-bh,Math.max(1,cell-.6),bh);
+  const base=h-16,top=W>700?11:3,C=yearCache(w),n=Math.floor(P.pos),xNow=S[n]?yearX(S[n].t):-1;
+  const y0=+S[0].d.slice(0,4),every=w<520?5:(w<900?2:1);
+  /* year bands */
+  for(let y=y0;y<=2026;y++){
+    const x0=yearX(day(y+'-01-01')),x1=yearX(day((y+1)+'-01-01'));
+    if((y-y0)%2===0){yg.fillStyle='rgba(255,255,255,.028)';yg.fillRect(x0,0,x1-x0,base)}
+    const c=C.years[y]||0;
+    if(c&&x1-x0>=26&&W>700){yg.font='9px "IBM Plex Mono",monospace';yg.textBaseline='top';yg.fillStyle=hoverYear===y?COL.paper:COL.faint;yg.fillText(String(c),x0+3,1)}
   }
+  /* the curve, one pixel column at a time, in the colour of its tour once it has been played */
+  for(let p=0;p<C.dens.length;p++){
+    const v=C.dens[p];if(v<.02)continue;
+    const bh=Math.max(1,Math.sqrt(v/C.max)*(base-top));
+    const past=p<=xNow&&C.tour[p]>=0;
+    yg.fillStyle=past?TOURS[C.tour[p]].col:'#3d4350';yg.globalAlpha=past?.9:1;yg.fillRect(p,base-bh,1,bh);
+  }
+  yg.globalAlpha=1;
+  /* one tick per concert */
+  for(let i=0;i<C.xs.length;i++){const x=C.xs[i];yg.fillStyle=x<=xNow?'rgba(17,20,27,.55)':'rgba(236,232,220,.22)';yg.fillRect(Math.round(x),base-2,1,2)}
   yg.globalAlpha=.75;yg.fillStyle=COL.tour[0];
   for(let i=0;i<LAST();i++){const j=journey(i);if(!j.home)continue;const x0=yearX(S[i].t),x1=yearX(S[i+1].t);if(x1-x0>=1.5)yg.fillRect(x0+1,base+1,x1-x0-1,1.5)}
   yg.globalAlpha=1;
-  yg.font='10px "IBM Plex Mono",monospace';yg.textBaseline='alphabetic';yg.fillStyle=COL.faint;
-  const y0=+S[0].d.slice(0,4),every=w<520?5:(w<900?2:1),ty=h-3;
-  for(let y=Math.ceil(y0/every)*every;y<=2026;y+=every){const x=yearX(day(y+'-01-01'));yg.fillStyle=COL.faint;yg.fillRect(x,base+1,1,3);yg.fillText(String(y),x+2,ty)}
-  const s=S[n];if(s){const x=yearX(s.t);yg.fillStyle=COL.paper;yg.fillRect(x-.75,0,1.5,base+4)}
+  yg.font='10px "IBM Plex Mono",monospace';yg.textBaseline='alphabetic';
+  const ty=h-3;
+  for(let y=Math.ceil(y0/every)*every;y<=2026;y+=every){const x=yearX(day(y+'-01-01'));yg.fillStyle=hoverYear===y?COL.paper:COL.faint;yg.fillRect(x,base+1,1,3);yg.fillText(String(y),x+2,ty)}
+  if(hoverX!=null){yg.fillStyle='rgba(236,232,220,.35)';yg.fillRect(Math.round(hoverX),0,1,base)}
+  if(xNow>=0){yg.fillStyle=COL.paper;yg.fillRect(xNow-.75,0,1.5,base+4)}
 }
+/* Pointing at the strip says what was going on there. */
+let hoverYear=null,hoverX=null;
+function stripInfo(x){
+  const C=yearCache(yc.clientWidth);let best=-1,bd=1e9;
+  for(let i=0;i<C.xs.length;i++){const dd=Math.abs(C.xs[i]-x);if(dd<bd){bd=dd;best=i}}
+  const a=day(S[0].d.slice(0,4)+'-01-01'),b=day('2027-01-01'),t=a+(x-8)/(yc.clientWidth-16)*(b-a),y=new Date(t*864e5).getUTCFullYear();
+  return{y,count:C.years[y]||0,s:best>=0&&bd<14?S[best]:null};
+}
+yc.addEventListener('pointermove',ev=>{
+  if(ev.pointerType!=='mouse'||yc._on)return;
+  const r=yc.getBoundingClientRect(),x=ev.clientX-r.left,info=stripInfo(x),tip=$('#tip');
+  hoverYear=info.y;hoverX=x;
+  let html=`<em>${info.y}</em><span>${info.count?`${info.count} concert${info.count===1?'':'s'}`:'No concerts'}</span>`;
+  if(info.s){const T=TOURS[info.s.tour],k=T.b-T.a+1,cs=new Set();for(let i=T.a;i<=T.b;i++)cs.add(S[i].k);
+    html+=`<br><span>${k>1?`${k} concerts, ${fmt(S[T.a].d)} – ${fmt(S[T.b].d)}`:fmt(info.s.d)} · ${[...cs].slice(0,3).join(', ')}${cs.size>3?' …':''}</span>`}
+  tip.innerHTML=html;tip.style.display='block';
+  const tw=tip.offsetWidth,th=tip.offsetHeight;tip.style.left=clamp(ev.clientX-tw/2,8,W-tw-8)+'px';tip.style.top=(r.top-th-8)+'px';
+  dirty=true;
+});
+yc.addEventListener('pointerleave',()=>{hoverYear=null;hoverX=null;$('#tip').style.display='none';dirty=true});
 
 /* ---------- releases: when the switch is on, each record appears in the top right corner as the journey reaches its date ---------- */
 const Rel={on:true,list:[],i:0,queue:[],cur:null,t:0,gap:0,lastPos:0};
