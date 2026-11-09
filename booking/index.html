@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gunnar Tynes: Booking</title>
+<meta name="description" content="Booking requests for film and television, production, recording, mixing, performance, theatre and collaboration.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{color-scheme:dark;--ground:#11141b;--plate:#1a1e28;--plate2:#242936;--rule:#ffffff1c;--paper:#ece8dc;--dim:#a3a6ad;--faint:#6f747f;--p:#e6b450;--bad:#e58b7a;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;--sans:"Instrument Sans","Helvetica Neue",Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html{background:var(--ground)}
+body{margin:0;min-height:100vh;background:radial-gradient(120% 70% at 50% 0%,#181c27 0%,#11141b 60%);color:var(--paper);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit}button,input,select,textarea{font:inherit;color:inherit}button{background:none;border:0;cursor:pointer;padding:0}
+:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+#bar{position:sticky;top:0;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:14px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141bf2 60%,#11141b00);z-index:5}
+#bar h1{margin:0;font:400 20px/1 var(--serif);white-space:nowrap}#bar h1 a{text-decoration:none}
+#views{display:flex;gap:12px}
+.quiet{font-size:13px;color:var(--dim);padding:3px 2px;border-bottom:1px solid transparent;text-decoration:none;transition:color .15s}.quiet:hover{color:var(--paper)}.quiet.on{color:var(--paper);border-color:var(--paper)}
+main{width:min(1060px,100%);margin:0 auto;padding:clamp(28px,7vh,80px) max(20px,env(safe-area-inset-right,0px)) 90px max(20px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);gap:24px 64px;align-items:start}
+.intro{position:sticky;top:90px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
+h2{margin:14px 0 0;font:400 clamp(46px,6vw,78px)/.95 var(--serif);letter-spacing:-.015em;color:#fff}
+.intro p{margin:20px 0 0;color:var(--dim);max-width:24em}
+.intro ol{list-style:none;margin:30px 0 0;padding:0;font:12.5px/1.4 var(--mono);color:var(--faint);counter-reset:s}
+.intro li{counter-increment:s;padding:7px 0;border-top:1px solid var(--rule);transition:color .3s}.intro li::before{content:"0" counter(s) "  "}
+.intro li.on{color:var(--paper)}.intro li.done{color:var(--dim)}
+form{margin:0}
+fieldset{border:0;margin:0 0 34px;padding:0;min-width:0}
+legend{padding:0;margin:0 0 14px;font:italic 400 26px/1.15 var(--serif);color:#fff}
+.step{transition:opacity .5s ease,transform .6s cubic-bezier(.2,.7,.2,1)}
+.step.wait{opacity:.28;pointer-events:none;transform:translateY(6px)}
+.types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.type{display:block;position:relative;text-align:left;padding:13px 14px 12px;border:1px solid var(--rule);border-radius:2px;background:#ffffff04;transition:border-color .2s,background .2s}
+.type input{position:absolute;opacity:0;pointer-events:none}
+.type b{display:block;font:400 17px/1.2 var(--sans);color:var(--paper)}
+.type small{display:block;margin-top:3px;font-size:12.5px;color:var(--faint)}
+.type:hover{border-color:#ffffff44}
+.type:has(input:checked){border-color:var(--paper);background:#ffffff0c}.type:has(input:checked) b::after{content:" ✓";color:var(--p)}
+.type:has(input:focus-visible){outline:2px solid var(--paper);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px}.full{grid-column:1/-1}
+label.f{display:block}label.f>span{display:block;font:500 10.5px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+label.f>span i{font-style:normal;color:var(--faint);letter-spacing:.06em;text-transform:none}
+input[type=text],input[type=email],input[type=date],input[type=number],input[type=url],select,textarea{width:100%;background:var(--plate);border:1px solid var(--rule);border-radius:2px;padding:10px 11px;font-size:15px;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--paper)}
+textarea{min-height:130px;resize:vertical;line-height:1.45}
+input[type=date]{color-scheme:dark}
+.check{display:flex;gap:9px;align-items:center;font-size:14px;color:var(--dim);margin-top:4px;cursor:pointer}.check input{accent-color:var(--p);width:16px;height:16px}
+.more{display:grid;transition:grid-template-rows .45s ease;grid-template-rows:0fr}.more.on{grid-template-rows:1fr}.more>div{overflow:hidden}.more.on>div{overflow:visible}
+.more .grid{padding-top:14px}
+.bad{border-color:var(--bad)!important}.err{font:12.5px var(--sans);color:var(--bad);margin-top:5px}
+.trap{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.send{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;padding-top:6px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;background:var(--paper);color:var(--ground);border-radius:2px;font:500 15px var(--sans);transition:transform .15s,opacity .2s}
+.btn:hover{transform:translateY(-1px)}.btn[disabled]{opacity:.55;cursor:wait;transform:none}
+.btn.ghost{background:none;color:var(--paper);border:1px solid #ffffff40;padding:10px 16px;font-size:14px}
+.note{font-size:13px;color:var(--faint)}
+.status{margin-top:16px;padding:14px 16px;border-left:2px solid var(--bad);background:#e58b7a12;color:var(--paper);font-size:14px}
+.done{padding:6px 0}.done h3{margin:12px 0 0;font:italic 400 clamp(34px,4vw,48px)/1.05 var(--serif);color:#fff}
+.done p{color:var(--dim);max-width:32em}.done .ref{font:500 13px var(--mono);color:var(--p);letter-spacing:.06em}
+.closed{padding:18px;border:1px dashed #ffffff30;color:var(--dim);margin-bottom:28px}
+.rise{opacity:0;transform:translateY(12px);animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--d,0s)}@keyframes rise{to{opacity:1;transform:none}}
+@media (max-width:760px){
+  main{grid-template-columns:1fr;gap:10px}
+  .intro{position:static}.intro ol{display:none}
+  .types{grid-template-columns:1fr 1fr}.type{padding:11px 12px}.type b{font-size:15.5px}.type small{display:none}
+  .grid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.rise{animation:none;opacity:1;transform:none}.step,.more{transition:none}}
+</style>
+</head>
+<body>
+<header id="bar">
+  <h1><a href="../" title="Back to the start">gunnar tynes</a></h1>
+  <nav id="views" aria-label="Pages">
+    <a class="quiet" href="../?view=timeline">Timeline</a>
+    <a class="quiet" href="../?view=record">Record</a>
+    <a class="quiet" href="../live/">Live</a>
+    <span class="quiet on" aria-current="page">Booking</span>
+  </nav>
+</header>
+
+<main>
+  <section class="intro">
+    <div class="eyebrow rise" style="--d:.05s">Booking</div>
+    <h2 class="rise" style="--d:.12s">Work together</h2>
+    <p class="rise" style="--d:.25s">Film and television scores, production, recording, mixing, performance, theatre and collaborations. Tell me a little about the project and I will get back to you.</p>
+    <ol class="rise" style="--d:.35s" aria-hidden="true"><li data-s="1">The work</li><li data-s="2">The project</li><li data-s="3">When and where</li><li data-s="4">You</li></ol>
+  </section>
+
+  <section>
+    <div class="closed" id="closed" hidden>Booking requests are not open here yet.</div>
+    <form id="book" novalidate class="rise" style="--d:.3s">
+      <fieldset class="step" data-s="1">
+        <legend>What is the work?</legend>
+        <div class="types" role="radiogroup" aria-label="Type of work">
+          <label class="type"><input type="radio" name="type" value="Film & TV"><b>Film &amp; TV</b><small>Scores for film, series and documentary</small></label>
+          <label class="type"><input type="radio" name="type" value="Production"><b>Production</b><small>Producing a record or songs</small></label>
+          <label class="type"><input type="radio" name="type" value="Recording"><b>Recording</b><small>Tracking in the studio or on location</small></label>
+          <label class="type"><input type="radio" name="type" value="Mixing"><b>Mixing</b><small>Mixing songs or a record</small></label>
+          <label class="type"><input type="radio" name="type" value="Performance"><b>Performance</b><small>Concerts and festivals</small></label>
+          <label class="type"><input type="radio" name="type" value="Theatre & dance"><b>Theatre &amp; dance</b><small>Music for the stage</small></label>
+          <label class="type"><input type="radio" name="type" value="Collaboration"><b>Collaboration</b><small>Writing or making something together</small></label>
+          <label class="type"><input type="radio" name="type" value="Something else"><b>Something else</b><small>Anything that does not fit</small></label>
+        </div>
+        <div class="err" id="typeErr" hidden>Choose the kind of work.</div>
+      </fieldset>
+
+      <fieldset class="step wait" data-s="2">
+        <legend>The project</legend>
+        <div class="grid">
+          <label class="f full"><span>Project or working title <i>· optional</i></span><input type="text" name="title" maxlength="200" autocomplete="off"></label>
+        </div>
+        <div class="more" data-for="Film & TV"><div><div class="grid">
+          <label class="f"><span>Format</span><select name="format"><option value="">Choose</option><option>Feature film</option><option>Series</option><option>Documentary</option><option>Short film</option><option>Commercial</option><option>Other</option></select></label>
+          <label class="f"><span>Stage</span><select name="stage"><option value="">Choose</option><option>Development</option><option>Shooting</option><option>Editing</option><option>Picture lock</option></select></label>
+        </div></div></div>
+        <div class="more" data-for="Production Recording Mixing"><div><div class="grid">
+          <label class="f"><span>Artist</span><input type="text" name="artist" maxlength="200"></label>
+          <label class="f"><span>Number of songs <i>· roughly</i></span><input type="number" name="songs" min="1" max="200" inputmode="numeric"></label>
+          <label class="f full"><span>Working</span><select name="mode"><option value="">Choose</option><option>In the studio together</option><option>Remotely, sending files</option><option>Not sure yet</option></select></label>
+        </div></div></div>
+        <div class="more" data-for="Performance Theatre & dance"><div><div class="grid">
+          <label class="f full"><span>Venue, festival or company</span><input type="text" name="venue" maxlength="200"></label>
+        </div></div></div>
+        <div class="grid" style="padding-top:14px">
+          <label class="f full"><span>About the project</span><textarea name="about" maxlength="4000" placeholder="What it is, who is involved, what you are looking for"></textarea></label>
+          <label class="f full"><span>Links <i>· optional: demos, references, a trailer</i></span><input type="text" name="links" maxlength="1000" autocomplete="off"></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="step wait" data-s="3">
+        <legend>When and where</legend>
+        <div class="grid">
+          <label class="f"><span>Date or start</span><input type="date" name="date"></label>
+          <label class="f"><span>Deadline <i>· optional</i></span><input type="date" name="deadline"></label>
+          <label class="check full"><input type="checkbox" name="flexible" value="yes"> The dates are flexible</label>
+          <label class="f"><span>Country</span><input type="text" name="country" maxlength="100" autocomplete="country-name"></label>
+          <label class="f"><span>City <i>· optional</i></span><input type="text" name="city" maxlength="100"></label>
+          <label class="f full"><span>Budget <i>· optional</i></span><input type="text" name="budget" maxlength="200" placeholder="A range is fine"></label>
+        </div>
+        <div class="err" id="whenErr" hidden>Give a date, or tick that the dates are flexible, and a country.</div>
+      </fieldset>
+
+      <fieldset class="step wait" data-s="4">
+        <legend>You</legend>
+        <div class="grid">
+          <label class="f"><span>Name</span><input type="text" name="name" maxlength="200" autocomplete="name"></label>
+          <label class="f"><span>Email</span><input type="email" name="email" maxlength="200" autocomplete="email"></label>
+          <label class="f full"><span>Company or organisation <i>· optional</i></span><input type="text" name="org" maxlength="200" autocomplete="organization"></label>
+          <label class="trap" aria-hidden="true">Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+        <div class="err" id="youErr" hidden>Add your name and an email address I can reply to.</div>
+      </fieldset>
+
+      <div class="send step wait" data-s="5">
+        <button class="btn" id="go" type="submit">Send request</button>
+        <span class="note">Your details are only used to reply to you.</span>
+      </div>
+      <div class="status" id="status" hidden></div>
+    </form>
+
+    <div class="done" id="done" hidden>
+      <div class="eyebrow">Sent</div>
+      <h3 id="doneT">Thank you</h3>
+      <p>Your request has arrived. I read every one and will reply to <b id="doneE"></b>.</p>
+      <p class="ref" id="doneR"></p>
+      <button class="btn ghost" id="again" type="button">Send another request</button>
+    </div>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script>
+'use strict';
+const $=s=>document.querySelector(s),form=$('#book'),END=(window.BOOKING&&BOOKING.endpoint)||'';
+const DRAFT='gt.booking.draft',opened=Date.now();
+const val=n=>{const el=form.elements[n];if(!el)return'';if(el.type==='checkbox')return el.checked?'yes':'';return(el.value||'').trim()};
+const type=()=>{const c=form.querySelector('input[name=type]:checked');return c?c.value:''};
+if(!END){$('#closed').hidden=false;$('#go').disabled=true}
+
+/* The page grows with the answers: each part wakes once the one before it is under way. */
+function sync(){
+  const t=type();
+  const groups={'Film & TV':['Film & TV'],'Production Recording Mixing':['Production','Recording','Mixing'],'Performance Theatre & dance':['Performance','Theatre & dance']};
+  form.querySelectorAll('.more').forEach(m=>m.classList.toggle('on',(groups[m.dataset.for]||[]).includes(t)));
+  form.querySelectorAll('.step').forEach(s=>s.classList.toggle('wait',+s.dataset.s>1&&!t));
+  const filled=[!!t,!!(val('about')||val('title')),!!((val('date')||val('flexible'))&&val('country')),!!(val('name')&&val('email'))];
+  document.querySelectorAll('.intro li').forEach((li,i)=>{li.classList.toggle('done',filled[i]);li.classList.toggle('on',!filled[i]&&(i===0||filled[i-1]))});
+}
+/* A draft survives a reload, in this browser only. */
+function save(){try{const d={};for(const el of form.elements){if(!el.name||el.name==='website')continue;if(el.type==='radio'){if(el.checked)d[el.name]=el.value}else if(el.type==='checkbox')d[el.name]=el.checked;else d[el.name]=el.value}localStorage.setItem(DRAFT,JSON.stringify(d))}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(DRAFT)||'null');if(!d)return;for(const el of form.elements){if(!(el.name in d))continue;if(el.type==='radio')el.checked=el.value===d[el.name];else if(el.type==='checkbox')el.checked=!!d[el.name];else el.value=d[el.name]}}catch(e){}}
+load();sync();
+form.addEventListener('input',()=>{sync();save();clearErr()});form.addEventListener('change',()=>{sync();save()});
+
+function clearErr(){['typeErr','whenErr','youErr'].forEach(i=>$('#'+i).hidden=true);form.querySelectorAll('.bad').forEach(e=>e.classList.remove('bad'))}
+function check(){
+  clearErr();let first=null;const bad=(el,msg)=>{if(el)el.classList.add('bad');$('#'+msg).hidden=false;if(!first)first=el||$('#'+msg)};
+  if(!type())bad(null,'typeErr');
+  if(!(val('date')||val('flexible')))bad(form.elements.date,'whenErr');
+  if(!val('country'))bad(form.elements.country,'whenErr');
+  if(!val('name'))bad(form.elements.name,'youErr');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val('email')))bad(form.elements.email,'youErr');
+  if(first){(first.closest('fieldset')||first).scrollIntoView({behavior:'smooth',block:'center'});if(first.focus)first.focus({preventScroll:true})}
+  return !first;
+}
+function payload(){
+  return{type:type(),title:val('title'),format:val('format'),stage:val('stage'),artist:val('artist'),songs:val('songs'),mode:val('mode'),venue:val('venue'),
+    about:val('about'),links:val('links'),date:val('date'),deadline:val('deadline'),flexible:val('flexible'),country:val('country'),city:val('city'),budget:val('budget'),
+    name:val('name'),email:val('email'),org:val('org'),website:val('website'),t:Date.now()-opened};
+}
+function summary(d){return Object.entries({Work:d.type,Project:d.title,Format:d.format,Stage:d.stage,Artist:d.artist,Songs:d.songs,Working:d.mode,Venue:d.venue,About:d.about,Links:d.links,Date:d.date,Deadline:d.deadline,Flexible:d.flexible,Country:d.country,City:d.city,Budget:d.budget,Name:d.name,Email:d.email,Organisation:d.org}).filter(([,v])=>v).map(([k,v])=>`${k}: ${v}`).join('\n')}
+form.addEventListener('submit',async ev=>{
+  ev.preventDefault();if(!END||!check())return;
+  const d=payload(),go=$('#go'),st=$('#status');go.disabled=true;go.textContent='Sending…';st.hidden=true;
+  try{
+    const r=await fetch(END,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(d),redirect:'follow'});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.ok)throw new Error(j.error||'failed');
+    try{localStorage.removeItem(DRAFT)}catch(e){}
+    form.hidden=true;$('#done').hidden=false;$('#doneT').textContent=`Thank you, ${d.name.split(' ')[0]}`;$('#doneE').textContent=d.email;$('#doneR').textContent=j.ref?`Reference ${j.ref}`:'';
+    document.querySelectorAll('.intro li').forEach(li=>{li.classList.add('done');li.classList.remove('on')});
+    $('#done').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){
+    st.hidden=false;
+    st.innerHTML=(e.message==='busy'?'A lot of requests are arriving right now. Please try again in a little while.':'The request could not be sent. Your answers are kept on this page, so you can try again.')+' <button type="button" class="btn ghost" id="copy" style="margin-left:6px;padding:5px 10px;font-size:13px">Copy your request</button>';
+    $('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(summary(d));$('#copy').textContent='Copied'}catch(x){}};
+  }finally{go.disabled=!END;go.textContent='Send request'}
+});
+$('#again').onclick=()=>{form.reset();form.hidden=false;$('#done').hidden=true;sync();scrollTo({top:0,behavior:'smooth'})};
+window.__book={payload,check,summary,END};
+</script>
+</body>
+</html>
