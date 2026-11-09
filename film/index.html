@@ -31,12 +31,11 @@ section.g header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;m
 section.g h3{margin:0;font:italic 400 clamp(26px,2.6vw,34px)/1.1 var(--serif);color:#fff}
 section.g header span{font:12px var(--mono);color:var(--faint)}
 section.g header p{flex-basis:100%;margin:2px 0 0;color:var(--dim);font-size:14px;max-width:44em}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:28px 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:28px 20px;align-items:start}
 .card{display:block;width:100%;text-align:left;opacity:0;transform:translateY(16px);transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
 .card.in{opacity:1;transform:none}
 .card .fr{display:block;position:relative;aspect-ratio:2/3;background:var(--plate);overflow:hidden;border-radius:1px;box-shadow:0 10px 30px #0007;transition:transform .45s cubic-bezier(.2,.7,.2,1),box-shadow .45s}
-.card .fr img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
-.card .fr img.fill{object-fit:cover}
+.card .fr img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
 .card:hover .fr,.card:focus-visible .fr{transform:translateY(-4px);box-shadow:0 18px 40px #000a}
 .card:hover .fr img{transform:scale(1.03)}
 .card .tag{position:absolute;left:8px;top:8px;font:500 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ground);background:var(--p);padding:4px 6px;border-radius:1px}
@@ -49,7 +48,7 @@ section.g header p{flex-basis:100%;margin:2px 0 0;color:var(--dim);font-size:14p
 #panel{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--plate);z-index:9;transform:translateX(102%);transition:transform .38s cubic-bezier(.2,.7,.2,1);overflow:auto;padding:22px 26px 48px;box-shadow:-14px 0 50px #0008}
 #panel.on{transform:none}
 #close{position:absolute;top:12px;right:14px;font-size:26px;line-height:1;color:var(--dim);padding:6px 8px}#close:hover{color:var(--paper)}
-#panel .pp{width:62%;max-height:46vh;aspect-ratio:2/3;object-fit:contain;display:block;margin:6px 0 18px;background:var(--ground);box-shadow:0 14px 40px #000a}
+#panel .pp{width:min(62%,calc(46vh*2/3));aspect-ratio:2/3;object-fit:cover;display:block;margin:6px 0 18px;background:var(--ground);box-shadow:0 14px 40px #000a}
 #panel h4{margin:0 30px 0 0;font:italic 400 32px/1.08 var(--serif);color:#fff}
 #panel .meta{margin-top:7px;font:12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
 #panel .role{margin:16px 0 0;font:400 17px/1.4 var(--sans);color:var(--paper)}
@@ -142,8 +141,6 @@ function render(){
   if(order==='role'){for(const[k,name,blurb]of GROUPS){const list=ALL.filter(e=>groupOf(e)===k).sort(by);if(!list.length)continue;html+=`<section class="g"><header><h3>${esc(name)}</h3><span>${list.length}</span>${blurb?`<p>${esc(blurb)}</p>`:''}</header><div class="grid">${list.map(e=>card(e,false)).join('')}</div></section>`}}
   else{const ys=[...new Set(ALL.map(e=>e.year))].sort((a,b)=>b-a);html=`<section class="g"><div class="grid">${ys.map(y=>ALL.filter(e=>e.year===y).sort(by).map(e=>card(e,true)).join('')).join('')}</div></section>`}
   $('#list').innerHTML=html;
-  /* square album covers sit inside the poster frame; real posters fill it */
-  document.querySelectorAll('.card img').forEach(im=>{const f=()=>{if(im.naturalHeight>im.naturalWidth*1.2)im.classList.add('fill')};if(im.complete)f();else im.onload=f});
   reveal();
 }
 let io=null;
