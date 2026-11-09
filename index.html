@@ -161,7 +161,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 #welcome .eyebrow{font:500 12px/1 var(--mono);letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
 #welcome h2{margin:16px 0 0;font:400 clamp(52px,9vw,124px)/.95 var(--serif);letter-spacing:-.015em;color:#fff}
 #welcome .lede{margin:22px 0 0;max-width:34em;font:400 clamp(16px,1.5vw,19px)/1.5 var(--sans);color:var(--dim)}
-#welcome .doors{list-style:none;margin:clamp(36px,7vh,72px) 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--rule)}
+#welcome .doors{list-style:none;margin:clamp(36px,7vh,72px) 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--rule)}
 #welcome .doors li+li .door{border-left:1px solid var(--rule)}
 #welcome .door{display:grid;grid-template-rows:auto auto 1fr auto;gap:6px;width:100%;height:100%;text-align:left;padding:20px 22px 22px;position:relative;transition:background .35s;outline:none}
 #welcome .door:hover,#welcome .door:focus-visible{background:#ffffff07}
@@ -219,7 +219,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
     <button class="quiet" id="vLine" aria-pressed="true">Timeline</button>
     <button class="quiet" id="vOrient" aria-pressed="false" title="Switch the timeline between horizontal and vertical">Vertical</button>
     <button class="quiet" id="vDisc" aria-pressed="false">Record</button>
-    <a class="quiet" id="vFilm" href="film/" style="text-decoration:none">Film &amp; TV</a>
+    <a class="quiet" id="vFilm" href="film/" style="text-decoration:none" hidden>Film &amp; TV</a>
     <a class="quiet" id="vLive" href="live/" style="text-decoration:none">Live</a>
   </div>
   <div id="right">
@@ -288,10 +288,10 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
     <ul class="doors">
       <li class="rise" style="--d:.55s"><button type="button" class="door" data-go="line"><span class="n">01</span><span class="t">Timeline</span><span class="d">Every release, year by year</span><span class="pv"><span class="strip" id="wStrip"></span></span></button></li>
       <li class="rise" style="--d:.68s"><button type="button" class="door" data-go="disc"><span class="n">02</span><span class="t">Record</span><span class="d">Play the catalogue like a record</span><span class="pv"><span class="disc"><img id="wDisc" alt=""></span></span></button></li>
-      <li class="rise" style="--d:.81s"><button type="button" class="door" data-go="film"><span class="n">03</span><span class="t">Film &amp; TV</span><span class="d">Scores and screen work</span><span class="pv"><span class="reel"><span class="frames" id="wFilm"></span></span></span></button></li>
-      <li class="rise" style="--d:.94s"><button type="button" class="door" data-go="live"><span class="n">04</span><span class="t">Live</span><span class="d">The concerts, tour by tour, on a map</span><span class="pv"><svg class="route" viewBox="0 0 150 46" aria-hidden="true"><path id="wPath" d="M6 36 Q34 4 62 24 T118 16 Q132 12 144 30" fill="none" stroke="#ffffff38" stroke-width="1.2" stroke-dasharray="3 4"/><circle cx="6" cy="36" r="2.2" fill="#a3a6ad"/><circle cx="62" cy="24" r="2.2" fill="#a3a6ad"/><circle cx="118" cy="16" r="2.2" fill="#a3a6ad"/><circle cx="144" cy="30" r="2.2" fill="#a3a6ad"/><circle r="3.6" fill="#e6b450"><animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines=".45 0 .55 1"><mpath href="#wPath"/></animateMotion></circle></svg></span></button></li>
+      <li class="rise" style="--d:.81s" hidden><button type="button" class="door" data-go="film"><span class="n">03</span><span class="t">Film &amp; TV</span><span class="d">Scores and screen work</span><span class="pv"><span class="reel"><span class="frames" id="wFilm"></span></span></span></button></li>
+      <li class="rise" style="--d:.81s"><button type="button" class="door" data-go="live"><span class="n">03</span><span class="t">Live</span><span class="d">The concerts, tour by tour, on a map</span><span class="pv"><svg class="route" viewBox="0 0 150 46" aria-hidden="true"><path id="wPath" d="M6 36 Q34 4 62 24 T118 16 Q132 12 144 30" fill="none" stroke="#ffffff38" stroke-width="1.2" stroke-dasharray="3 4"/><circle cx="6" cy="36" r="2.2" fill="#a3a6ad"/><circle cx="62" cy="24" r="2.2" fill="#a3a6ad"/><circle cx="118" cy="16" r="2.2" fill="#a3a6ad"/><circle cx="144" cy="30" r="2.2" fill="#a3a6ad"/><circle r="3.6" fill="#e6b450"><animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines=".45 0 .55 1"><mpath href="#wPath"/></animateMotion></circle></svg></span></button></li>
     </ul>
-    <a class="book rise" id="wBook" href="booking/" style="--d:1.05s" hidden>Booking requests <span>→</span></a>
+    <a class="book rise" id="wBook" href="booking/" style="--d:.95s" hidden>Booking requests <span>→</span></a>
   </div>
 </section>
 <div id="enterHint" aria-live="polite"></div>
