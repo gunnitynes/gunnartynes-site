@@ -89,8 +89,8 @@ section.g header p{flex-basis:100%;margin:2px 0 0;color:var(--dim);font-size:14p
   <p class="lede" id="lede"></p>
   <div class="tools" role="group" aria-label="Order">
     <small>Order</small>
-    <button class="quiet" id="byRole" aria-pressed="true">By role</button>
-    <button class="quiet" id="byYear" aria-pressed="false">By year</button>
+    <button class="quiet" id="byYear" aria-pressed="true">By year</button>
+    <button class="quiet" id="byRole" aria-pressed="false">By role</button>
   </div>
   <div id="list"></div>
 </main>
@@ -110,7 +110,7 @@ const kind=e=>KIND[e.film.kind]||(e.film.kind?e.film.kind[0].toUpperCase()+e.fil
 /* What Gunnar did, read from the credit itself. The order matters: songs before score, assistant before composer. */
 const GROUPS=[
   ['composer','Composer','Scores written alone or with others.'],
-  ['score','Score production, programming, editing and mixing','Inside the score: programming, recording, editing, producing and mixing the music.'],
+  ['score','Score production, programming, editing and mixing',''],
   ['assist','Assistant to the composer','Working alongside the composer through the scoring.'],
   ['songs','Songs in films','Songs written or performed, mostly with múm, used in films and series.'],
   ['more','On screen and more','Appearances, and work still to be described.'],
@@ -131,16 +131,16 @@ const years=ALL.map(e=>e.year);$('#years').textContent=`${Math.min(...years)} �
  const parts=Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`${n===1?'a':n} ${(words[k]||[k,k+'s'])[n===1?0:1]}`);
  $('#lede').textContent=`${ALL.length} pieces of screen work: ${parts.slice(0,-1).join(', ')} and ${parts.at(-1)}.`}
 
-function card(e){
+function card(e,showRole=true){
   const img=e.cover?`<img src="../${esc(e.cover)}" alt="" loading="lazy" decoding="async">`:'';
-  return `<button class="card" type="button" data-id="${esc(e.id)}"><span class="fr">${img}${e.film.nomination?'<span class="tag">Edda nomination</span>':''}</span><b>${esc(e.title.replace(/ - The Original Soundtrack$/,''))}</b><span class="m">${e.year} · ${esc(kind(e))}</span>${roleText(e)?`<span class="r">${esc(roleText(e))}</span>`:''}</button>`;
+  return `<button class="card" type="button" data-id="${esc(e.id)}"><span class="fr">${img}${e.film.nomination?'<span class="tag">Edda nomination</span>':''}</span><b>${esc(e.title.replace(/ - The Original Soundtrack$/,''))}</b><span class="m">${e.year} · ${esc(kind(e))}</span>${showRole&&roleText(e)?`<span class="r">${esc(roleText(e))}</span>`:''}</button>`;
 }
-let order='role';
+let order='year';
 function render(){
   const by=(a,b)=>b.year-a.year||a.title.localeCompare(b.title);
   let html='';
-  if(order==='role'){for(const[k,name,blurb]of GROUPS){const list=ALL.filter(e=>groupOf(e)===k).sort(by);if(!list.length)continue;html+=`<section class="g"><header><h3>${esc(name)}</h3><span>${list.length}</span><p>${esc(blurb)}</p></header><div class="grid">${list.map(card).join('')}</div></section>`}}
-  else{const ys=[...new Set(ALL.map(e=>e.year))].sort((a,b)=>b-a);html=`<section class="g"><div class="grid">${ys.map(y=>ALL.filter(e=>e.year===y).sort(by).map(card).join('')).join('')}</div></section>`}
+  if(order==='role'){for(const[k,name,blurb]of GROUPS){const list=ALL.filter(e=>groupOf(e)===k).sort(by);if(!list.length)continue;html+=`<section class="g"><header><h3>${esc(name)}</h3><span>${list.length}</span>${blurb?`<p>${esc(blurb)}</p>`:''}</header><div class="grid">${list.map(e=>card(e,false)).join('')}</div></section>`}}
+  else{const ys=[...new Set(ALL.map(e=>e.year))].sort((a,b)=>b-a);html=`<section class="g"><div class="grid">${ys.map(y=>ALL.filter(e=>e.year===y).sort(by).map(e=>card(e,true)).join('')).join('')}</div></section>`}
   $('#list').innerHTML=html;
   /* square album covers sit inside the poster frame; real posters fill it */
   document.querySelectorAll('.card img').forEach(im=>{const f=()=>{if(im.naturalHeight>im.naturalWidth*1.2)im.classList.add('fill')};if(im.complete)f();else im.onload=f});
@@ -153,9 +153,9 @@ function reveal(){
   io=new IntersectionObserver(es=>{let i=0;for(const x of es)if(x.isIntersecting){const c=x.target;setTimeout(()=>c.classList.add('in'),(i++)*55);io.unobserve(c)}},{rootMargin:'0px 0px -6% 0px'});
   cards.forEach(c=>io.observe(c));
 }
-function setOrder(o){order=o;$('#byRole').setAttribute('aria-pressed',o==='role');$('#byYear').setAttribute('aria-pressed',o==='year');try{localStorage.setItem('gt.film.order',o)}catch(e){}render()}
+function setOrder(o){order=o;$('#byRole').setAttribute('aria-pressed',o==='role');$('#byYear').setAttribute('aria-pressed',o==='year');try{localStorage.setItem('gt.film.order2',o)}catch(e){}render()}
 $('#byRole').onclick=()=>setOrder('role');$('#byYear').onclick=()=>setOrder('year');
-try{if(localStorage.getItem('gt.film.order')==='year')order='year'}catch(e){}
+try{if(localStorage.getItem('gt.film.order2')==='role')order='role'}catch(e){}
 setOrder(order);
 
 /* details */
