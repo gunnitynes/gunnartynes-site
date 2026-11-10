@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Gunnar Tynes: Recorded Work</title>
+<title>Gunnar Tynes</title>
 <meta name="description" content="A chronological catalogue of recordings, screen, stage and radio work, 1997 to the present, with credits and sources.">
-<link rel="icon" href="data:,">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* One surface: every release has a fixed place on a time axis. Browsing moves a camera over it; the talk is one long camera move. */
@@ -286,10 +288,10 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
     <div class="eyebrow rise" style="--d:.05s" id="wYears"></div>
     <h2 class="rise" style="--d:.15s">gunnar tynes</h2>
     <ul class="doors">
-      <li class="rise" style="--d:.55s"><button type="button" class="door" data-go="line"><span class="n">01</span><span class="t">Timeline</span><span class="d">Every release, year by year</span><span class="pv"><span class="strip" id="wStrip"></span></span></button></li>
+      <li class="rise" style="--d:.55s"><button type="button" class="door" data-go="line"><span class="n">01</span><span class="t">Timeline</span><span class="d">All projects</span><span class="pv"><span class="strip" id="wStrip"></span></span></button></li>
       <li class="rise" style="--d:.68s"><button type="button" class="door" data-go="disc"><span class="n">02</span><span class="t">Record</span><span class="d">Play the catalogue like a record</span><span class="pv"><span class="disc"><img id="wDisc" alt=""></span></span></button></li>
       <li class="rise" style="--d:.81s" hidden><button type="button" class="door" data-go="film"><span class="n">03</span><span class="t">Film &amp; TV</span><span class="d">Scores and screen work</span><span class="pv"><span class="reel"><span class="frames" id="wFilm"></span></span></span></button></li>
-      <li class="rise" style="--d:.81s"><button type="button" class="door" data-go="live"><span class="n">03</span><span class="t">Live</span><span class="d">The concerts, tour by tour, on a map</span><span class="pv"><svg class="route" viewBox="0 0 150 46" aria-hidden="true"><path id="wPath" d="M6 36 Q34 4 62 24 T118 16 Q132 12 144 30" fill="none" stroke="#ffffff38" stroke-width="1.2" stroke-dasharray="3 4"/><circle cx="6" cy="36" r="2.2" fill="#a3a6ad"/><circle cx="62" cy="24" r="2.2" fill="#a3a6ad"/><circle cx="118" cy="16" r="2.2" fill="#a3a6ad"/><circle cx="144" cy="30" r="2.2" fill="#a3a6ad"/><circle r="3.6" fill="#e6b450"><animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines=".45 0 .55 1"><mpath href="#wPath"/></animateMotion></circle></svg></span></button></li>
+      <li class="rise" style="--d:.81s"><button type="button" class="door" data-go="live"><span class="n">03</span><span class="t">Live</span><span class="d">The concerts, tour by tour, on a map</span><span class="pv"><svg class="route" viewBox="0 0 150 46" aria-hidden="true"><path id="wPath" d="M6 36 Q34 4 62 24 T118 16 Q132 12 144 30" fill="none" stroke="#ffffff38" stroke-width="1.2" stroke-dasharray="3 4"/><circle cx="6" cy="36" r="2.2" fill="#a3a6ad"/><circle cx="62" cy="24" r="2.2" fill="#a3a6ad"/><circle cx="118" cy="16" r="2.2" fill="#a3a6ad"/><circle cx="144" cy="30" r="2.2" fill="#a3a6ad"/><circle r="3.6" fill="#e6b450" opacity="0"><animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines=".45 0 .55 1"><mpath href="#wPath"/></animateMotion><animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="0;1;1;0;0" keyTimes="0;.1;.84;.96;1"/><animate attributeName="r" dur="5s" repeatCount="indefinite" values="1.5;3.6;3.6;1.5;1.5" keyTimes="0;.1;.84;.96;1"/></circle></svg></span></button></li>
     </ul>
     <a class="book rise" id="wBook" href="booking/" style="--d:.95s" hidden>Booking requests <span>→</span></a>
   </div>
@@ -833,7 +835,7 @@ function hoverSound(e,byMouse){
   if(view.name!=='disc'&&!byMouse)return;   /* on the timelines a mouse plays what it rests on; a finger plays what it taps */
   clearTimeout(soundTimer);
   if(!soundOn||(sel&&view.name!=='disc')||mode!=='browse')return;
-  if(view.name==='disc'){if(e&&biteOf(e)&&audio.id!==e.id&&audio.wantId!==e.id){preload(e);soundTimer=setTimeout(()=>playBite(e,XF_IN,XF_OUT),170)}return}
+  if(view.name==='disc'){if(disc.paused){if(e)preload(e);return}if(e&&biteOf(e)&&audio.id!==e.id&&audio.wantId!==e.id){preload(e);soundTimer=setTimeout(()=>playBite(e,XF_IN,XF_OUT),170)}return}
   if(!e){stopAudio(.45);return}
   preload(e);
   soundTimer=setTimeout(()=>playBite(e,.18,.3),170);
@@ -843,7 +845,7 @@ function setSound(on,forNow){
   if(!on){clearTimeout(soundTimer);if(!sel||view.name==='disc')stopAudio(.3)}
   syncPlay2();
 }
-function syncPlay2(){const b=$('#discPlay'),on=soundOn&&soundLive;b.classList.toggle('on',on);b.setAttribute('aria-label',on?'Pause':'Play')}
+function syncPlay2(){const b=$('#discPlay'),on=soundOn&&soundLive&&!disc.paused;b.classList.toggle('on',on);b.setAttribute('aria-label',on?'Pause':'Play')}
 function wakeSound(ev){
   if(soundLive){unbindWake();return}
   const t=ev.target;
@@ -854,7 +856,7 @@ function wakeSound(ev){
     /* A first press on a release: its own click will start it, so do not start another one for a split second. */
     const p=ev.changedTouches?ev.changedTouches[0]:ev;
     if(t===cv&&p&&discHit(p.clientX,p.clientY)){soundLive=true;syncPlay2();unbindWake();return}
-    if(biteOf(items[disc.cur])){disc.paused=false;playBite(items[disc.cur],XF_IN,.2);return}soundLive=true;syncPlay2();unbindWake()}
+    soundLive=true;syncPlay2();unbindWake()}   /* the record waits for its play button */
   else{soundLive=true;syncPlay2();unbindWake()}
 }
 const WAKE=['mousedown','touchend','click','keydown'];
@@ -1068,7 +1070,7 @@ function audible(e){return !!e&&!e._dead&&!!biteOf(e)}
 function nextAudible(c){const N=items.length;for(let k=1;k<N;k++){const i=(c+k)%N;if(audible(items[i])&&matches(items[i]))return i}return -1}
 function discToggle(){
   discTouch();
-  if(soundOn&&soundLive){if(audio.el)audio.held={a:audio.el,id:audio.id};setSound(false,true);disc.paused=true;return}
+  if(soundOn&&soundLive&&!disc.paused){if(audio.el)audio.held={a:audio.el,id:audio.id};setSound(false,true);disc.paused=true;syncPlay2();return}
   soundLive=true;setSound(true,true);disc.paused=false;disc.vel=0;disc.target=null;disc.touched=-1e9;
   const e=items[disc.cur],h=audio.held;audio.held=null;
   if(h&&h.id===e.id){audio.token++;audio.fading.delete(h.a);audio.el=h.a;audio.id=h.id;h.a.play().then(()=>fade(h.a,1,.5)).catch(()=>playBite(e,XF_IN,.2));syncPlay();return}
@@ -1086,6 +1088,8 @@ function discClick(ev){
 function discChoose(e){
   discTouch();disc.vel=0;disc.target=e._da;dirty=true;clearTimeout(soundTimer);
   if(sel){sel=e;renderPanel(e);syncPlay()}
+  /* choosing a release is a request to hear it, even while the record waits */
+  if(disc.paused&&audible(e)){soundLive=true;setSound(true,true);disc.paused=false;syncPlay2()}
   if(soundOn&&!disc.paused&&audible(e)&&audio.id!==e.id&&audio.wantId!==e.id)playBite(e,XF_IN,XF_OUT);
 }
 /* Nothing to hear here: on to the next release that has audio, which starts as the record turns towards it. */
@@ -1312,8 +1316,9 @@ function setView(name){
   $('#vLine').setAttribute('aria-pressed',name==='line');$('#vDisc').setAttribute('aria-pressed',name==='disc');
   cv.classList.remove('over');
   if(name==='disc'){disc.cxLive=null;disc.prev=-1;disc.fresh=true;discMetrics(0);discTouch();disc.seen=false;$('#hint').classList.remove('off')}
-  if(disc.paused)setSound(store.get('gt.sound2',true),true);
-  armed=null;camBefore=null;disc.paused=false;store.set('gt.view2',name);syncLayout();dirty=true;
+  /* Record opens still and silent; it starts when you press play or choose a release. */
+  if(name==='disc'){stopAudio(.2);disc.paused=true}else{if(disc.paused)setSound(store.get('gt.sound2',true),true);disc.paused=false}
+  armed=null;camBefore=null;store.set('gt.view2',name);syncLayout();syncPlay2();dirty=true;
 }
 function syncLayout(){
   const vert=view.name==='line'&&orient==='v',n=$('#now'),o=$('#vOrient');
@@ -1371,7 +1376,6 @@ function openWelcome(){
   w.hidden=false;w.classList.remove('out');
   /* replay the entrance */
   w.querySelectorAll('.rise').forEach(el=>{el.style.animation='none';void el.offsetWidth;el.style.animation=''});
-  setTimeout(()=>{const d=w.querySelector('.door');if(d)d.focus({preventScroll:true})},REDUCED?0:700);
 }
 let hintTimer=0;
 function hideEnterHint(){$('#enterHint').classList.remove('on')}
@@ -1400,7 +1404,6 @@ if(!wantedView&&!seenWelcome){
   /* Behind the welcome the covers wait in their places, unseen, until a door is chosen. */
   if(!REDUCED)intro.t0=performance.now()+1e7;
   $('#welcome').hidden=false;
-  setTimeout(()=>{const d=$('#welcome .door');if(d)d.focus({preventScroll:true})},REDUCED?0:900);
 }else{
   if(!startDisc)startIntro();
 }
