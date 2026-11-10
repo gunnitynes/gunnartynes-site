@@ -174,7 +174,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 #welcome .door:hover .t::after,#welcome .door:focus-visible .t::after{opacity:.8}
 #welcome .door .d{font:14.5px/1.4 var(--sans);color:var(--dim)}
 #welcome .door .pv{height:46px;margin-top:16px;display:flex;align-items:center;overflow:hidden}
-#welcome .door::before{content:"";position:absolute;left:0;right:0;top:-1px;height:1px;background:var(--paper);transform:scaleX(0);transform-origin:left;transition:transform .55s cubic-bezier(.2,.7,.2,1)}
+#welcome .door::before{content:"";position:absolute;left:0;right:0;top:-1px;height:1px;background:var(--paper);transform:scaleX(0);transform-origin:var(--from,left);transition:transform .55s cubic-bezier(.2,.7,.2,1)}
 #welcome .door:hover::before,#welcome .door:focus-visible::before{transform:none}
 #welcome .strip{display:flex;gap:5px;animation:drift 38s linear infinite;will-change:transform}
 #welcome .strip img{width:40px;height:40px;object-fit:cover;flex:none;border-radius:1px;opacity:.9}
@@ -1398,6 +1398,13 @@ function enterFrom(go){
   items.forEach(e=>{e._iy=0});startIntro();dirty=true;
   setTimeout(showEnterHint,REDUCED?0:1500);
 }
+/* The line over a door grows from the side the pointer came in by, and shrinks towards the side it left by,
+   so moving from one door to the next it seems to travel across. */
+document.querySelectorAll('#welcome .door').forEach(d=>{
+  const side=ev=>{const r=d.getBoundingClientRect();return ev.clientX<r.left+r.width/2?'left':'right'};
+  d.addEventListener('pointerenter',ev=>{if(ev.pointerType==='mouse')d.style.setProperty('--from',side(ev))});
+  d.addEventListener('pointerleave',ev=>{if(ev.pointerType==='mouse')d.style.setProperty('--from',side(ev))});
+});
 $('#welcome').addEventListener('click',ev=>{const d=ev.target.closest('[data-go]');if(d)enterFrom(d.dataset.go)});
 addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!$('#welcome').hidden&&!$('#welcome').classList.contains('out')){ev.stopPropagation();enterFrom('line')}},true);
 if(!wantedView&&!seenWelcome){
