@@ -91,7 +91,7 @@ async function watchLive(text){
 const showKey=s=>s.id;
 function name(s){return s.v&&!/unknown|not known/i.test(s.v)?s.v:(s.n||'Venue not known')}
 function renderYears(){const ys=[...new Set(data.shows.map(s=>s.d.slice(0,4)))].sort().reverse(),cur=$('#year').value;$('#year').innerHTML='<option value="">All years</option>'+ys.map(y=>`<option${y===cur?' selected':''}>${y}</option>`).join('')}
-function visible(){const q=$('#q').value.trim().toLowerCase(),y=$('#year').value;return data.shows.filter(s=>(!y||s.d.startsWith(y))&&(!q||[s.d,s.c,s.k,s.v,s.n,s.w].join(' ').toLowerCase().includes(q)))}
+function visible(){const q=$('#q').value.trim().toLowerCase(),y=$('#year').value;return data.shows.filter(s=>(!y||s.d.startsWith(y))&&(!q||[s.d,s.c,s.k,s.v,s.n,s.w,s.s].join(' ').toLowerCase().includes(q)))}
 function renderList(){
   $('#counts').textContent=`${data.shows.length} concerts · ${new Set(data.shows.map(s=>s.c+s.k)).size} cities`;
   $('#list').innerHTML=visible().slice().reverse().map(s=>`<li><button type="button" data-id="${esc(s.id)}" class="${s.id===openId?'on':''}"><time>${esc(s.d)}</time><strong>${esc(name(s))}</strong><span>${esc([s.c,s.k].filter(Boolean).join(', '))}${s.photos&&s.photos.length?' · '+s.photos.length+' photos':''}${s.s==='doubtful'?' · hidden: '+esc(s.why||'marked doubtful'):''}</span></button></li>`).join('');
