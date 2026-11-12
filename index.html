@@ -140,6 +140,15 @@ body.vert #years{display:none}
 body.vert #bar{background:linear-gradient(#11141b 86%,#11141b00)}
 body.vert canvas#world{cursor:grab}
 body.disc #years{display:none}
+/* zoom control: shows that the timeline zooms, and follows the opening pull-back */
+#zoomCtl{position:fixed;right:max(12px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px;border-radius:22px;background:#11141bcc;border:1px solid var(--rule);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:opacity .4s}
+#zoomCtl button{width:30px;height:30px;border-radius:50%;color:var(--paper);display:grid;place-items:center}
+#zoomCtl button:hover{background:#ffffff16}#zoomCtl svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round}
+#zoomCtl .lv{width:20px;height:70px;position:relative;cursor:pointer;touch-action:none}
+#zoomCtl .lv::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:2px;border-radius:1px;background:#ffffff1f}
+#zoomCtl .lv i{position:absolute;left:6px;width:8px;height:8px;border-radius:50%;background:var(--p);bottom:calc(var(--k,0) * (100% - 8px));box-shadow:0 0 0 3px #e6b45026}
+body.vert #zoomCtl,body.disc #zoomCtl,body.talk #zoomCtl{display:none}
+#zoomCtl.wait{opacity:0;pointer-events:none}
 body.talk #now{display:none}
 #right{margin-left:auto;display:flex;gap:16px;align-items:center}
 .btn{padding:5px 12px;border:1px solid #ffffff40;border-radius:2px;font-size:13px}
@@ -356,6 +365,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
   </div>
 </header>
 <nav id="years" aria-label="Years"></nav>
+<div id="zoomCtl" class="wait" role="group" aria-label="Zoom"><button id="zIn" aria-label="Zoom in"><svg viewBox="0 0 14 14"><path d="M7 2v10M2 7h10"/></svg></button><div class="lv" id="zLv" title="Zoom"><i></i></div><button id="zOut" aria-label="Zoom out"><svg viewBox="0 0 14 14"><path d="M2 7h10"/></svg></button></div>
 <div id="tip"></div>
 <button id="discPlay" type="button" aria-label="Play" hidden><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
 <button id="recView" type="button" hidden>Whole record</button>
@@ -515,7 +525,7 @@ function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight
 /* Whole catalogue: the time axis rests just above the reserved bottom band, like the baseline of a bar chart. */
 const barH=()=>$('#bar').offsetHeight;
 function vZoom(){return Math.min((W-24)/world.w,170/T)}
-function fitBox(top,bottom){if(orient==='v'&&mode!=='talk'){const z=vZoom();return{z,x:world.w/2,y:(H/2-barH()-10)/z}}const z=Math.min((W*.96)/world.w,(H-top-bottom-30)/world.h);return{z,x:world.w/2,y:(bottom+30-H/2)/z}}
+function fitBox(top,bottom){if(orient==='v'&&mode!=='talk'){const z=vZoom();return{z,x:world.w/2,y:(H/2-barH()-10)/z}}const z=Math.min((W-Math.max(W*.04,116))/world.w,(H-top-bottom-30)/world.h);return{z,x:world.w/2,y:(bottom+30-H/2)/z}}
 function fitAll(snap){if(orient==='v'&&!snap&&mode!=='talk'){cam.tz=vZoom();clampCam();cam.tau=.3;dirty=true;return}const f=fitBox(70,64);cam.tx=f.x;cam.ty=f.y;cam.tz=f.z;cam.tau=.45;if(snap){cam.x=f.x;cam.y=f.y;cam.z=f.z}dirty=true}
 function step(dt){
   const tau=REDUCED?0.001:cam.tau,k=1-Math.exp(-dt/tau);
@@ -629,7 +639,7 @@ function draw(){
     let a=matches(e)?1:.09,gr=(e._g||1)*(e===sel?1.03:1);
     e._iy=0;
     if(intro.t0!==null){
-      const p=clamp((now-intro.t0-e.seq*intro.gap)/520,0,1),o=1-Math.pow(1-p,3),back=1+2.2*Math.pow(p-1,3)+1.2*Math.pow(p-1,2);
+      const p=clamp((now-intro.t0-(e._idel!=null?e._idel:e.seq*intro.gap))/520,0,1),o=1-Math.pow(1-p,3),back=1+2.2*Math.pow(p-1,3)+1.2*Math.pow(p-1,2);
       a*=o;gr*=lerp(.72,1,back);e._iy=(1-o)*46;
     }
     drawTile(e,a,gr,e===sel||(mode==='browse'&&e.id===audio.id));
@@ -681,7 +691,31 @@ function updateLens(dt){
   }
   return busy;
 }
-const intro={t0:null,gap:11};
+const intro={t0:null,gap:11,span:0};
+/* The opening shot: one cover fills the screen, the others ripple in around it, and the camera pulls back to the whole career. */
+const cine={t0:null};
+const zRange=()=>{const a=fitBox(70,64).z*.8,b=H/T*1.1;return[a,b]};
+function startCine(){
+  if(REDUCED||orient!=='h'||mode!=='browse'||view.name!=='line')return false;
+  const loaded=items.filter(e=>e.img&&matches(e)),core=loaded.filter(e=>e.tier==='core');
+  const pool=core.length?core:loaded;if(!pool.length)return false;
+  const e=pool[Math.floor(Math.random()*pool.length)],f=fitBox(70,64);
+  const z0=Math.min(Math.min(W,H)*.84/T,H/T*1.1);
+  cine.from={x:e.cx,y:e.cy,z:z0};cine.to={x:f.x,y:f.y,z:f.z};cine.hold=700;cine.dur=2700;cine.t0=performance.now();
+  let far=1;items.forEach(o=>{o._idel=Math.hypot(o.cx-e.cx,o.cy-e.cy);far=Math.max(far,o._idel)});
+  items.forEach(o=>{o._idel=380+Math.pow(o._idel/far,.75)*1700});e._idel=0;intro.span=2080+560;
+  cam.x=cam.tx=e.cx;cam.y=cam.ty=e.cy;cam.z=cam.tz=z0;dirty=true;return true;
+}
+const ease3=p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+function tickCine(now){
+  if(cine.t0===null)return false;
+  const p=clamp((now-cine.t0-cine.hold)/cine.dur,0,1),s=ease3(p),A=cine.from,B=cine.to;
+  const z=Math.exp(lerp(Math.log(A.z),Math.log(B.z),s)),w=clamp((1/z-1/A.z)/(1/B.z-1/A.z),0,1);
+  cam.x=cam.tx=lerp(A.x,B.x,w);cam.y=cam.ty=lerp(A.y,B.y,w);cam.z=cam.tz=z;
+  if(p>=1)cine.t0=null;return true;
+}
+function abortCine(){if(cine.t0===null)return;cine.t0=null;cam.tx=cine.to.x;cam.ty=cine.to.y;cam.tz=cine.to.z;cam.tau=.35;dirty=true}
+function syncZoom(){const [a,b]=zRange(),k=clamp(Math.log(cam.z/a)/Math.log(b/a),0,1);const el=$('#zoomCtl');if(el)el.style.setProperty('--k',k.toFixed(3))}
 function clampCam(){
   if(orient==='v'&&mode!=='talk'){
     const z=cam.tz,lo=(H/2-barH()-10)/z,hi=Math.max(lo,world.h-(H/2-116)/z)+(sel&&W<=700?H*.45/z:0);
@@ -698,13 +732,14 @@ function frame(now){
     cam.tx+=flick.x*dt;cam.ty+=flick.y*dt;clampCam();cam.tau=.05;
     const d=Math.exp(-dt/.42);flick.x*=d;flick.y*=d;glide=true;
   }
+  const cineOn=tickCine(now);
   const moving=step(dt);
   if(mode==='talk')talkTick(now);
   const lensBusy=mode==='browse'&&view.name==='line'&&view.mix===0&&updateLens(dt);
   const discBusy=mode==='browse'&&tickDisc(dt,now);
   let intros=false;
-  if(intro.t0!==null){intros=true;if(now-intro.t0>items.length*intro.gap+560){intro.t0=null;items.forEach(e=>e._iy=0)}}
-  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy){draw();dirty=false}
+  if(intro.t0!==null){intros=true;if(now-intro.t0>(intro.span||items.length*intro.gap+560)){intro.t0=null;intro.span=0;items.forEach(e=>{e._iy=0;e._idel=null})}}
+  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn){draw();syncZoom();dirty=false}
   requestAnimationFrame(frame);
 }
 
@@ -974,6 +1009,12 @@ cv.addEventListener('pointerup',ev=>{pts.delete(ev.pointerId);pinch=0;cv.classLi
   drag=null});
 cv.addEventListener('pointerleave',ev=>{if(hover){hover=null;dirty=true}lens.on=false;dirty=true;$('#tip').style.display='none'});
 function zoomAt(mx,my,f){if(orient==='v')return;const zmin=fitBox(70,64).z*.8,zmax=H/T*1.1;const nz=clamp(cam.tz*f,zmin,zmax);const wxx=(mx-W/2)/cam.tz+cam.tx,wyy=(my-H/2)/cam.tz+cam.ty;cam.tz=nz;cam.tx=wxx-(mx-W/2)/nz;cam.ty=wyy-(my-H/2)/nz;cam.tau=.08;dirty=true}
+['pointerdown','wheel'].forEach(t=>cv.addEventListener(t,abortCine,{capture:true,passive:true}));
+addEventListener('keydown',abortCine,true);addEventListener('resize',abortCine);
+function zoomMid(f){abortCine();const pw=sel&&W>700?panelWidth():0;zoomAt((W-pw)/2,H/2+(barH()-34)/2,f);cam.tau=.28}
+$('#zIn').addEventListener('click',()=>zoomMid(1.8));$('#zOut').addEventListener('click',()=>zoomMid(1/1.8));
+(()=>{const lv=$('#zLv');let on=false;const set=ev=>{const r=lv.getBoundingClientRect(),k=clamp(1-(ev.clientY-r.top-4)/(r.height-8),0,1),[a,b]=zRange();zoomMid(a*Math.pow(b/a,k)/cam.tz)};
+  lv.addEventListener('pointerdown',ev=>{on=true;lv.setPointerCapture(ev.pointerId);set(ev)});lv.addEventListener('pointermove',ev=>{if(on)set(ev)});lv.addEventListener('pointerup',()=>on=false)})();
 cv.addEventListener('wheel',ev=>{
   ev.preventDefault();if(mode==='talk')return;
   if(view.name==='disc'){discWheel(ev);return}
@@ -1683,9 +1724,9 @@ const wantedView=(location.search.match(/[?&]view=(record|timeline)/)||[])[1];
 const startDisc=wantedView?wantedView==='record':store.get('gt.view2','line')==='disc';
 /* The covers fly in once they have loaded, or after a moment regardless. */
 function startIntro(){
-  if(REDUCED)return;
+  if(REDUCED){$('#zoomCtl').classList.remove('wait');return}
   intro.t0=performance.now()+1e7;
-  const go=()=>{if(intro.t0>performance.now())intro.t0=performance.now()+120};
+  const go=()=>{if(intro.t0>performance.now()){intro.t0=performance.now()+120;startCine();$('#zoomCtl').classList.remove('wait')}};
   const pending=ALL.filter(e=>e.cover&&items.includes(e));
   const tick=()=>{if(pending.filter(e=>e.img).length>=pending.length*.9)go();else if(mode==='browse'&&intro.t0>performance.now())setTimeout(tick,60)};
   tick();setTimeout(go,1100);
