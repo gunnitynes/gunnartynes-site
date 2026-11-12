@@ -468,7 +468,9 @@ const Y0=Math.min(...ALL.map(e=>e.year)),Y1=Math.max(2026,...ALL.map(e=>e.year))
 let items=[],world={w:1,h:1},yearX={},showApp=false,yearBlocks=[],vCols=4;
 const VGUT=150,VGAP=64;
 const wantLayout=(location.search.match(/[?&]layout=(vertical|horizontal)/)||[])[1];
-let orient=wantLayout?(wantLayout==='vertical'?'v':'h'):store.get('gt.orient',innerWidth<900?'v':'h');
+/* A phone always opens the way it is held: upright, the years run down. */
+const PHONE=matchMedia('(hover: none)').matches&&Math.min(screen.width,screen.height)<=700;
+let orient=wantLayout?(wantLayout==='vertical'?'v':'h'):PHONE?(innerWidth>innerHeight?'h':'v'):store.get('gt.orient',innerWidth<900?'v':'h');
 const colsFor=w=>w<=700?4:w<=1100?6:8;
 function layout(){
   items=ALL.filter(e=>showApp||e.tier==='core');
@@ -636,8 +638,9 @@ function draw(){
     return;
   }
   if(view.mix>0){drawDisc(view.mix);return}
-  drawAxis(sel?sel.year:null);
   const now=performance.now();
+  if(morph.t0!==null){drawMorph(now);return}
+  drawAxis(sel?sel.year:null);
   [...items].sort((a,b)=>(a===sel)-(b===sel)||(a._g||1)-(b._g||1)).forEach(e=>{
     let a=matches(e)?1:.09,gr=(e._g||1)*(e===sel?1.03:1);
     e._iy=0;
@@ -651,6 +654,21 @@ function draw(){
 /* The lens: covers near the cursor swell and push their neighbours aside, strongest when they are small. */
 const lens={x:0,y:0,on:false};
 let focus=null,morphUntil=0;
+/* Changing direction: every cover leaves its old place in turn, year by year, and swings on an arc to its new one,
+   dipping and tilting in flight, so the whole timeline seems to turn a quarter round. */
+const morph={t0:null,dur:1000,spread:900,dir:1};
+function drawMorph(now){
+  const el=now-morph.t0,total=morph.dur+morph.spread;
+  g.save();g.globalAlpha=sstep(.5,1,el/total);drawAxis(null);g.restore();
+  let done=true;const s1=T*cam.z,list=[];
+  for(const e of items){const m=e._m;if(!m)continue;
+    const t=clamp((el-e._md*morph.spread)/morph.dur,0,1);if(t<1)done=false;
+    const k=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,b=Math.sin(Math.PI*k);
+    const x1=sx(e.cx),y1=sy(e.cy),dx=x1-m.x,dy=y1-m.y,L=Math.hypot(dx,dy)||1,arc=Math.min(L*.28,Math.max(W,H)*.22)*b*morph.dir;
+    list.push({e,x:lerp(m.x,x1,k)-dy/L*arc,y:lerp(m.y,y1,k)+dx/L*arc,s:lerp(m.s,s1,k)*(1-.22*b),r:b*.32*morph.dir,b})}
+  list.sort((a,b)=>a.b-b.b).forEach(p=>drawTileAt(p.e,p.x,p.y,p.s,p.r,1,false));
+  if(done){morph.t0=null;dirty=true;items.forEach(e=>{e._m=null})}
+}
 function setFocus(e){
   if(e===focus)return;focus=e;dirty=true;
   if(!e)return;
@@ -740,7 +758,7 @@ function frame(now){
   const discBusy=mode==='browse'&&tickDisc(dt,now);
   let intros=false;
   if(intro.t0!==null){intros=true;if(now-intro.t0>(intro.span||items.length*intro.gap+560)){intro.t0=null;intro.span=0;items.forEach(e=>{e._iy=0;e._idel=null})}}
-  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn){draw();positionPeek();dirty=false}
+  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn||morph.t0!==null){draw();positionPeek();dirty=false}
   requestAnimationFrame(frame);
 }
 
@@ -1714,8 +1732,10 @@ function setOrient(o){
   const old=items.map(e=>({e,x:sx(e.cx)+(e._dx||0),y:sy(e.cy)+(e._dy||0),s:T*cam.z*(e._g||1)}));
   select(null);stopAudio(.2);clearTimeout(soundTimer);hover=null;lens.on=false;flick.x=flick.y=0;intro.t0=null;focus=null;$('#tip').style.display='none';
   orient=o;layout();fitAll(true);
-  old.forEach(p=>{p.e._dx=p.x-sx(p.e.cx);p.e._dy=p.y-sy(p.e.cy);p.e._g=p.s/(T*cam.z);p.e._iy=0});
-  morphUntil=performance.now()+1200;
+  if(REDUCED){items.forEach(e=>{e._dx=e._dy=0;e._g=1})}
+  else{old.forEach(p=>{p.e._m={x:clamp(p.x,-p.s,W+p.s),y:clamp(p.y,-p.s-H*.15,H+p.s+H*.15),s:p.s};p.e._dx=p.e._dy=0;p.e._g=1;p.e._iy=0});morph.t0=performance.now();morph.dir=o==='v'?1:-1;
+    /* the order follows the years, so the career turns over from its beginning */
+    const n=items.length;items.forEach(e=>e._md=e.seq/Math.max(1,n-1))}
   store.set('gt.orient',o);syncLayout();dirty=true;
 }
 $('#vOrient').onclick=()=>setOrient(orient==='v'?'h':'v');
