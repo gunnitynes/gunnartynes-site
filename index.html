@@ -140,15 +140,6 @@ body.vert #years{display:none}
 body.vert #bar{background:linear-gradient(#11141b 86%,#11141b00)}
 body.vert canvas#world{cursor:grab}
 body.disc #years{display:none}
-/* zoom control: shows that the timeline zooms, and follows the opening pull-back */
-#zoomCtl{position:fixed;right:max(12px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px;border-radius:22px;background:#11141bcc;border:1px solid var(--rule);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:opacity .4s}
-#zoomCtl button{width:30px;height:30px;border-radius:50%;color:var(--paper);display:grid;place-items:center}
-#zoomCtl button:hover{background:#ffffff16}#zoomCtl svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round}
-#zoomCtl .lv{width:20px;height:70px;position:relative;cursor:pointer;touch-action:none}
-#zoomCtl .lv::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:2px;border-radius:1px;background:#ffffff1f}
-#zoomCtl .lv i{position:absolute;left:6px;width:8px;height:8px;border-radius:50%;background:var(--p);bottom:calc(var(--k,0) * (100% - 8px));box-shadow:0 0 0 3px #e6b45026}
-body.vert #zoomCtl,body.disc #zoomCtl,body.talk #zoomCtl{display:none}
-#zoomCtl.wait{opacity:0;pointer-events:none}
 body.talk #now{display:none}
 #right{margin-left:auto;display:flex;gap:16px;align-items:center}
 .btn{padding:5px 12px;border:1px solid #ffffff40;border-radius:2px;font-size:13px}
@@ -162,6 +153,17 @@ body.talk #now{display:none}
 @media (hover:hover){#years{opacity:0;transition:opacity .2s}#years:hover,#years.scrub{opacity:1}}
 @media (max-width:900px){#years span{overflow:visible}#years span:not(:nth-child(5n+2)){color:transparent}}
 
+#peek{position:fixed;z-index:6;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 8px;max-width:min(380px,calc(100vw - 20px));background:#1b1f29f2;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--rule);border-radius:14px;box-shadow:0 14px 40px #000b;opacity:0;transform:translateY(6px);transition:opacity .18s,transform .18s;pointer-events:none}
+#peek.on{opacity:1;transform:none;pointer-events:auto}
+#peek .pt{min-width:0;flex:1}#peek em{display:block;font:italic 400 17px/1.2 var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#peek b{display:block;font:500 12px/1.3 var(--sans);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+#pkPlay{flex:none;display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 15px 0 12px;border-radius:20px;background:var(--p);color:#14161c;font:600 13px var(--sans)}
+#pkPlay svg{width:16px;height:16px;fill:currentColor}#pkPlay[disabled]{background:#ffffff14;color:var(--faint);cursor:default}
+#pkPlay .i-pause{display:none}#pkPlay.on .i-pause{display:block}#pkPlay.on .i-play{display:none}
+#pkMore{flex:none;height:40px;padding:0 10px;border-radius:10px;color:var(--paper);font:500 13px var(--sans);display:inline-flex;align-items:center;gap:4px}
+#pkMore:hover{background:#ffffff12}#pkMore svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none}
+body.peeking #mini{opacity:0;pointer-events:none}
+@media (max-width:700px){#peek{left:10px!important;right:10px;top:auto!important;bottom:12px;max-width:none}body.vert.peeking #now{visibility:hidden}}
 #tip{position:fixed;pointer-events:none;background:var(--plate2);padding:6px 9px;font-size:13px;z-index:6;max-width:320px;border-radius:2px;display:none}
 #tip b{font-weight:500}#tip em{font:italic 15px var(--serif)}#tip span{display:block;font:11px var(--mono);color:var(--dim)}
 
@@ -365,10 +367,10 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
   </div>
 </header>
 <nav id="years" aria-label="Years"></nav>
-<div id="zoomCtl" class="wait" role="group" aria-label="Zoom"><button id="zIn" aria-label="Zoom in"><svg viewBox="0 0 14 14"><path d="M7 2v10M2 7h10"/></svg></button><div class="lv" id="zLv" title="Zoom"><i></i></div><button id="zOut" aria-label="Zoom out"><svg viewBox="0 0 14 14"><path d="M2 7h10"/></svg></button></div>
 <div id="tip"></div>
 <button id="discPlay" type="button" aria-label="Play" hidden><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
 <button id="recView" type="button" hidden>Whole record</button>
+<div id="peek" role="dialog" aria-label="Release"><button id="pkPlay" type="button"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg><span>Play</span></button><div class="pt"><em></em><b></b></div><button id="pkMore" type="button">Details<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button></div>
 <div id="mini" hidden>
   <i id="miniBar"></i>
   <button id="miniOpen" type="button" aria-label="Show details"><img id="miniCov" alt=""><span><em></em><b></b></span><small class="more">Details</small><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 12.5 10 7.5l5 5"/></svg></button>
@@ -525,8 +527,9 @@ function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight
 /* Whole catalogue: the time axis rests just above the reserved bottom band, like the baseline of a bar chart. */
 const barH=()=>$('#bar').offsetHeight;
 function vZoom(){return Math.min((W-24)/world.w,170/T)}
-function fitBox(top,bottom){if(orient==='v'&&mode!=='talk'){const z=vZoom();return{z,x:world.w/2,y:(H/2-barH()-10)/z}}const z=Math.min((W-Math.max(W*.04,116))/world.w,(H-top-bottom-30)/world.h);return{z,x:world.w/2,y:(bottom+30-H/2)/z}}
-function fitAll(snap){if(orient==='v'&&!snap&&mode!=='talk'){cam.tz=vZoom();clampCam();cam.tau=.3;dirty=true;return}const f=fitBox(70,64);cam.tx=f.x;cam.ty=f.y;cam.tz=f.z;cam.tau=.45;if(snap){cam.x=f.x;cam.y=f.y;cam.z=f.z}dirty=true}
+function fitBox(top,bottom,mid){if(orient==='v'&&mode!=='talk'){const z=vZoom();return{z,x:world.w/2,y:(H/2-barH()-10)/z}}const z=Math.min((W*.975)/world.w,(H-top-bottom-30)/world.h),free=mid?Math.max(0,H-top-bottom-30-world.h*z)*.42:0;return{z,x:world.w/2,y:(bottom+30+free-H/2)/z}}
+const fitMain=()=>fitBox($('#bar').offsetHeight+10,matchMedia('(hover: none)').matches?40:14,true);
+function fitAll(snap){if(orient==='v'&&!snap&&mode!=='talk'){cam.tz=vZoom();clampCam();cam.tau=.3;dirty=true;return}const f=fitMain();cam.tx=f.x;cam.ty=f.y;cam.tz=f.z;cam.tau=.45;if(snap){cam.x=f.x;cam.y=f.y;cam.z=f.z}dirty=true}
 function step(dt){
   const tau=REDUCED?0.001:cam.tau,k=1-Math.exp(-dt/tau);
   cam.x+=(cam.tx-cam.x)*k;cam.y+=(cam.ty-cam.y)*k;
@@ -642,7 +645,7 @@ function draw(){
       const p=clamp((now-intro.t0-(e._idel!=null?e._idel:e.seq*intro.gap))/520,0,1),o=1-Math.pow(1-p,3),back=1+2.2*Math.pow(p-1,3)+1.2*Math.pow(p-1,2);
       a*=o;gr*=lerp(.72,1,back);e._iy=(1-o)*46;
     }
-    drawTile(e,a,gr,e===sel||(mode==='browse'&&e.id===audio.id));
+    drawTile(e,a,gr,e===sel||e===peek.e||(mode==='browse'&&e.id===audio.id));
   });
 }
 /* The lens: covers near the cursor swell and push their neighbours aside, strongest when they are small. */
@@ -694,12 +697,11 @@ function updateLens(dt){
 const intro={t0:null,gap:11,span:0};
 /* The opening shot: one cover fills the screen, the others ripple in around it, and the camera pulls back to the whole career. */
 const cine={t0:null};
-const zRange=()=>{const a=fitBox(70,64).z*.8,b=H/T*1.1;return[a,b]};
 function startCine(){
   if(REDUCED||orient!=='h'||mode!=='browse'||view.name!=='line')return false;
   const loaded=items.filter(e=>e.img&&matches(e)),core=loaded.filter(e=>e.tier==='core');
   const pool=core.length?core:loaded;if(!pool.length)return false;
-  const e=pool[Math.floor(Math.random()*pool.length)],f=fitBox(70,64);
+  const e=pool[Math.floor(Math.random()*pool.length)],f=fitMain();
   const z0=Math.min(Math.min(W,H)*.84/T,H/T*1.1);
   cine.from={x:e.cx,y:e.cy,z:z0};cine.to={x:f.x,y:f.y,z:f.z};cine.hold=700;cine.dur=2700;cine.t0=performance.now();
   let far=1;items.forEach(o=>{o._idel=Math.hypot(o.cx-e.cx,o.cy-e.cy);far=Math.max(far,o._idel)});
@@ -715,7 +717,6 @@ function tickCine(now){
   if(p>=1)cine.t0=null;return true;
 }
 function abortCine(){if(cine.t0===null)return;cine.t0=null;cam.tx=cine.to.x;cam.ty=cine.to.y;cam.tz=cine.to.z;cam.tau=.35;dirty=true}
-function syncZoom(){const [a,b]=zRange(),k=clamp(Math.log(cam.z/a)/Math.log(b/a),0,1);const el=$('#zoomCtl');if(el)el.style.setProperty('--k',k.toFixed(3))}
 function clampCam(){
   if(orient==='v'&&mode!=='talk'){
     const z=cam.tz,lo=(H/2-barH()-10)/z,hi=Math.max(lo,world.h-(H/2-116)/z)+(sel&&W<=700?H*.45/z:0);
@@ -739,7 +740,7 @@ function frame(now){
   const discBusy=mode==='browse'&&tickDisc(dt,now);
   let intros=false;
   if(intro.t0!==null){intros=true;if(now-intro.t0>(intro.span||items.length*intro.gap+560)){intro.t0=null;intro.span=0;items.forEach(e=>{e._iy=0;e._idel=null})}}
-  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn){draw();syncZoom();dirty=false}
+  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn){draw();positionPeek();dirty=false}
   requestAnimationFrame(frame);
 }
 
@@ -861,7 +862,7 @@ function flyTo(e){
   cam.tz=z;cam.tx=e.cx+(pw/2)/z;cam.ty=e.cy+(phone?(H/2-(headH+gap/2))/z:0);cam.tau=.28;dirty=true;
 }
 function select(e,opts={}){
-  clearTimeout(soundTimer);sel=e;hover=null;dirty=true;$('#tip').style.display='none';
+  clearTimeout(soundTimer);sel=e;hover=null;dirty=true;$('#tip').style.display='none';hidePeek();
   if(!e){$('#panel').classList.remove('open');syncPlay();syncYears();return}
   if(orient==='v'&&view.name==='line')setFocus(e);
   renderPanel(e);$('#panel').classList.add('open');flyTo(e);syncYears();
@@ -978,13 +979,13 @@ cv.addEventListener('pointermove',ev=>{
   const h=hit(ev.clientX,ev.clientY);
   if(h!==hover){hover=h;dirty=true;cv.classList.toggle('over',!!h);if(h&&ev.pointerType==='mouse')preload(h)}
   const tip=$('#tip');
-  if(h&&!sel&&ev.pointerType==='mouse')showTip(h,ev.clientX,ev.clientY);else if(ev.pointerType==='mouse')tip.style.display='none';
+  if(h&&!sel&&h!==peek.e&&ev.pointerType==='mouse')showTip(h,ev.clientX,ev.clientY);else if(ev.pointerType==='mouse')tip.style.display='none';
 });
 /* On the timelines the first click or tap on a release plays it and nothing else; the next one on the same release opens its details.
    This waits for the click itself, which every browser accepts as permission to play. */
 let tapped=null,armed=null,camBefore=null,tipTimer=0;
 const TOUCH=matchMedia('(hover: none)').matches;
-const tipHtml=h=>`<em>${esc(h.title)}</em><br><b>${esc(h.artist)}</b><span>${h.year}${h===armed?` · ${TOUCH?'tap':'click'} again for info`:''}</span>`;
+const tipHtml=h=>`<em>${esc(h.title)}</em><br><b>${esc(h.artist)}</b><span>${h.year}</span>`;
 function showTip(h,x,y){const tip=$('#tip');tip.style.display='block';tip.innerHTML=tipHtml(h);tip.style.left=clamp(x+14,8,Math.max(8,W-330))+'px';tip.style.top=Math.min(H-90,y+14)+'px'}
 function closeInfo(){
   if(!sel)return;
@@ -993,28 +994,38 @@ function closeInfo(){
   if(view.name==='line'&&camBefore){cam.tx=camBefore.x;cam.ty=camBefore.y;cam.tz=camBefore.z;cam.tau=.28;clampCam();dirty=true}else fitAll();
   camBefore=null;
 }
+/* One click on a release: a small card with its name and a Play button, silent unless music is already playing
+   (then the new one follows on). A second click, or Details, opens the full info. */
+const peek={e:null};
+const anyPlaying=()=>!!audio.el&&!audio.el.paused&&!audio.fading.has(audio.el);
+function showPeek(h){peek.e=h;const p=$('#peek');p.querySelector('em').textContent=h.title;p.querySelector('b').textContent=`${h.artist} · ${h.year}`;
+  $('#pkPlay').disabled=!biteOf(h);p.classList.add('on');document.body.classList.add('peeking');$('#tip').style.display='none';syncPeek();positionPeek();dirty=true}
+function hidePeek(){if(!peek.e)return;peek.e=null;$('#peek').classList.remove('on');document.body.classList.remove('peeking');dirty=true}
+function syncPeek(){if(!peek.e)return;const on=audioPlaying(peek.e.id)||audio.wantId===peek.e.id&&!!audio.wantId,b=$('#pkPlay');b.classList.toggle('on',on);b.querySelector('span').textContent=!biteOf(peek.e)?'No preview':on?'Pause':'Play';b.setAttribute('aria-label',on?'Pause':'Play')}
+function positionPeek(){const e=peek.e;if(!e||W<=700)return;const p=$('#peek'),s=T*cam.z*(e._g||1),x=sx(e.cx)+(e._dx||0),y=sy(e.cy)+(e._dy||0),w=p.offsetWidth||320,h=p.offsetHeight||58;
+  let top=y-s/2-h-10;if(top<$('#bar').offsetHeight+8)top=y+s/2+10;top=clamp(top,$('#bar').offsetHeight+8,H-h-12);
+  p.style.left=clamp(x-w/2,10,W-w-10)+'px';p.style.top=top+'px'}
+$('#pkPlay').addEventListener('click',()=>{if(peek.e){playerToggle(peek.e);setTimeout(syncPeek,40)}});
+$('#pkMore').addEventListener('click',()=>{const h=peek.e;if(!h)return;camBefore=camBefore||{x:cam.tx,y:cam.ty,z:cam.tz};select(h)});
+setInterval(syncPeek,250);
 cv.addEventListener('click',ev=>{
   if(view.name==='disc'&&mode==='browse'){discClick(ev);return}
   if(!tapped||view.name!=='line'||mode!=='browse')return;
   const h=tapped.e;tapped=null;clearTimeout(tipTimer);
-  if(!h){if(sel)closeInfo();else{armed=null;stopAudio(.6)}$('#tip').style.display='none';return}
-  if(sel&&sel!==h){armed=h;select(h);if(soundOn&&biteOf(h)&&audio.id!==h.id&&audio.wantId!==h.id)playBite(h,.25,.6);return}
-  if(armed===h){if(sel!==h){camBefore=camBefore||{x:cam.tx,y:cam.ty,z:cam.tz};select(h)}return}
-  armed=h;
-  if(!soundOn||!biteOf(h))stopAudio(.6);else if(audio.id!==h.id&&audio.wantId!==h.id)playBite(h,.25,.6);
-  if(!sel&&!TOUCH)showTip(h,ev.clientX,ev.clientY);
+  const follow=()=>{if(soundOn&&anyPlaying()&&biteOf(h)&&audio.id!==h.id&&audio.wantId!==h.id){player.e=h;playBite(h,.25,.6)}};
+  if(!h){if(sel)closeInfo();else hidePeek();$('#tip').style.display='none';return}
+  if(sel&&sel!==h){follow();armed=h;select(h);return}
+  if(sel===h)return;
+  if(peek.e===h){camBefore=camBefore||{x:cam.tx,y:cam.ty,z:cam.tz};select(h);return}
+  follow();armed=h;showPeek(h);
 });
 cv.addEventListener('pointerup',ev=>{pts.delete(ev.pointerId);pinch=0;cv.classList.remove('drag');if(mode==='talk'){if(finished)leaveTalk(hit(ev.clientX,ev.clientY));return}if(view.name==='disc'){discUp(ev);return}if(moved<6&&pts.size===0){flick.x=flick.y=0;tapped={e:hit(ev.clientX,ev.clientY)}}
   if(performance.now()-dragT>90){flick.x=flick.y=0}
   drag=null});
 cv.addEventListener('pointerleave',ev=>{if(hover){hover=null;dirty=true}lens.on=false;dirty=true;$('#tip').style.display='none'});
-function zoomAt(mx,my,f){if(orient==='v')return;const zmin=fitBox(70,64).z*.8,zmax=H/T*1.1;const nz=clamp(cam.tz*f,zmin,zmax);const wxx=(mx-W/2)/cam.tz+cam.tx,wyy=(my-H/2)/cam.tz+cam.ty;cam.tz=nz;cam.tx=wxx-(mx-W/2)/nz;cam.ty=wyy-(my-H/2)/nz;cam.tau=.08;dirty=true}
+function zoomAt(mx,my,f){if(orient==='v')return;const zmin=fitMain().z*.8,zmax=H/T*1.1;const nz=clamp(cam.tz*f,zmin,zmax);const wxx=(mx-W/2)/cam.tz+cam.tx,wyy=(my-H/2)/cam.tz+cam.ty;cam.tz=nz;cam.tx=wxx-(mx-W/2)/nz;cam.ty=wyy-(my-H/2)/nz;cam.tau=.08;dirty=true}
 ['pointerdown','wheel'].forEach(t=>cv.addEventListener(t,abortCine,{capture:true,passive:true}));
 addEventListener('keydown',abortCine,true);addEventListener('resize',abortCine);
-function zoomMid(f){abortCine();const pw=sel&&W>700?panelWidth():0;zoomAt((W-pw)/2,H/2+(barH()-34)/2,f);cam.tau=.28}
-$('#zIn').addEventListener('click',()=>zoomMid(1.8));$('#zOut').addEventListener('click',()=>zoomMid(1/1.8));
-(()=>{const lv=$('#zLv');let on=false;const set=ev=>{const r=lv.getBoundingClientRect(),k=clamp(1-(ev.clientY-r.top-4)/(r.height-8),0,1),[a,b]=zRange();zoomMid(a*Math.pow(b/a,k)/cam.tz)};
-  lv.addEventListener('pointerdown',ev=>{on=true;lv.setPointerCapture(ev.pointerId);set(ev)});lv.addEventListener('pointermove',ev=>{if(on)set(ev)});lv.addEventListener('pointerup',()=>on=false)})();
 cv.addEventListener('wheel',ev=>{
   ev.preventDefault();if(mode==='talk')return;
   if(view.name==='disc'){discWheel(ev);return}
@@ -1724,9 +1735,9 @@ const wantedView=(location.search.match(/[?&]view=(record|timeline)/)||[])[1];
 const startDisc=wantedView?wantedView==='record':store.get('gt.view2','line')==='disc';
 /* The covers fly in once they have loaded, or after a moment regardless. */
 function startIntro(){
-  if(REDUCED){$('#zoomCtl').classList.remove('wait');return}
+  if(REDUCED)return;
   intro.t0=performance.now()+1e7;
-  const go=()=>{if(intro.t0>performance.now()){intro.t0=performance.now()+120;startCine();$('#zoomCtl').classList.remove('wait')}};
+  const go=()=>{if(intro.t0>performance.now()){intro.t0=performance.now()+120;startCine()}};
   const pending=ALL.filter(e=>e.cover&&items.includes(e));
   const tick=()=>{if(pending.filter(e=>e.img).length>=pending.length*.9)go();else if(mode==='browse'&&intro.t0>performance.now())setTimeout(tick,60)};
   tick();setTimeout(go,1100);
