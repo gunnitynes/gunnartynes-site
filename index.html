@@ -56,6 +56,7 @@ button{background:none;border:0;cursor:pointer;padding:0}
 #now span{font:12px var(--mono);color:var(--dim)}
 #now small{display:block;font:11.5px var(--mono);color:var(--faint);margin-top:4px;transition:opacity .4s}
 #now small.off{opacity:0}
+@media (max-width:700px){body.disc #now small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}body.disc #now em{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:21px}}
 #discPlay{position:fixed;z-index:4;width:44px;height:44px;margin:-22px 0 0 -22px;padding:0;border:0;border-radius:50%;background:var(--paper);color:var(--ground);display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 14px #000a;transition:transform .15s}
 #discPlay:hover{transform:scale(1.1)}#discPlay:active{transform:scale(.94)}
 #discPlay svg{width:24px;height:24px;fill:currentColor;display:block}
@@ -431,7 +432,7 @@ function drawTileAt(e,cxs,cys,s,rot,alpha,outline){
   g.save();g.translate(cxs,cys);if(rot)g.rotate(rot);
   const x=-s/2,y=-s/2;
   g.globalAlpha=alpha;
-  const src=s<=128&&e.thumb?e.thumb:e.img;
+  const src=s*DPR<=150&&e.thumb?e.thumb:e.img;
   if(src){g.imageSmoothingQuality='high';g.drawImage(src,x,y,s,s)}
   else if(!e.cover)drawMissing(x,y,s,e);
   else{
@@ -1043,6 +1044,10 @@ const view={name:'line',mix:0,to:0};
 const disc={s:0,target:null,vel:0,touched:-1e9,wheelAt:0,cur:0,prev:-1,labelT:1,stops:[],years:[],tile:.1,pitch:.02,R0:1,R:100,cx:0,cy:0,cxLive:null,drag:false,arm:false,dist:0,lastA:0,lastT:0,vinyl:null,vinylR:0,seen:false};
 const AUTOPLAY_SECONDS=20,SILENT_SECONDS=3,XF_IN=.9,XF_OUT=1.7;
 const RIN=.27,PIVOT=1.35,BETA=-Math.PI/4,ARM=1.18;
+/* On a phone the record is seen twice: a close-up of the groove under the needle, big enough to read and tap,
+   and the whole record below it, small, as a map. Both are the same record turning; swipe either one. */
+const PH={on:false,top:0,h:0,nx:0,ny:0,Rb:1000,tp:80};
+const phoneDisc=()=>W<=700;
 function discLayout(){
   /* A slot before each new year works like the gap between tracks. Solve the tile size so the groove ends at the label. */
   const rows=[];let yr=null;
@@ -1081,6 +1086,8 @@ function discClick(ev){
   const tap=disc.tap;disc.tap=null;if(!tap)return;
   const now=performance.now(),l=disc.lastClick;
   if(l&&now-l.t<400&&Math.hypot(ev.clientX-l.x,ev.clientY-l.y)<14){disc.lastClick=null;select(l.e);return}   /* the release has moved by now, so go by where the first click was */
+  /* on a phone the cover under the needle is the big one: tapping it plays it if the record waits, and opens its details if it is already playing */
+  if(tap.e&&tap.band&&tap.e===items[disc.cur]&&(discLive()||!audible(tap.e))){disc.lastClick=null;select(tap.e);return}
   if(tap.e){disc.lastClick={e:tap.e,t:now,x:ev.clientX,y:ev.clientY};discChoose(tap.e);return}
   disc.lastClick=null;
   if(tap.label)select(items[disc.cur]);else if(sel)select(null);
@@ -1109,6 +1116,18 @@ function discRest(now){
 }
 function discTouch(){disc.touched=performance.now();if(!disc.seen){disc.seen=true;$('#hint').classList.add('off')}}
 function discMetrics(dt){
+  PH.on=phoneDisc();
+  if(PH.on){
+    /* top to bottom: the close-up, the name of what is under the needle, the whole record */
+    const head=$('#bar').offsetHeight,avail=H-head,nowH=108,Dw=Math.min(W*.6,230,avail*.32);
+    PH.top=head;PH.h=Math.round(clamp(avail-nowH-Dw-30,200,440));PH.nx=W/2;PH.ny=PH.top+PH.h*.58;
+    PH.tp=clamp(W*.215,66,96);PH.Rb=PH.tp/disc.tile;
+    const below=H-(PH.top+PH.h)-nowH-18,D=Math.max(100,Math.min(Dw,below));
+    disc.R=D/2;disc.cx=disc.cxLive=W/2;disc.cy=PH.top+PH.h+nowH+(below-D)/2+D/2+4;
+    const pb=$('#discPlay');pb.style.left=disc.cx+'px';pb.style.top=disc.cy+'px';pb.hidden=view.mix<1;
+    const n=$('#now');n.style.width=(W-32)+'px';n.style.left='16px';n.style.top=(PH.top+PH.h+8)+'px';
+    return;
+  }
   const head=$('#bar').offsetHeight,capH=W<=700?78:92,pw=sel&&W>700?400:0;
   const D=Math.max(180,Math.min(W-pw-24,H-head-capH-12));
   disc.R=D/2;
@@ -1158,7 +1177,7 @@ function tickDisc(dt,now){
   }
   /* The sound follows the hand, then eases back to speed from exactly where it was. */
   {
-    const v=Math.abs(disc.vel),want=disc.drag&&!disc.arm&&disc.dist>6?clamp(v/2.2,.35,2.5):(!disc.drag&&v>.05?clamp(v/2.2,.6,2.5):1);
+    const v=Math.abs(disc.vel)*(disc.lastBand?Math.max(1,discR(disc.s)*PH.Rb/(disc.R*.6)):1),want=disc.drag&&!disc.arm&&disc.dist>6?clamp(v/2.2,.35,2.5):(!disc.drag&&v>.05?clamp(v/2.2,.6,2.5):1);
     disc.rate=(disc.rate||1)+(want-(disc.rate||1))*(1-Math.exp(-dt/(disc.drag?.05:.25)));
     if(!disc.drag&&Math.abs(disc.rate-1)<.01)disc.rate=1;else busy=busy||disc.rate!==1;
     const a=audio.el;if(a&&a.playbackRate!==disc.rate){try{a.preservesPitch=disc.rate===1;a.playbackRate=disc.rate}catch(x){}}
@@ -1187,6 +1206,57 @@ function drawLabel(e,alpha,rl){
   }
   g.globalAlpha=1;
 }
+function bandX(){const ra=discR(disc.s);return{phi:discPhi(),rot:Math.PI/2-discAlpha(ra),cx:PH.nx,cy:PH.ny-ra*PH.Rb,ra}}
+/* in the close-up the covers lean in towards the centre of the record, which is above the screen, so they stand upright under the needle */
+function bandPos(e,X,a,r){const th=X.phi-(a??e._da)+X.rot,rr=(r??e._dr)*PH.Rb;return{x:X.cx+rr*Math.cos(th),y:X.cy+rr*Math.sin(th),rot:th-Math.PI/2,s:disc.tile*PH.Rb}}
+function bandHit(mx,my){
+  if(my<PH.top||my>PH.top+PH.h)return null;
+  const X=bandX();let best=null,bd=1e9;
+  for(const e of items){const p=bandPos(e,X),d=Math.hypot(mx-p.x,my-p.y),k=e===items[disc.cur]?.78:.56;if(d<p.s*k&&d<bd){bd=d;best=e}}
+  return best;
+}
+function drawBand(alpha){
+  const X=bandX(),top=PH.top,h=PH.h,Rb=PH.Rb,cur=items[disc.cur];
+  g.save();g.globalAlpha=alpha;g.beginPath();g.rect(0,top,W,h);g.clip();
+  /* the vinyl, its grooves and the rim or the label when the needle is near either */
+  g.fillStyle='#090a0e';g.beginPath();g.arc(X.cx,X.cy,Rb,0,7);g.fill();
+  const rmin=Math.max(RIN*Rb,top-X.cy),rmax=Math.min(Rb,Math.hypot(W/2+10,top+h-X.cy));
+  g.lineWidth=1;
+  for(let r=rmax,i=0;r>rmin;r-=4.5,i++){const a=Math.asin(Math.min(1,(W/2+20)/r));g.strokeStyle=i%7?'rgba(255,255,255,.03)':'rgba(255,255,255,.055)';g.beginPath();g.arc(X.cx,X.cy,r,Math.PI/2-a,Math.PI/2+a);g.stroke()}
+  if(g.createConicGradient){
+    const gr=g.createConicGradient(Math.PI/2-.55,X.cx,X.cy),hl='rgba(255,255,255,.06)',o='rgba(255,255,255,0)';
+    [[0,o],[.06,hl],[.11,o],[1,o]].forEach(q=>gr.addColorStop(q[0],q[1]));g.fillStyle=gr;g.beginPath();g.arc(X.cx,X.cy,Rb,0,7);g.fill();
+  }
+  g.strokeStyle='rgba(255,255,255,.16)';g.beginPath();g.arc(X.cx,X.cy,Rb-1,0,7);g.stroke();
+  if(RIN*Rb>top-X.cy){g.fillStyle=COL.plate;g.beginPath();g.arc(X.cx,X.cy,RIN*Rb*.9,0,7);g.fill()}
+  /* the covers in the grooves near the needle: this turn of the spiral and the ones either side */
+  const pad=PH.tp;
+  for(const e of items){
+    if(e===cur)continue;
+    const p=bandPos(e,X);if(p.y<top-pad||p.y>top+h+pad||p.x<-pad||p.x>W+pad)continue;
+    const ring=Math.abs(e._dr-X.ra)/(disc.pitch*2*Math.PI);   /* 0 on the needle's own turn, 1 a turn away */
+    drawTileAt(e,p.x,p.y,p.s*.93,p.rot,(matches(e)?1:.12)*(ring<.5?1:.55),false);
+  }
+  /* each year is written in its gap in the groove */
+  g.font=`500 ${Math.round(PH.tp*.17)}px "IBM Plex Mono",monospace`;g.textAlign='center';g.textBaseline='middle';
+  disc.years.forEach(y=>{const p=bandPos(null,X,y.a,y.r);if(p.y<top-30||p.y>top+h+30||p.x<-40||p.x>W+40)return;g.save();g.translate(p.x,p.y);g.rotate(p.rot);g.fillStyle=y.year===cur.year?COL.paper:COL.dim;g.fillText(String(y.year),0,0);g.restore()});
+  g.textAlign='left';
+  /* soft edges, so the close-up reads as a window onto a bigger record */
+  const fade=(x0,y0,x1,y1)=>{const lg=g.createLinearGradient(x0,y0,x1,y1);lg.addColorStop(0,COL.ground);lg.addColorStop(1,'rgba(0,0,0,0)');return lg};
+  g.globalAlpha=alpha;g.fillStyle=fade(0,0,44,0);g.fillRect(0,top,44,h);g.fillStyle=fade(W,0,W-44,0);g.fillRect(W-44,top,44,h);
+  g.fillStyle=fade(0,top+h,0,top+h-26);g.fillRect(0,top+h-26,W,26);g.fillStyle=fade(0,top,0,top+18);g.fillRect(0,top,W,18);
+  /* the release under the needle lifts out of the groove, and the stylus rests on it */
+  const pc=bandPos(cur,X),S=pc.s*1.42;
+  g.globalAlpha=alpha;g.save();g.shadowColor='rgba(0,0,0,.7)';g.shadowBlur=22;g.shadowOffsetY=8;g.fillStyle=COL.ground;g.fillRect(pc.x-S/2+2,pc.y-S/2+2,S-4,S-4);g.restore();
+  drawTileAt(cur,pc.x,pc.y,S,0,alpha,true);
+  const tipX=pc.x,tipY=pc.y-S/2-3,pivX=W-22,pivY=top+16;
+  g.globalAlpha=alpha;g.strokeStyle=COL.paper;g.lineCap='round';g.lineWidth=2;
+  g.beginPath();g.moveTo(pivX,pivY);g.lineTo(tipX+30,tipY-22);g.stroke();
+  g.lineWidth=7;g.beginPath();g.moveTo(tipX+30,tipY-22);g.lineTo(tipX+6,tipY-4);g.stroke();
+  g.lineWidth=1.5;g.beginPath();g.moveTo(tipX+6,tipY-4);g.lineTo(tipX,tipY);g.stroke();
+  g.fillStyle=COL.paper;g.beginPath();g.arc(pivX,pivY,6,0,7);g.fill();g.fillStyle=COL.ground;g.beginPath();g.arc(pivX,pivY,2,0,7);g.fill();
+  g.lineCap='butt';g.restore();g.globalAlpha=1;
+}
 function drawDisc(m){
   discMetrics(0);
   const phi=discPhi(),R=disc.R,cur=items[disc.cur],em=m<.5?4*m*m*m:1-Math.pow(-2*m+2,3)/2,solid=sstep(.45,1,m);
@@ -1204,7 +1274,7 @@ function drawDisc(m){
   items.forEach(e=>{
     if(e===cur&&m===1)return;
     const p=discPos(e,phi),a=matches(e)?1:.1;
-    if(m>=1){if(e!==hover)drawTileAt(e,p.x,p.y,p.s,p.rot,a,false);return}
+    if(m>=1||PH.on){if(e!==hover||PH.on)drawTileAt(e,p.x,p.y,p.s,p.rot,a*(m>=1?1:solid),false);return}
     /* the morph from the timeline: each cover leaves its year for its place in the groove, oldest first */
     const k=clamp((em*1.35)-(e.seq/N)*.35,0,1),q=k*k*(3-2*k);
     drawTileAt(e,lerp(sx(e.cx),p.x,q),lerp(sy(e.cy),p.y,q),lerp(T*cam.z,p.s,q),p.rot*q,a,false);
@@ -1215,6 +1285,7 @@ function drawDisc(m){
     disc.years.forEach(y=>{const th=phi-y.a,r=y.r*R;g.save();g.translate(disc.cx+r*Math.cos(th),disc.cy+r*Math.sin(th));g.rotate(th+Math.PI/2);g.fillStyle=y.year===cur.year?COL.paper:COL.dim;g.fillText(String(y.year),0,0);g.restore()});
     g.textAlign='left';g.globalAlpha=1;
   }
+  if(PH.on)drawBand(solid);
   if(m<1)return;
   /* the label shows whatever is under the needle */
   const rl=R*RIN*.86;
@@ -1225,7 +1296,7 @@ function drawDisc(m){
   g.restore();
   g.fillStyle='#090a0e';g.beginPath();g.arc(disc.cx,disc.cy,Math.max(2.5,R*.012),0,7);g.fill();
   /* the release under the needle lifts out of the groove; so does one under the cursor */
-  const pc=discPos(cur,phi);drawTileAt(cur,pc.x,pc.y,Math.max(pc.s*1.5,48),pc.rot,1,true);
+  const pc=discPos(cur,phi);drawTileAt(cur,pc.x,pc.y,PH.on?pc.s*2.4:Math.max(pc.s*1.5,48),pc.rot,1,true);
   if(hover&&hover!==cur){const ph=discPos(hover,phi);drawTileAt(hover,ph.x,ph.y,Math.max(ph.s*2,ph.s+30),ph.rot,1,false)}
   /* tonearm */
   const ra=discR(disc.s),al=discAlpha(ra),nx=disc.cx+ra*R*Math.cos(al),ny=disc.cy+ra*R*Math.sin(al),px=disc.cx+PIVOT*R*Math.cos(BETA),py=disc.cy+PIVOT*R*Math.sin(BETA);
@@ -1248,7 +1319,8 @@ function armNear(mx,my){
 function discDown(ev){
   discTouch();disc.vel=0;disc.target=null;disc.wheelAt=0;disc.dist=0;disc.downCur=disc.cur;
   const dx=ev.clientX-disc.cx,dy=ev.clientY-disc.cy;
-  disc.arm=armNear(ev.clientX,ev.clientY);
+  disc.band=disc.lastBand=PH.on&&ev.clientY<PH.top+PH.h;disc.lastX=ev.clientX;
+  disc.arm=!disc.band&&armNear(ev.clientX,ev.clientY);
   disc.drag=true;disc.lastA=Math.atan2(dy,dx);disc.lastT=performance.now();cv.classList.add('drag');
   $('#tip').style.display='none';clearTimeout(soundTimer);
 }
@@ -1259,6 +1331,11 @@ function discMove(ev){
     const first=disc.stops[0],lastS=disc.stops[disc.stops.length-1];
     if(disc.arm){
       disc.s=clamp((disc.R0-r/disc.R)/disc.pitch,first,lastS);disc.dist+=2;return;
+    }
+    if(disc.band){   /* the close-up turns with the finger, sideways: the groove moves exactly as far as the finger */
+      const dxp=ev.clientX-disc.lastX;disc.lastX=ev.clientX;disc.dist+=Math.abs(dxp);
+      const da=-dxp/(discR(disc.s)*PH.Rb),tn=performance.now(),ms=Math.max(4,tn-disc.lastT);disc.lastT=tn;
+      disc.s=clamp(disc.s+da,first,lastS);disc.vel=lerp(disc.vel,da/(ms/1000),.35);return;
     }
     if(r<14)return;
     const a=Math.atan2(dy,dx);let da=a-disc.lastA;if(da>Math.PI)da-=2*Math.PI;if(da<-Math.PI)da+=2*Math.PI;
@@ -1279,12 +1356,13 @@ function discUp(ev){
   disc.drag=false;disc.arm=false;cv.classList.remove('drag');discTouch();
   if(dist<6){   /* no movement is a tap, even on a cover lying under the arm */
     disc.vel=0;
-    const r=Math.hypot(ev.clientX-disc.cx,ev.clientY-disc.cy),h=discHit(ev.clientX,ev.clientY);
-    disc.tap={e:h,label:!h&&r<disc.R*RIN*.86};   /* the click that follows decides what this means */
+    const r=Math.hypot(ev.clientX-disc.cx,ev.clientY-disc.cy),h=disc.band?bandHit(ev.clientX,ev.clientY):discHit(ev.clientX,ev.clientY);
+    disc.tap={e:h,band:disc.band,label:!disc.band&&!h&&r<disc.R*RIN*.86};disc.band=false;   /* the click that follows decides what this means */
     disc.target=disc.target==null?disc.stops[discNearest(disc.s)]:disc.target;
     return;
   }
-  disc.vel=clamp(disc.vel,-12,12);
+  const vmax=disc.band?1500/(discR(disc.s)*PH.Rb):12;   /* a flick of the close-up carries a dozen covers at most */
+  disc.band=false;disc.vel=clamp(disc.vel,-vmax,vmax);
   if(wasArm||performance.now()-disc.lastT>90||Math.abs(disc.vel)<.25){
     disc.vel=0;const near=discNearest(disc.s),own=items[disc.downCur];
     /* A scratch that ends within a release of where it started goes back to its song, which never stopped. */
@@ -1324,7 +1402,7 @@ function syncLayout(){
   const vert=view.name==='line'&&orient==='v',n=$('#now'),o=$('#vOrient');
   document.body.classList.toggle('vert',vert);
   n.classList.toggle('dock',vert);
-  $('#hint').textContent=vert?'':(matchMedia('(hover: none)').matches?'Tap a release to play it, double tap for info, spin to scratch':'Click a release to play it, double click for info, spin to scratch');
+  $('#hint').textContent=vert?'':(matchMedia('(hover: none)').matches?(W<=700?'Swipe · tap a cover to play · again for info':'Tap a release to play it, double tap for info, spin to scratch'):'Click a release to play it, double click for info, spin to scratch');
   $('#discPlay').hidden=view.name!=='disc'||view.mix<1;
   o.hidden=view.name!=='line';
   o.setAttribute('aria-pressed',orient==='v');
