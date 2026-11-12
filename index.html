@@ -32,14 +32,52 @@ button{background:none;border:0;cursor:pointer;padding:0}
 #bar{position:fixed;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:14px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141bf2 60%,#11141b00);z-index:5}
 #bar h1{margin:0;font:400 20px/1 var(--serif);letter-spacing:.005em;white-space:nowrap}
 #bar h1 small{font:12px var(--mono);color:var(--faint);margin-left:10px}
+#vOrient,#filterBtn,#bookLink{display:none!important}
+.quiet.live{display:inline-flex;align-items:center;gap:6px;color:var(--paper);text-decoration:none}
+.quiet.live i,.mlive i{width:7px;height:7px;border-radius:50%;background:#e6b450;flex:none;animation:livePulse 2.6s ease-out infinite}
+.quiet.live .arr{display:inline-block;color:#e6b450;transition:transform .25s}.quiet.live:hover .arr{transform:translateX(3px)}
+@keyframes livePulse{0%{box-shadow:0 0 0 0 #e6b45088}70%{box-shadow:0 0 0 7px #e6b45000}100%{box-shadow:0 0 0 0 #e6b45000}}
+#menuBtn{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px 0 10px;border:1px solid var(--rule);border-radius:17px;color:var(--paper);font:13px var(--sans);background:#ffffff08;transition:background .2s,border-color .2s}
+#menuBtn:hover,#menuBtn[aria-expanded=true]{background:#ffffff14;border-color:#ece8dc55}
+#menuBtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+#qChip{height:28px;padding:0 10px;border-radius:15px;background:var(--paper);color:var(--ground);font:12px var(--mono);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#qChip[hidden]{display:none}
+#menu{position:absolute;top:calc(100% + 2px);right:max(16px,env(safe-area-inset-right,0px));width:min(400px,calc(100vw - 32px));max-height:calc(100dvh - 90px);overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--plate);border:1px solid var(--rule);border-radius:12px;box-shadow:0 24px 60px #000a;z-index:8}
+#menu[hidden]{display:none}
+.msearch{display:flex;align-items:center;gap:9px;padding:0 12px;height:44px;border-radius:9px;background:var(--ground);border:1px solid var(--rule)}
+.msearch:focus-within{border-color:#ece8dc77}
+.msearch svg{width:18px;height:18px;flex:none;fill:none;stroke:var(--dim);stroke-width:1.7;stroke-linecap:round}
+#q{flex:1;min-width:0;background:none;border:0;outline:0;font:16px var(--sans);color:var(--paper);padding:0}
+#q::placeholder{color:var(--dim)}
+#qCount{margin:-2px 2px 0;font:11.5px var(--mono);color:var(--dim)}#qCount:empty{display:none}
+#results{list-style:none;margin:0 -4px;padding:0;display:flex;flex-direction:column;gap:2px;max-height:min(46vh,420px);overflow:auto}#results:empty{display:none}
+#results button{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;padding:6px 8px;border-radius:7px;text-align:left;color:var(--paper)}
+#results button:hover,#results button.k{background:#ffffff10}
+#results .rc{width:44px;height:44px;object-fit:cover;background:var(--plate2);display:block}
+#results .rc.none{background:repeating-linear-gradient(-45deg,#ffffff0b 0 1px,transparent 1px 7px),var(--plate2);outline:1px dashed #ece8dc40;outline-offset:-4px}
+#results em{display:block;font:italic 400 16px/1.2 var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#results b{display:block;font:400 12.5px/1.35 var(--sans);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#results mark{background:none;color:#e6b450}
+#results span{font:12px var(--mono);color:var(--dim)}
+.mrows{display:flex;flex-direction:column;border-top:1px solid var(--rule);padding-top:4px}
+.mrow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;font:13.5px var(--sans);color:var(--dim)}
+.mrow[hidden]{display:none}
+#soundBtn{display:inline-flex;align-items:center;gap:9px;color:var(--paper);font:12px var(--mono)}
+#soundBtn i{position:relative;width:34px;height:20px;border-radius:11px;background:#ffffff1c;transition:background .2s}
+#soundBtn i::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--paper);transition:transform .2s}
+#soundBtn[aria-checked=true] i{background:#e6b450}#soundBtn[aria-checked=true] i::after{transform:translateX(14px);background:var(--ground)}
+.seg{display:inline-flex;padding:2px;border-radius:8px;background:var(--ground);border:1px solid var(--rule)}
+.seg button{padding:6px 11px;border-radius:6px;font:12.5px var(--sans);color:var(--dim)}
+.seg button[aria-pressed=true]{background:var(--plate2);color:var(--paper)}
+.mlive{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:9px;background:linear-gradient(100deg,#e6b4501c,#e6b45008);border:1px solid #e6b45040;color:var(--paper);text-decoration:none}
+.mlive span{flex:1;min-width:0}.mlive b{display:block;font:italic 400 20px/1.1 var(--serif)}.mlive small{display:block;font:12px var(--sans);color:var(--dim);margin-top:2px}
+.mlive em{font-style:normal;color:#e6b450;font-size:18px;transition:transform .25s}.mlive:hover em{transform:translateX(4px)}
+.mlinks{display:flex;gap:18px;padding:2px 4px 2px;font:12px var(--mono)}.mlinks a{color:var(--dim);text-decoration:none}.mlinks a:hover{color:var(--paper)}
 #roles{display:flex;gap:4px;flex-wrap:wrap}
 .chip{display:inline-flex;gap:7px;align-items:center;padding:4px 9px;border:1px solid var(--rule);border-radius:2px;font:12px var(--sans);color:var(--dim)}
 .chip i{width:9px;height:9px;background:var(--c);display:block}
 .chip[aria-pressed=true]{color:var(--paper);background:var(--plate2);border-color:#ffffff40}
 .chip:not([aria-pressed=true]) i{opacity:.35}
-#q{background:none;border:0;border-bottom:1px solid transparent;padding:3px 2px;width:84px;font-size:13px;transition:width .25s,border-color .25s}
-#q::placeholder{color:var(--dim)}
-#q:hover{border-color:var(--rule)}#q:focus{width:190px;outline:0;border-color:var(--paper)}
 .quiet{font-size:13px;color:var(--dim);padding:3px 2px;border-bottom:1px solid transparent;transition:color .15s}
 .quiet:hover{color:var(--paper)}
 .quiet[aria-pressed=true],.quiet[aria-expanded=true],.quiet.on{color:var(--paper);border-color:var(--paper)}
@@ -58,7 +96,7 @@ button{background:none;border:0;cursor:pointer;padding:0}
 #now small.off{opacity:0}
 #recView{position:fixed;left:14px;z-index:4;padding:6px 11px;border:1px solid rgba(236,232,220,.28);border-radius:20px;background:rgba(14,16,22,.72);color:var(--paper);font:11.5px var(--mono);letter-spacing:.02em;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 #recView:active{transform:scale(.96)}
-@media (max-width:700px){body.disc.recclose #now{text-align:left}}
+body.disc.recclose #now{text-align:left}
 @media (max-width:700px){body.disc #now small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}body.disc #now em{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:21px}}
 #discPlay{position:fixed;z-index:4;width:44px;height:44px;margin:-22px 0 0 -22px;padding:0;border:0;border-radius:50%;background:var(--paper);color:var(--ground);display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 14px #000a;transition:transform .15s}
 #discPlay:hover{transform:scale(1.1)}#discPlay:active{transform:scale(.94)}
@@ -154,7 +192,8 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 
 @media (max-width:700px){
-  #bar h1 small{display:none}#q{width:74px}#q:focus{width:120px}#right{order:1;margin-left:auto;gap:12px}#views{order:2;flex-basis:100%}#bookLink{display:none}
+  #bar h1 small{display:none}#right{order:1;margin-left:auto;gap:8px}#views{order:2;flex-basis:100%;gap:18px}#menuBtn span{display:none}#menuBtn{padding:0 10px;gap:8px}#qChip{max-width:110px}
+  #menu{left:8px;right:8px;width:auto;max-height:calc(100dvh - 110px)}
   #panel{top:auto;left:0;right:0;width:auto;height:calc(58% - 34px);border-left:0;border-top:1px solid var(--rule);transform:translateY(102%)}
   #full{left:6%;right:6%;top:auto;bottom:14%;transform:none}
 }
@@ -223,17 +262,29 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
   <h1>gunnar tynes <small id="count"></small></h1>
   <div id="views" role="group" aria-label="View">
     <button class="quiet" id="vLine" aria-pressed="true">Timeline</button>
-    <button class="quiet" id="vOrient" aria-pressed="false" title="Switch the timeline between horizontal and vertical">Vertical</button>
+    <button class="quiet" id="vOrient" aria-pressed="false" hidden>Vertical</button>
     <button class="quiet" id="vDisc" aria-pressed="false">Record</button>
     <a class="quiet" id="vFilm" href="film/" style="text-decoration:none" hidden>Film &amp; TV</a>
-    <a class="quiet" id="vLive" href="live/" style="text-decoration:none">Live</a>
+    <a class="quiet live" id="vLive" href="live/" title="Every concert, tour by tour, on a map"><i aria-hidden="true"></i>Live<span class="arr" aria-hidden="true">→</span></a>
   </div>
   <div id="right">
-    <a class="quiet" id="bookLink" href="booking/" style="text-decoration:none" hidden>Booking</a>
-    <input id="q" type="search" placeholder="Search" aria-label="Search artist or title">
-    <button class="quiet" id="soundBtn" aria-pressed="false" title="Turn sound on or off">Sound</button>
-    <button class="quiet" id="filterBtn" aria-expanded="false" aria-controls="filters">Filter</button>
+    <a class="quiet" id="bookLink" href="booking/" hidden>Booking</a>
+    <button class="quiet" id="filterBtn" aria-expanded="false" aria-controls="filters" hidden>Filter</button>
+    <button id="qChip" type="button" hidden title="Clear the search"></button>
+    <button id="menuBtn" type="button" aria-expanded="false" aria-controls="menu" title="Search, sound and settings"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.2"/><path d="M12.4 12.4 17 17"/></svg><span>Menu</span><svg class="burg" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"/></svg></button>
     <button class="quiet talk" id="talkBtn">Talk</button>
+  </div>
+  <div id="menu" hidden>
+    <label class="msearch"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.2"/><path d="M12.4 12.4 17 17"/></svg><input id="q" type="search" placeholder="Search titles, artists, years" aria-label="Search titles, artists or years" autocomplete="off" enterkeyhint="search"></label>
+    <p id="qCount"></p>
+    <ol id="results"></ol>
+    <div class="mrows">
+      <div class="mrow"><span>Sound</span><button id="soundBtn" type="button" role="switch" aria-checked="false" aria-pressed="false"><i></i><b>Off</b></button></div>
+      <div class="mrow" id="mOrient"><span>Timeline</span><div class="seg"><button type="button" data-o="h">Across</button><button type="button" data-o="v">Down</button></div></div>
+      <div class="mrow" id="mRec"><span>Record</span><div class="seg"><button type="button" data-r="close">Close-up</button><button type="button" data-r="whole">Whole record</button></div></div>
+    </div>
+    <a class="mlive" href="live/"><i aria-hidden="true"></i><span><b>Live</b><small>Every concert, tour by tour, on a map</small></span><em aria-hidden="true">→</em></a>
+    <div class="mlinks"><a href="?start">Start page</a><a id="mBook" href="booking/" hidden>Booking requests</a></div>
   </div>
   <div id="filters" hidden>
     <div id="roles" role="group" aria-label="Filter by role"></div>
@@ -407,11 +458,14 @@ const wx=s=>(s-W/2)/cam.z+cam.x, wy=s=>(s-H/2)/cam.z+cam.y;
 
 /* ---------- filters ---------- */
 const active=new Set(Object.keys(ROLE));let query='';
+/* search ignores accents and Icelandic letters: mum finds múm, thordis finds Þórdís */
+const fold=t=>String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ð/g,'d').replace(/þ/g,'th').replace(/æ/g,'ae').replace(/ø/g,'o');
+const hayOf=e=>e._hay||(e._hay=fold(e.artist+' '+e.title+' '+e.year+' '+(e.labels||[]).join(' ')));
 const matches=e=>{
   const roleOK=e.roles.length?e.roles.some(r=>active.has(r)):active.size===Object.keys(ROLE).length;
   if(!roleOK)return false;
   if(!query)return true;
-  return (e.artist+' '+e.title+' '+e.year+' '+(e.labels||[]).join(' ')).toLowerCase().includes(query);
+  return query.split(/\s+/).every(w=>hayOf(e).includes(w));
 };
 
 /* ---------- drawing ---------- */
@@ -830,7 +884,7 @@ const rb=$('#roles');
 Object.keys(ROLE).forEach(k=>{const b=document.createElement('button');b.className='chip';b.setAttribute('aria-pressed','true');b.style.setProperty('--c',C[k]);b.innerHTML=`<i></i>${ROLE[k][0]}`;b.onclick=()=>{
   if(active.size===Object.keys(ROLE).length){active.clear();active.add(k)}else if(active.has(k)){active.delete(k);if(!active.size)Object.keys(ROLE).forEach(r=>active.add(r))}else active.add(k);
   [...rb.children].forEach((c,i)=>c.setAttribute('aria-pressed',active.has(Object.keys(ROLE)[i])));syncFilter();dirty=true};rb.appendChild(b)});
-$('#q').addEventListener('input',ev=>{query=ev.target.value.trim().toLowerCase();dirty=true});
+$('#q').addEventListener('input',ev=>{query=fold(ev.target.value.trim());dirty=true});
 $('#bar').querySelector('h1').onclick=()=>{if(mode==='browse'){openWelcome();return}select(null);if(orient==='v'&&view.name==='line'){cam.ty=-1e9;clampCam();cam.tau=.45;dirty=true}else fitAll();if(view.name==='disc'){disc.target=disc.stops[0];discTouch()}};
 $('#filterBtn').onclick=()=>{const f=$('#filters');f.hidden=!f.hidden;$('#filterBtn').setAttribute('aria-expanded',!f.hidden)};
 function syncFilter(){const on=active.size<Object.keys(ROLE).length||showApp;$('#filterBtn').classList.toggle('on',on);$('#filterBtn').textContent=on?'Filter on':'Filter'}
@@ -846,7 +900,7 @@ function hoverSound(e,byMouse){
   soundTimer=setTimeout(()=>playBite(e,.18,.3),170);
 }
 function setSound(on,forNow){
-  soundOn=on;if(!forNow)store.set('gt.sound2',on);$('#soundBtn').setAttribute('aria-pressed',on);
+  soundOn=on;if(!forNow)store.set('gt.sound2',on);syncSoundBtn();
   if(!on){clearTimeout(soundTimer);if(!sel||view.name==='disc')stopAudio(.3)}
   syncPlay2();
 }
@@ -867,8 +921,63 @@ function wakeSound(ev){
 const WAKE=['mousedown','touchend','click','keydown'];
 function unbindWake(){WAKE.forEach(k=>window.removeEventListener(k,wakeSound,true))}
 WAKE.forEach(k=>window.addEventListener(k,wakeSound,true));
-$('#soundBtn').setAttribute('aria-pressed',soundOn);
-$('#recView').onclick=()=>{PH.mode=PH.mode==='close'?'whole':'close';store.set('gt.recview',PH.mode);disc.vinyl=null;disc.cxLive=null;disc.vel=0;discMetrics(0);recViewBtn();dirty=true};
+function syncSoundBtn(){const b=$('#soundBtn');b.setAttribute('aria-pressed',soundOn);b.setAttribute('aria-checked',soundOn);b.querySelector('b').textContent=soundOn?'On':'Off'}
+syncSoundBtn();
+/* ---------- the menu: search with real results, sound, how each view looks, and the way on to Live ---------- */
+const menu=$('#menu'),menuBtn=$('#menuBtn');
+function openMenu(focus){
+  menu.hidden=false;menuBtn.setAttribute('aria-expanded',true);$('#qChip').hidden=true;syncMenu();renderResults();
+  if(focus||!matchMedia('(hover: none)').matches)setTimeout(()=>$('#q').focus(),30);
+}
+function closeMenu(){
+  if(menu.hidden)return;menu.hidden=true;menuBtn.setAttribute('aria-expanded',false);$('#q').blur();
+  const c=$('#qChip');c.hidden=!query;if(query)c.textContent=`“${$('#q').value.trim()}” ×`;
+}
+function clearSearch(){$('#q').value='';query='';$('#qChip').hidden=true;renderResults();dirty=true}
+menuBtn.onclick=()=>menu.hidden?openMenu():closeMenu();
+$('#qChip').onclick=clearSearch;
+addEventListener('pointerdown',ev=>{if(!menu.hidden&&!ev.target.closest('#menu,#menuBtn'))closeMenu()},true);
+function syncMenu(){
+  menu.querySelectorAll('[data-o]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.o===orient));
+  menu.querySelectorAll('[data-r]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.r===recMode()));
+  $('#mBook').hidden=!(window.BOOKING&&BOOKING.endpoint);
+}
+menu.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{if(view.name!=='line')setView('line');setOrient(b.dataset.o);syncMenu()});
+menu.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{if(view.name!=='disc')setView('disc');setRecMode(b.dataset.r)});
+const qWords=q=>q.split(/\s+/).filter(Boolean);
+function hiQ(text,words){
+  let f='';const map=[];[...text].forEach((c,i)=>{for(const k of fold(c)){f+=k;map.push(i)}});
+  const on=new Array(text.length).fill(false);
+  words.forEach(w=>{const i=f.indexOf(w);if(i>=0)for(let k=map[i];k<=map[i+w.length-1];k++)on[k]=true});
+  let h='',open=false;[...text].forEach((c,i)=>{if(on[i]&&!open){h+='<mark>';open=true}if(!on[i]&&open){h+='</mark>';open=false}h+=esc(c)});return h+(open?'</mark>':'');
+}
+let resList=[],resK=-1;
+function renderResults(){
+  const ol=$('#results'),cnt=$('#qCount');resK=-1;
+  if(!query){ol.innerHTML='';cnt.textContent='';resList=[];return}
+  const words=qWords(query),hay=hayOf;
+  const score=e=>{const t=fold(e.title),a=fold(e.artist);return t.startsWith(query)?0:a.startsWith(query)?1:(' '+t+' '+a).includes(' '+words[0])?2:3};
+  resList=items.filter(e=>{const h=hay(e);return words.every(w=>h.includes(w))}).sort((x,y)=>score(x)-score(y)||x.year-y.year);
+  cnt.textContent=resList.length?`${resList.length} ${resList.length===1?'release':'releases'}${resList.length>60?' · showing the first 60':''}`:'Nothing matches. Try an artist, a title or a year.';
+  ol.innerHTML=resList.slice(0,60).map((e,i)=>`<li><button type="button" data-i="${i}">${e.cover?`<img class="rc" src="${esc(e.cover)}" alt="" loading="lazy">`:'<i class="rc none"></i>'}<span style="min-width:0;font:inherit;color:inherit"><em>${hiQ(e.title,words)}</em><b>${hiQ(e.artist,words)}</b></span><span>${e.year}</span></button></li>`).join('');
+}
+$('#results').onclick=ev=>{const b=ev.target.closest('button[data-i]');if(b)goResult(resList[+b.dataset.i])};
+function goResult(e){if(!e)return;closeMenu();clearSearch();select(e)}
+function markK(){[...$('#results').querySelectorAll('button')].forEach((b,i)=>{b.classList.toggle('k',i===resK);if(i===resK)b.scrollIntoView({block:'nearest'})})}
+$('#q').addEventListener('input',renderResults);
+$('#q').addEventListener('keydown',ev=>{
+  const n=Math.min(resList.length,60);
+  if(ev.key==='ArrowDown'&&n){ev.preventDefault();resK=(resK+1)%n;markK()}
+  else if(ev.key==='ArrowUp'&&n){ev.preventDefault();resK=(resK-1+n)%n;markK()}
+  else if(ev.key==='Enter'){ev.preventDefault();if(n)goResult(resList[Math.max(0,resK)])}
+  else if(ev.key==='Escape'){ev.preventDefault();closeMenu()}
+});
+addEventListener('keydown',ev=>{
+  if(ev.target.matches&&ev.target.matches('input,textarea,select'))return;
+  if(ev.key==='/'&&mode==='browse'){ev.preventDefault();openMenu(true)}
+  else if(ev.key==='Escape'&&!menu.hidden){ev.stopPropagation();closeMenu()}
+},true);
+$('#recView').onclick=()=>setRecMode(recMode()==='close'?'whole':'close');
 $('#soundBtn').onclick=()=>{soundLive=true;setSound(!soundOn);disc.paused=false;if(soundOn&&view.name==='disc'&&!sel)playBite(items[disc.cur],.1,.2)};
 $('#moreBtn').onclick=ev=>{showApp=!showApp;ev.currentTarget.setAttribute('aria-pressed',showApp);layout();select(null);syncFilter();fitAll()};
 $('#close').onclick=closeInfo;
@@ -1051,8 +1160,14 @@ const AUTOPLAY_SECONDS=20,SILENT_SECONDS=3,XF_IN=.9,XF_OUT=1.7;
 const RIN=.27,PIVOT=1.35,BETA=-Math.PI/4,ARM=1.18;
 /* On a phone the record opens as a close-up of the groove under the needle, filling the screen, big enough to read and tap.
    A switch shows the whole record instead, as on a computer. */
-const PH={on:false,top:0,h:0,nx:0,ny:0,Rb:1000,tp:80,mode:store.get('gt.recview','close')};
-const phoneDisc=()=>W<=700&&PH.mode==='close';
+const PH={on:false,top:0,h:0,w:1,nx:0,ny:0,Rb:1000,tp:80,modeP:store.get('gt.recview','close'),modeD:store.get('gt.recview.desk','whole')};
+/* phones open on the close-up, computers on the whole record; each remembers its own choice */
+const recMode=()=>W<=700?PH.modeP:PH.modeD;
+const phoneDisc=()=>recMode()==='close';
+function setRecMode(m){
+  if(W<=700){PH.modeP=m;store.set('gt.recview',m)}else{PH.modeD=m;store.set('gt.recview.desk',m)}
+  disc.vinyl=null;disc.cxLive=null;disc.vel=0;discMetrics(0);recViewBtn();syncMenu();syncLayout();dirty=true;
+}
 function discLayout(){
   /* A slot before each new year works like the gap between tracks. Solve the tile size so the groove ends at the label. */
   const rows=[];let yr=null;
@@ -1116,7 +1231,7 @@ function discRest(now){
   const e=items[discNearest(disc.s)];
   if(sel&&sel!==e){sel=e;renderPanel(e);syncPlay()}
   if(!discLive())return;
-  if(!audible(e)){disc.skipAt=now+900;return}
+  if(!audible(e)){disc.skipAt=now+(PH.on?6000:900);return}
   if(audio.id!==e.id&&audio.wantId!==e.id)playBite(e,XF_IN,XF_OUT);
 }
 function discTouch(){disc.touched=performance.now();if(!disc.seen){disc.seen=true;$('#hint').classList.add('off')}}
@@ -1124,11 +1239,14 @@ function discMetrics(dt){
   PH.on=phoneDisc();
   if(PH.on){
     /* the close-up fills the screen; the name of what is under the needle sits at the foot, with the play button */
-    const head=$('#bar').offsetHeight,nowH=96;
-    PH.top=head;PH.h=Math.max(200,H-head-nowH);PH.nx=W/2;PH.ny=PH.top+PH.h*.5;
-    PH.tp=clamp(W*.18,58,84);PH.Rb=PH.tp/disc.tile;
-    const n=$('#now');n.style.width=(W-32-60)+'px';n.style.left='16px';n.style.top=(PH.top+PH.h+8)+'px';
-    const pb=$('#discPlay');pb.style.left=(W-16-22)+'px';pb.style.top=(PH.top+PH.h+8+30)+'px';pb.hidden=view.mix<1;
+    const head=$('#bar').offsetHeight,nowH=W<=700?96:104,pw=sel&&W>700?400:0;
+    PH.w=W-pw;PH.top=head;PH.h=Math.max(200,H-head-nowH);PH.nx=PH.w/2;
+    PH.tp=W<=700?clamp(W*.18,58,84):clamp(Math.min(PH.w,H)*.15,84,130);PH.Rb=PH.tp/disc.tile;
+    /* the needle rides lower near the rim and higher near the label, so the record always fills the screen */
+    {const ra=discR(disc.s),rim=(1-ra)*PH.Rb,lab=(ra-RIN)*PH.Rb,m=PH.tp*1.1;
+     const lo=PH.top+PH.h-rim-m,hi=PH.top+lab+m,k=clamp((disc.R0-ra)/(disc.R0-RIN),0,1);PH.ny=lo>hi?lerp(lo,hi,k):clamp(PH.top+PH.h*.5,lo,hi)}
+    const n=$('#now');n.style.width=(PH.w-32-60)+'px';n.style.left=(W<=700?16:24)+'px';n.style.top=(PH.top+PH.h+8)+'px';
+    const pb=$('#discPlay');pb.style.left=(PH.w-(W<=700?16:24)-22)+'px';pb.style.top=(PH.top+PH.h+8+30)+'px';pb.hidden=view.mix<1;
     return;
   }
   const head=$('#bar').offsetHeight,capH=W<=700?78:92,pw=sel&&W>700?400:0;
@@ -1180,7 +1298,7 @@ function tickDisc(dt,now){
   }
   /* The sound follows the hand, then eases back to speed from exactly where it was. */
   {
-    const v=Math.abs(disc.vel)*(disc.lastBand?Math.max(1,discR(disc.s)*PH.Rb/(disc.R*.6)):1),want=disc.drag&&!disc.arm&&disc.dist>6?clamp(v/2.2,.35,2.5):(!disc.drag&&v>.05?clamp(v/2.2,.6,2.5):1);
+    const v=Math.abs(disc.vel),want=PH.on?1:disc.drag&&!disc.arm&&disc.dist>6?clamp(v/2.2,.35,2.5):(!disc.drag&&v>.05?clamp(v/2.2,.6,2.5):1);
     disc.rate=(disc.rate||1)+(want-(disc.rate||1))*(1-Math.exp(-dt/(disc.drag?.05:.25)));
     if(!disc.drag&&Math.abs(disc.rate-1)<.01)disc.rate=1;else busy=busy||disc.rate!==1;
     const a=audio.el;if(a&&a.playbackRate!==disc.rate){try{a.preservesPitch=disc.rate===1;a.playbackRate=disc.rate}catch(x){}}
@@ -1211,12 +1329,12 @@ function drawLabel(e,alpha,rl){
 }
 /* the switch between the close-up and the whole record, on phones only */
 function recViewBtn(){
-  const b=$('#recView'),show=W<=700&&view.name==='disc'&&view.mix===1&&mode==='browse'&&!sel;
-  if(b.hidden===!show&&b.dataset.m===PH.mode)return;
-  b.hidden=!show;b.dataset.m=PH.mode;b.textContent=PH.mode==='close'?'Whole record':'Close-up';
-  b.style.top=($('#bar').offsetHeight+10)+'px';
-  if(show)$('#hint').textContent=PH.mode==='close'?'Swipe to turn · tap a cover to play':'Tap a release to play it, double tap for info, spin to scratch';
-  document.body.classList.toggle('recclose',PH.mode==='close');
+  const m=recMode(),b=$('#recView'),show=view.name==='disc'&&view.mix===1&&mode==='browse'&&!(sel&&W<=700);
+  document.body.classList.toggle('recclose',m==='close');
+  const top=($('#bar').offsetHeight+10)+'px';if(b.style.top!==top)b.style.top=top;
+  if(b.hidden===!show&&b.dataset.m===m)return;
+  b.hidden=!show;b.dataset.m=m;b.textContent=m==='close'?'Whole record':'Close-up';
+  if(show)syncLayout();
 }
 function bandX(){const ra=discR(disc.s);return{phi:discPhi(),rot:Math.PI/2-discAlpha(ra),cx:PH.nx,cy:PH.ny-ra*PH.Rb,ra}}
 /* in the close-up the covers lean in towards the centre of the record, which is above the screen, so they stand upright under the needle */
@@ -1229,12 +1347,12 @@ function bandHit(mx,my){
 }
 function drawBand(alpha){
   const X=bandX(),top=PH.top,h=PH.h,Rb=PH.Rb,cur=items[disc.cur];
-  g.save();g.globalAlpha=alpha;g.beginPath();g.rect(0,top,W,h);g.clip();
+  g.save();g.globalAlpha=alpha;g.beginPath();g.rect(0,top,PH.w,h);g.clip();
   /* the vinyl, its grooves and the rim or the label when the needle is near either */
   g.fillStyle='#090a0e';g.beginPath();g.arc(X.cx,X.cy,Rb,0,7);g.fill();
-  const rmin=Math.max(RIN*Rb,top-X.cy),rmax=Math.min(Rb,Math.hypot(W/2+10,top+h-X.cy));
+  const rmin=Math.max(RIN*Rb,top-X.cy),rmax=Math.min(Rb,Math.hypot(PH.w/2+10,top+h-X.cy));
   g.lineWidth=1;
-  for(let r=rmax,i=0;r>rmin;r-=4.5,i++){const a=Math.asin(Math.min(1,(W/2+20)/r));g.strokeStyle=i%7?'rgba(255,255,255,.03)':'rgba(255,255,255,.055)';g.beginPath();g.arc(X.cx,X.cy,r,Math.PI/2-a,Math.PI/2+a);g.stroke()}
+  for(let r=rmax,i=0;r>rmin;r-=4.5,i++){const a=Math.asin(Math.min(1,(PH.w/2+20)/r));g.strokeStyle=i%7?'rgba(255,255,255,.03)':'rgba(255,255,255,.055)';g.beginPath();g.arc(X.cx,X.cy,r,Math.PI/2-a,Math.PI/2+a);g.stroke()}
   if(g.createConicGradient){
     const gr=g.createConicGradient(Math.PI/2-.55,X.cx,X.cy),hl='rgba(255,255,255,.06)',o='rgba(255,255,255,0)';
     [[0,o],[.06,hl],[.11,o],[1,o]].forEach(q=>gr.addColorStop(q[0],q[1]));g.fillStyle=gr;g.beginPath();g.arc(X.cx,X.cy,Rb,0,7);g.fill();
@@ -1245,23 +1363,23 @@ function drawBand(alpha){
   const pad=PH.tp;
   for(const e of items){
     if(e===cur)continue;
-    const p=bandPos(e,X);if(p.y<top-pad||p.y>top+h+pad||p.x<-pad||p.x>W+pad)continue;
+    const p=bandPos(e,X);if(p.y<top-pad||p.y>top+h+pad||p.x<-pad||p.x>PH.w+pad)continue;
     const ring=Math.abs(e._dr-X.ra)/(disc.pitch*2*Math.PI);   /* 0 on the needle's own turn, 1 a turn away */
     drawTileAt(e,p.x,p.y,p.s*.93,p.rot,(matches(e)?1:.12)*(ring<.5?1:.55),false);
   }
   /* each year is written in its gap in the groove */
   g.font=`500 ${Math.round(PH.tp*.17)}px "IBM Plex Mono",monospace`;g.textAlign='center';g.textBaseline='middle';
-  disc.years.forEach(y=>{const p=bandPos(null,X,y.a,y.r);if(p.y<top-30||p.y>top+h+30||p.x<-40||p.x>W+40)return;g.save();g.translate(p.x,p.y);g.rotate(p.rot);g.fillStyle=y.year===cur.year?COL.paper:COL.dim;g.fillText(String(y.year),0,0);g.restore()});
+  disc.years.forEach(y=>{const p=bandPos(null,X,y.a,y.r);if(p.y<top-30||p.y>top+h+30||p.x<-40||p.x>PH.w+40)return;g.save();g.translate(p.x,p.y);g.rotate(p.rot);g.fillStyle=y.year===cur.year?COL.paper:COL.dim;g.fillText(String(y.year),0,0);g.restore()});
   g.textAlign='left';
   /* soft edges, so the close-up reads as a window onto a bigger record */
   const fade=(x0,y0,x1,y1)=>{const lg=g.createLinearGradient(x0,y0,x1,y1);lg.addColorStop(0,COL.ground);lg.addColorStop(1,'rgba(0,0,0,0)');return lg};
-  g.globalAlpha=alpha;g.fillStyle=fade(0,0,44,0);g.fillRect(0,top,44,h);g.fillStyle=fade(W,0,W-44,0);g.fillRect(W-44,top,44,h);
-  g.fillStyle=fade(0,top+h,0,top+h-26);g.fillRect(0,top+h-26,W,26);g.fillStyle=fade(0,top,0,top+18);g.fillRect(0,top,W,18);
+  g.globalAlpha=alpha;g.fillStyle=fade(0,0,44,0);g.fillRect(0,top,44,h);g.fillStyle=fade(PH.w,0,PH.w-44,0);g.fillRect(PH.w-44,top,44,h);
+  g.fillStyle=fade(0,top+h,0,top+h-26);g.fillRect(0,top+h-26,PH.w,26);g.fillStyle=fade(0,top,0,top+18);g.fillRect(0,top,PH.w,18);
   /* the release under the needle lifts out of the groove, and the stylus rests on it */
   const pc=bandPos(cur,X),S=pc.s*1.42;
   g.globalAlpha=alpha;g.save();g.shadowColor='rgba(0,0,0,.7)';g.shadowBlur=22;g.shadowOffsetY=8;g.fillStyle=COL.ground;g.fillRect(pc.x-S/2+2,pc.y-S/2+2,S-4,S-4);g.restore();
   drawTileAt(cur,pc.x,pc.y,S,0,alpha,true);
-  const tipX=pc.x,tipY=pc.y-S/2-3,pivX=W-22,pivY=top+16;
+  const tipX=pc.x,tipY=pc.y-S/2-3,pivX=PH.w-22,pivY=top+16;
   g.globalAlpha=alpha;g.strokeStyle=COL.paper;g.lineCap='round';g.lineWidth=2;
   g.beginPath();g.moveTo(pivX,pivY);g.lineTo(tipX+30,tipY-22);g.stroke();
   g.lineWidth=7;g.beginPath();g.moveTo(tipX+30,tipY-22);g.lineTo(tipX+6,tipY-4);g.stroke();
@@ -1336,7 +1454,7 @@ function armNear(mx,my){
 function discDown(ev){
   discTouch();disc.vel=0;disc.target=null;disc.wheelAt=0;disc.dist=0;disc.downCur=disc.cur;
   const dx=ev.clientX-disc.cx,dy=ev.clientY-disc.cy;
-  disc.band=disc.lastBand=PH.on;disc.lastX=ev.clientX;
+  disc.band=disc.lastBand=PH.on;disc.lastX=ev.clientX;disc.lastY=ev.clientY;
   disc.arm=!disc.band&&armNear(ev.clientX,ev.clientY);
   disc.drag=true;disc.lastA=Math.atan2(dy,dx);disc.lastT=performance.now();cv.classList.add('drag');
   $('#tip').style.display='none';clearTimeout(soundTimer);
@@ -1350,8 +1468,9 @@ function discMove(ev){
       disc.s=clamp((disc.R0-r/disc.R)/disc.pitch,first,lastS);disc.dist+=2;return;
     }
     if(disc.band){   /* the close-up turns with the finger, sideways: the groove moves exactly as far as the finger */
-      const dxp=ev.clientX-disc.lastX;disc.lastX=ev.clientX;disc.dist+=Math.abs(dxp);
-      const da=-dxp/(discR(disc.s)*PH.Rb),tn=performance.now(),ms=Math.max(4,tn-disc.lastT);disc.lastT=tn;
+      const dxp=ev.clientX-disc.lastX,dyp=ev.clientY-disc.lastY;disc.lastX=ev.clientX;disc.lastY=ev.clientY;
+      const d=Math.abs(dxp)>=Math.abs(dyp)?dxp:dyp;disc.dist+=Math.abs(d);
+      const da=-d/(discR(disc.s)*PH.Rb),tn=performance.now(),ms=Math.max(4,tn-disc.lastT);disc.lastT=tn;
       disc.s=clamp(disc.s+da,first,lastS);disc.vel=lerp(disc.vel,da/(ms/1000),.35);return;
     }
     if(r<14)return;
@@ -1362,7 +1481,7 @@ function discMove(ev){
     disc.vel=lerp(disc.vel,da/(ms/1000),.35);
     return;
   }
-  if(PH.on)return;
+  if(PH.on){const h=bandHit(ev.clientX,ev.clientY);cv.classList.toggle('over',!!h);return}
   const h=discHit(ev.clientX,ev.clientY),overLabel=r<disc.R*RIN*.86,overArm=armNear(ev.clientX,ev.clientY);
   if(h!==hover){hover=h;dirty=true}
   cv.classList.toggle('over',!!h||overLabel||overArm);
@@ -1370,7 +1489,7 @@ function discMove(ev){
   if(h&&!sel&&ev.pointerType==='mouse'){tip.style.display='block';tip.innerHTML=`<em>${esc(h.title)}</em><br><b>${esc(h.artist)}</b><span>${h.year}</span>`;tip.style.left=Math.min(W-330,ev.clientX+14)+'px';tip.style.top=Math.min(H-90,ev.clientY+14)+'px'}else tip.style.display='none';
 }
 function discUp(ev){
-  const wasArm=disc.arm,dist=disc.dist;
+  const wasArm=disc.arm,wasBand=disc.band,dist=disc.dist;
   disc.drag=false;disc.arm=false;cv.classList.remove('drag');discTouch();
   if(dist<6){   /* no movement is a tap, even on a cover lying under the arm */
     disc.vel=0;
@@ -1384,13 +1503,13 @@ function discUp(ev){
   if(wasArm||performance.now()-disc.lastT>90||Math.abs(disc.vel)<.25){
     disc.vel=0;const near=discNearest(disc.s),own=items[disc.downCur];
     /* A scratch that ends within a release of where it started goes back to its song, which never stopped. */
-    disc.target=disc.stops[!wasArm&&own&&audio.id===own.id&&Math.abs(near-disc.downCur)<=1?disc.downCur:near];
+    disc.target=disc.stops[!wasArm&&!wasBand&&own&&audio.id===own.id&&Math.abs(near-disc.downCur)<=1?disc.downCur:near];
   }
 }
 function discWheel(ev){
   discTouch();disc.vel=0;disc.target=null;
   const d=(Math.abs(ev.deltaX)>Math.abs(ev.deltaY)?ev.deltaX:ev.deltaY);
-  disc.s=clamp(disc.s+d*.0035,disc.stops[0],disc.stops[disc.stops.length-1]);disc.wheelAt=performance.now();dirty=true;
+  disc.s=clamp(disc.s+(PH.on?d/(discR(disc.s)*PH.Rb):d*.0035),disc.stops[0],disc.stops[disc.stops.length-1]);disc.wheelAt=performance.now();dirty=true;
 }
 function discGoTo(e){discTouch();disc.vel=0;disc.target=e._da;dirty=true}
 function discStep(dir){
@@ -1412,6 +1531,7 @@ function setView(name){
   $('#vLine').setAttribute('aria-pressed',name==='line');$('#vDisc').setAttribute('aria-pressed',name==='disc');
   cv.classList.remove('over');
   if(name!=='disc')$('#recView').hidden=true;
+  closeMenu();
   if(name==='disc'){disc.cxLive=null;disc.prev=-1;disc.fresh=true;discMetrics(0);discTouch();disc.seen=false;$('#hint').classList.remove('off')}
   /* Record opens still and silent; it starts when you press play or choose a release. */
   if(name==='disc'){stopAudio(.2);disc.paused=true}else{if(disc.paused)setSound(store.get('gt.sound2',true),true);disc.paused=false}
@@ -1421,7 +1541,7 @@ function syncLayout(){
   const vert=view.name==='line'&&orient==='v',n=$('#now'),o=$('#vOrient');
   document.body.classList.toggle('vert',vert);
   n.classList.toggle('dock',vert);
-  $('#hint').textContent=vert?'':(matchMedia('(hover: none)').matches?(W<=700?'Swipe to turn · tap a cover to play':'Tap a release to play it, double tap for info, spin to scratch'):'Click a release to play it, double click for info, spin to scratch');
+  const touch=matchMedia('(hover: none)').matches;$('#hint').textContent=vert?'':recMode()==='close'?(touch?'Swipe to turn · tap a cover to play':'Drag or scroll to turn · click a cover to play'):(touch?'Tap a release to play it, double tap for info, spin to scratch':'Click a release to play it, double click for info, spin to scratch');
   $('#discPlay').hidden=view.name!=='disc'||view.mix<1;
   o.hidden=view.name!=='line';
   o.setAttribute('aria-pressed',orient==='v');
