@@ -42,6 +42,17 @@ button{background:none;border:0;cursor:pointer;padding:0}
 #menuBtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
 #qChip{height:28px;padding:0 10px;border-radius:15px;background:var(--paper);color:var(--ground);font:12px var(--mono);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #qChip[hidden]{display:none}
+#mini{position:fixed;z-index:6;right:16px;top:64px;width:380px;height:62px;display:flex;align-items:center;gap:8px;padding:0 9px 0 8px;background:#1b1f29ee;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--rule);border-radius:13px;box-shadow:0 14px 40px #000a;overflow:hidden;transition:transform .3s cubic-bezier(.2,.7,.2,1),opacity .3s}
+#mini[hidden]{display:none}
+#miniBar{position:absolute;left:0;top:0;height:2px;width:0;background:#e6b450}
+#miniOpen{flex:1;min-width:0;display:flex;align-items:center;gap:11px;text-align:left;color:var(--paper);height:100%}
+#miniCov{width:44px;height:44px;object-fit:cover;flex:none;border-radius:3px;background:var(--plate2)}
+#miniOpen span{flex:1;min-width:0}#miniOpen em{display:block;font:italic 400 16px/1.2 var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#miniOpen b{display:block;font:400 12px/1.4 var(--sans);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#miniOpen>svg{width:18px;height:18px;flex:none;fill:none;stroke:var(--dim);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#miniPlay{width:44px;height:44px;flex:none;border-radius:50%;background:var(--paper);color:var(--ground);display:grid;place-items:center}
+#miniPlay svg{width:22px;height:22px;fill:currentColor}#miniPlay .i-pause{display:none}#mini.on #miniPlay .i-pause{display:block}#mini.on #miniPlay .i-play{display:none}
+body.mini #now.dock{visibility:hidden}
 #menu{position:absolute;top:calc(100% + 2px);right:max(16px,env(safe-area-inset-right,0px));width:min(400px,calc(100vw - 32px));max-height:calc(100dvh - 90px);overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--plate);border:1px solid var(--rule);border-radius:12px;box-shadow:0 24px 60px #000a;z-index:8}
 #menu[hidden]{display:none}
 .msearch{display:flex;align-items:center;gap:9px;padding:0 12px;height:44px;border-radius:9px;background:var(--ground);border:1px solid var(--rule)}
@@ -131,6 +142,18 @@ body.talk #now{display:none}
 #panel .yr{font:13px var(--mono);color:var(--dim)}
 #panel h2{font:500 15px/1.3 var(--sans);margin:12px 0 2px;padding-right:20px}
 #panel h3{font:italic 400 31px/1.1 var(--serif);margin:0 0 12px;text-wrap:balance}
+#pHead{display:grid;grid-template-columns:112px minmax(0,1fr);gap:16px;align-items:end;padding-right:26px}
+#pHead .pcov{width:112px;height:112px;object-fit:cover;display:block;background:var(--plate2);box-shadow:0 8px 24px #0008}
+#pHead .pcov.none{background:repeating-linear-gradient(-45deg,#ffffff0b 0 1px,transparent 1px 9px),var(--plate2);outline:1px dashed #ece8dc48;outline-offset:-8px}
+#pHead h3{font-size:26px;margin:0 0 4px}#pHead h2{margin:0;font:500 14px/1.3 var(--sans);padding:0}
+#pHead .when{font:12px var(--mono);color:#e6b450;margin-bottom:6px;letter-spacing:.02em}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:16px 0 14px;background:var(--rule);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.facts div{background:var(--plate);padding:8px 11px;min-width:0}.facts div.wide{grid-column:1/-1}
+.facts small{display:block;font:10.5px var(--mono);color:var(--faint);letter-spacing:.05em;text-transform:uppercase}
+.facts span{display:block;font:13.5px/1.35 var(--sans);color:var(--paper);overflow:hidden;text-overflow:ellipsis}
+#bite{margin:16px 0 4px;padding:10px 12px;border-radius:10px;background:var(--ground);border:1px solid var(--rule)}
+#bite .prow{margin:0}#bite[hidden]{display:none}
+#biteTracks{margin-top:18px}
 .lamps{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 14px}
 .lamp{font:11px var(--mono);padding:2px 7px;background:var(--c);color:#14161c}
 .flag{font:11px var(--mono);padding:2px 7px;border:1px dashed var(--p);color:var(--p)}
@@ -141,7 +164,9 @@ dt{color:var(--faint);font:11px/1.8 var(--mono)}dd{margin:0;min-width:0}
 .links a{color:var(--paper);margin-right:12px;font-size:13px}
 #bite .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 #bite .src{font-size:12px;color:var(--dim)}
-#play{width:34px;height:34px;border-radius:50%;background:var(--paper);color:var(--ground);font-size:13px}
+#play{width:46px;height:46px;flex:none;border-radius:50%;background:var(--paper);color:var(--ground);font-size:15px;letter-spacing:-1px}
+#play svg{width:22px;height:22px;fill:currentColor;display:block;margin:auto}
+#biteName{font:italic 400 16px/1.25 var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #drop{border:1px dashed #ffffff40;padding:11px;text-align:center;color:var(--dim);font-size:12.5px;display:block;cursor:pointer;margin-bottom:8px}
 #drop.over{border-color:var(--paper);color:var(--paper)}
 #linkIn,#startIn{background:var(--ground);border:1px solid var(--rule);padding:4px 8px;font-size:12.5px;border-radius:2px}
@@ -194,7 +219,10 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 @media (max-width:700px){
   #bar h1 small{display:none}#right{order:1;margin-left:auto;gap:8px}#views{order:2;flex-basis:100%;gap:18px}#menuBtn span{display:none}#menuBtn{padding:0 10px;gap:8px}#qChip{max-width:110px}
   #menu{left:8px;right:8px;width:auto;max-height:calc(100dvh - 110px)}
-  #panel{top:auto;left:0;right:0;width:auto;height:calc(58% - 34px);border-left:0;border-top:1px solid var(--rule);transform:translateY(102%)}
+  #panel{top:auto;left:0;right:0;width:auto;height:min(78%,calc(100% - 96px));border-left:0;border-top:1px solid var(--rule);border-radius:16px 16px 0 0;padding-top:28px;transform:translateY(102%)}
+  #panel::before{content:"";position:absolute;left:50%;top:9px;width:38px;height:4px;margin-left:-19px;border-radius:2px;background:#ffffff30}
+  #pHead{grid-template-columns:92px minmax(0,1fr)}#pHead .pcov{width:92px;height:92px}#pHead h3{font-size:23px}
+  #mini{left:10px;right:10px;width:auto;top:auto;bottom:12px}
   #full{left:6%;right:6%;top:auto;bottom:14%;transform:none}
 }
 
@@ -295,15 +323,19 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 <div id="tip"></div>
 <button id="discPlay" type="button" aria-label="Play" hidden><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
 <button id="recView" type="button" hidden>Whole record</button>
+<div id="mini" hidden>
+  <i id="miniBar"></i>
+  <button id="miniOpen" type="button" aria-label="Show details"><img id="miniCov" alt=""><span><em></em><b></b></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 12.5 10 7.5l5 5"/></svg></button>
+  <button id="miniPlay" type="button" aria-label="Pause"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
+</div>
 <div id="now" aria-live="polite"><em></em><b></b><span></span><small id="hint"></small></div>
 
 <aside id="panel" aria-label="Release details">
   <button id="close" aria-label="Close">×</button>
-  <div id="pBody"></div>
-  <section class="sec" id="bite">
-    <h4>Soundbite</h4>
-    <div class="row">
-      <button id="play" aria-label="Play or stop">▶</button>
+  <div id="pHead"></div>
+  <section id="bite">
+    <div class="row prow">
+      <button id="play" aria-label="Play or pause">▶</button>
       <div style="flex:1;min-width:0"><div id="biteName"></div><div class="src" id="biteSrc"></div></div>
     </div>
     <canvas id="wave" width="704" height="112"></canvas>
@@ -311,8 +343,9 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
       <label class="src"><input id="pin" type="checkbox"> Stop here in the talk</label></div>
     <label id="drop">Drop an audio file here, or click to choose one<input id="file" type="file" accept="audio/*" hidden></label>
     <div class="row"><input id="linkIn" type="text" placeholder="…or a link: audio/palme.wav or https://…" aria-label="Audio link"><button class="btn" id="linkGo">Use</button></div>
-    <div id="biteTracks"></div>
   </section>
+  <div id="pBody"></div>
+  <div id="biteTracks"></div>
 </aside>
 
 <div id="hud">
@@ -707,14 +740,34 @@ async function playBite(e,fadeIn=.05,fadePrev=.15){
   soundLive=true;syncPlay2();
   if(token!==audio.token){a.pause();return false}   /* something newer was asked for while this one loaded */
   if(audio.el&&audio.el!==a)fadeOut(audio.el,fadePrev);   /* only now does the old one go, so nothing falls silent while the new one loads */
-  audio.el=a;audio.id=e.id;audio.wantId=null;
+  audio.el=a;audio.id=e.id;audio.wantId=null;if(view.name==='line'){player.e=e;player.closed=false}
   if(fadeIn>.01)fade(a,1,fadeIn);
   checkRoute(a,e);
   a.onended=()=>{if(audio.el===a){audio.el=null;audio.id=null;syncPlay();if(view.name==='disc'&&mode==='browse'&&discLive())discSkip()}};
   syncPlay();return true;
 }
 function stopAudio(secs=.15,keep){if(!keep){audio.token++;audio.wantId=null}if(audio.el){fadeOut(audio.el,secs);audio.el=null;audio.id=null}syncPlay()}
-function syncPlay(){dirty=true;paintNow();const p=$('#play');if(p)p.textContent=(sel&&audio.id===sel.id)?'■':'▶'}
+function audioPlaying(id){const a=audio.el;return !!a&&audio.id===id&&!a.paused&&!audio.fading.has(a)}
+function syncPlay(){dirty=true;paintNow();const p=$('#play');if(p){const on=sel&&audioPlaying(sel.id);if(p.dataset.on!==String(!!on)){p.dataset.on=!!on;p.innerHTML=on?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg>'}p.setAttribute('aria-label',on?'Pause':'Play')}syncMini()}
+/* ---------- the player: a bar that folds out into the details. It is there whenever something has played, so pause is always one tap away ---------- */
+const player={e:null,closed:false};
+function syncMini(){
+  const m=$('#mini');if(!m)return;const e=player.e;
+  const show=!!e&&view.name==='line'&&mode==='browse'&&!sel&&!player.closed;
+  m.hidden=!show;document.body.classList.toggle('mini',show);if(!show)return;
+  const on=audioPlaying(e.id);m.classList.toggle('on',on);$('#miniPlay').setAttribute('aria-label',on?'Pause':'Play');
+  if(m.dataset.id!==e.id){m.dataset.id=e.id;const c=$('#miniCov');c.style.visibility=e.cover?'':'hidden';if(e.cover)c.src=e.cover;m.querySelector('em').textContent=e.title;m.querySelector('b').textContent=`${e.artist} · ${e.year}`}
+  if(W<=700){const yb=$('#years'),yh=yb&&getComputedStyle(yb).display!=='none'?yb.offsetHeight:0;m.style.bottom=(yh+12)+'px';m.style.top=''}else{m.style.top=($('#bar').offsetHeight+8)+'px';m.style.bottom=''}
+}
+function playerToggle(e){
+  e=e||player.e;if(!e)return;soundLive=true;player.e=e;player.closed=false;
+  const a=audio.el;
+  if(a&&audio.id===e.id&&!a.paused&&!audio.fading.has(a)){a.pause();syncPlay();return}
+  if(!soundOn)setSound(true);
+  if(a&&audio.id===e.id&&a.paused){a.play().then(()=>fade(a,1,.15)).catch(()=>playBite(e,.05,.1));setTimeout(syncPlay,30)}
+  else playBite(e,.05,.2);
+}
+setInterval(()=>{if(sel){const p=$('#play');if(p&&p.dataset.on!==String(audioPlaying(sel.id)))syncPlay()}const m=$('#mini');if(!m||m.hidden)return;const a=audio.el,e=player.e;let k=0;if(a&&e&&audio.id===e.id&&a.duration)k=a.currentTime/a.duration;$('#miniBar').style.width=(k*100).toFixed(2)+'%';const on=e&&audioPlaying(e.id);if(m.classList.contains('on')!==!!on)syncMini()},200);
 
 /* ---------- browse: selection + panel ---------- */
 let mode='browse',sel=null,hover=null;
@@ -740,6 +793,8 @@ function select(e,opts={}){
   renderPanel(e);$('#panel').classList.add('open');flyTo(e);syncYears();
   items.slice(e.seq+1,e.seq+3).forEach(preload);
 }
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function longDate(d){if(!d)return'';const m=String(d).match(/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?/);if(!m)return String(d);return [m[3]?+m[3]:'',m[2]?MONTHS[+m[2]-1]:'',m[1]].filter(Boolean).join(' ')}
 function renderPanel(e){
   const links={discogs:'Discogs',bandcamp:'Bandcamp',apple:'Apple Music',spotify:'Spotify',imdb:'IMDb',musicbrainz:'MusicBrainz'};
   const rows=[];
@@ -757,15 +812,14 @@ function renderPanel(e){
     if(f.genres&&f.genres.length)rows.push(['Genre',esc(f.genres.join(', '))]);
     if(f.nomination)rows.push(['Nominated',esc(f.nomination)]);
   }
-  if(e.type)rows.push(['Type',esc(e.type)]);
-  if(e.date)rows.push([e.film&&e.film.label?'Date':'Released',esc(e.date)]);
-  if(e.labels&&e.labels.length)rows.push(['Label',esc(e.labels.join(', '))]);
-  if(e.formats&&e.formats.length)rows.push(['Format',esc(e.formats.join(', '))]);
   if(e.styles&&e.styles.length)rows.push(['Style',esc(e.styles.join(', '))]);
   if(e.places&&e.places.length)rows.push(['Places',e.places.map(esc).join('<br>')]);
   if(e.note)rows.push(['Note',esc(e.note)]);
   if(e.others&&e.others.length)rows.push(['Also',e.others.map(esc).join('<br>')]);
-  $('#pBody').innerHTML=`<div class="yr">${e.year}</div><h2>${esc(e.artist)}</h2><h3>${esc(e.title)}</h3>
+  /* the head says what it is and when it came out; the facts are the basics at a glance; the rest follows */
+  const when=longDate(e.date)||String(e.year),facts=[[e.film&&e.film.label?'Date':'Released',when],['Label',(e.labels||[]).join(', ')],['Format',(e.formats||[]).join(' · ')],['Type',e.type||'']].filter(f=>f[1]);
+  $('#pHead').innerHTML=`${e.cover?`<img class="pcov" src="${esc(e.cover)}" alt="">`:'<i class="pcov none"></i>'}<div><div class="when">${esc(when)}</div><h3>${esc(e.title)}</h3><h2>${esc(e.artist)}</h2></div>`;
+  $('#pBody').innerHTML=`<div class="facts">${facts.map((f,i)=>`<div class="${facts.length%2&&i===facts.length-1?'wide':''}"><small>${f[0]}</small><span>${esc(f[1])}</span></div>`).join('')}</div>
     <div class="lamps">${e.roles.map(r=>`<span class="lamp" style="--c:${C[r]}">${esc(ROLE[r][0])}</span>`).join('')}${e.confirm&&!PUBLIC?'<span class="flag">role to confirm</span>':''}</div>
     <dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('')}</dl>
     <div class="sec links"><h4>Sources</h4>${(e.film&&e.film.label&&!(e.refs||[]).length?(e.source||[]).map(esc).join(', '):'')}${Object.keys(links).filter(k=>e.links&&e.links[k]).map(k=>`<a href="${esc(e.links[k])}" target="_blank" rel="noopener">${links[k]}</a>`).join('')}${(e.refs||[]).map(r=>`<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.label)}</a>`).join('')}</div>`;
@@ -776,7 +830,7 @@ function renderBite(e){
   const box=$('#bite');box.hidden=PUBLIC&&!b;
   ['#drop','#linkIn','#linkGo','#startIn','#pin'].forEach(s=>{const el=$(s);if(el)(el.closest('.row')||el).style.display=PUBLIC?'none':''});
   let name='No audio yet',src=PUBLIC?'':'Add a file or link below';
-  if(b&&b.kind==='track'){const t=e.tracks[b.idx];name=t?t.t:'';src='30-second preview'}
+  if(b&&b.kind==='track'){const t=e.tracks[b.idx];name=t?t.t:'';src=`Track ${t&&t.n||b.idx+1} · 30-second preview`}
   if(b&&b.kind==='file'){name=b.name;src='Your file, stored in this browser'}
   if(b&&b.kind==='url'){name=b.own?(b.title||e.title):b.url.split('/').pop();src=b.own?'':b.url}
   $('#biteName').textContent=name;$('#biteSrc').textContent=src;
@@ -850,6 +904,7 @@ cv.addEventListener('click',ev=>{
   if(!tapped||view.name!=='line'||mode!=='browse')return;
   const h=tapped.e;tapped=null;clearTimeout(tipTimer);
   if(!h){if(sel)closeInfo();else{armed=null;stopAudio(.6)}$('#tip').style.display='none';return}
+  if(sel&&sel!==h){armed=h;select(h);if(soundOn&&biteOf(h)&&audio.id!==h.id&&audio.wantId!==h.id)playBite(h,.25,.6);return}
   if(armed===h){if(sel!==h){camBefore=camBefore||{x:cam.tx,y:cam.ty,z:cam.tz};select(h)}return}
   armed=h;
   if(!soundOn||!biteOf(h))stopAudio(.6);else if(audio.id!==h.id&&audio.wantId!==h.id)playBite(h,.25,.6);
@@ -981,7 +1036,9 @@ $('#recView').onclick=()=>setRecMode(recMode()==='close'?'whole':'close');
 $('#soundBtn').onclick=()=>{soundLive=true;setSound(!soundOn);disc.paused=false;if(soundOn&&view.name==='disc'&&!sel)playBite(items[disc.cur],.1,.2)};
 $('#moreBtn').onclick=ev=>{showApp=!showApp;ev.currentTarget.setAttribute('aria-pressed',showApp);layout();select(null);syncFilter();fitAll()};
 $('#close').onclick=closeInfo;
-$('#play').onclick=()=>{if(!sel)return;if(view.name==='disc'){discToggle();return}if(audio.id===sel.id)stopAudio(.2);else playBite(sel)};
+$('#play').onclick=()=>{if(!sel)return;if(view.name==='disc'){discToggle();return}playerToggle(sel)};
+$('#miniPlay').onclick=()=>playerToggle();
+$('#miniOpen').onclick=()=>{if(player.e)select(player.e)};
 $('#startIn').onchange=ev=>{if(!sel)return;const b=Object.assign({},biteOf(sel));if(!b.kind)return;delete b.placeholder;b.start=+ev.target.value||0;setBite(sel,b)};
 $('#pin').onchange=ev=>{if(!sel)return;if(ev.target.checked)pins[sel.id]=1;else delete pins[sel.id];store.set('gt.pins',pins)};
 $('#file').onchange=ev=>takeFile(ev.target.files[0]);
@@ -1535,7 +1592,7 @@ function setView(name){
   if(name==='disc'){disc.cxLive=null;disc.prev=-1;disc.fresh=true;discMetrics(0);discTouch();disc.seen=false;$('#hint').classList.remove('off')}
   /* Record opens still and silent; it starts when you press play or choose a release. */
   if(name==='disc'){stopAudio(.2);disc.paused=true}else{if(disc.paused)setSound(store.get('gt.sound2',true),true);disc.paused=false}
-  armed=null;camBefore=null;store.set('gt.view2',name);syncLayout();syncPlay2();dirty=true;
+  armed=null;camBefore=null;store.set('gt.view2',name);syncLayout();syncPlay2();syncMini();dirty=true;
 }
 function syncLayout(){
   const vert=view.name==='line'&&orient==='v',n=$('#now'),o=$('#vOrient');
