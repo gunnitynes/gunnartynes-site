@@ -163,6 +163,21 @@ body.talk #now{display:none}
 #pkMore{flex:none;height:40px;padding:0 10px;border-radius:10px;color:var(--paper);font:500 13px var(--sans);display:inline-flex;align-items:center;gap:4px}
 #pkMore:hover{background:#ffffff12}#pkMore svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none}
 body.peeking #mini{opacity:0;pointer-events:none}
+#peek .pbar{position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--p);border-radius:0 2px 2px 0}
+#pkCov{display:none;width:34px;height:34px;object-fit:cover;border-radius:3px;flex:none;background:var(--plate2)}
+/* On a computer the player lives in the header, never over the covers */
+@media (min-width:701px){
+  #mini{display:none!important}
+  #bar #peek{position:relative;left:auto!important;top:auto!important;order:0;flex:0 1 430px;min-width:0;margin-left:auto;padding:4px 6px 4px 4px;gap:9px;border-radius:12px;box-shadow:none;background:#ffffff0b;transform:none;overflow:hidden;height:46px;margin-top:-6px;margin-bottom:-6px}
+  #bar #peek:not(.on){visibility:hidden}
+  #bar #peek #pkCov{display:block;order:-2}
+  #bar #peek em{font-size:15px}#bar #peek b{font-size:11.5px}
+  #bar #peek #pkPlay{height:32px;padding:0 12px 0 9px;font-size:12.5px;order:-1}
+  #bar #peek #pkPlay svg{width:14px;height:14px}
+  #bar #peek #pkMore{height:32px;font-size:12.5px;padding:0 8px}
+  #bar #peek + #right{margin-left:0}
+  body.disc #bar #peek,body.selopen #bar #peek{visibility:hidden}
+}
 @media (max-width:700px){#peek{left:10px!important;right:10px;top:auto!important;bottom:12px;max-width:none}body.vert.peeking #now{visibility:hidden}}
 #tip{position:fixed;pointer-events:none;background:var(--plate2);padding:6px 9px;font-size:13px;z-index:6;max-width:320px;border-radius:2px;display:none}
 #tip b{font-weight:500}#tip em{font:italic 15px var(--serif)}#tip span{display:block;font:11px var(--mono);color:var(--dim)}
@@ -203,6 +218,20 @@ body.peeking #mini{opacity:0;pointer-events:none}
 .listen a:hover{background:#ffffff1a;border-color:#ffffff38}.listen a::after,.more a::after{content:"↗";font-size:11px;color:var(--dim)}
 .more{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:13px}.more a{color:var(--dim);text-decoration:none;border-bottom:1px solid #ffffff22}.more a:hover{color:var(--paper)}.more a::after{margin-left:3px}
 .more .src{color:var(--faint)}
+.specs i{display:block;font:11px var(--mono);color:var(--faint);font-style:normal;margin-top:3px;overflow-wrap:anywhere}
+.about p{margin:0 0 10px;font-size:14px;line-height:1.6;color:#d8d4c8;text-wrap:pretty}.about p:first-child::first-letter{font:400 1.9em/1 var(--serif);float:left;margin:3px 6px 0 0;color:var(--paper)}
+.about.fold p+p{display:none}.about cite{display:block;font:11px var(--mono);font-style:normal;color:var(--faint)}.about cite a{color:var(--dim)}
+.xbtn{font:11px var(--mono);color:var(--p);letter-spacing:.04em;padding:6px 0 0;display:inline-block}
+.credits li.me b{color:var(--p)}.credits li.me span{color:#e6b450b0}
+.credits.fold li:nth-child(n+11){display:none}
+.rows{margin:0;padding:0;list-style:none;font-size:13px}.rows li{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:5px 0;border-top:1px solid #ffffff0a}.rows li:first-child{border-top:0}
+.rows small{font:10px/1.9 var(--mono);color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+.eds{width:100%;border-collapse:collapse;font-size:12.5px}.eds td{padding:5px 8px 5px 0;border-top:1px solid #ffffff0a;vertical-align:top;color:var(--dim)}.eds td:first-child{font:11.5px var(--mono);color:var(--paper);width:42px}.eds td:nth-child(3){color:var(--paper)}
+.eds.fold tr:nth-child(n+7){display:none}.eds tr.this td{color:var(--p)}
+.collect{margin-top:10px;font-size:12.5px;color:var(--dim)}.collect b{color:var(--paper);font-weight:500}
+.dnotes{font-size:13px;line-height:1.55;color:#cfcbc0;white-space:pre-line;overflow-wrap:anywhere}
+.watch{list-style:none;margin:0;padding:0;font-size:13px}.watch li{padding:4px 0}.watch a{color:var(--paper);text-decoration:none;border-bottom:1px solid #ffffff22}.watch a::before{content:"▶";font-size:9px;color:var(--p);margin-right:8px;vertical-align:1px}
+.tracks .ta{display:block;font-size:11.5px;color:var(--faint);margin-top:1px}
 #bite{margin:16px 0 4px;padding:10px 12px;border-radius:10px;background:var(--ground);border:1px solid var(--rule)}
 #bite .prow{margin:0}#bite[hidden]{display:none}
 .flag{font:11px var(--mono);padding:2px 7px;border:1px dashed var(--p);color:var(--p)}
@@ -370,7 +399,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 <div id="tip"></div>
 <button id="discPlay" type="button" aria-label="Play" hidden><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
 <button id="recView" type="button" hidden>Whole record</button>
-<div id="peek" role="dialog" aria-label="Release"><button id="pkPlay" type="button"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg><span>Play</span></button><div class="pt"><em></em><b></b></div><button id="pkMore" type="button">Details<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button></div>
+<div id="peek" role="group" aria-label="Player"><i class="pbar"></i><img id="pkCov" alt=""><button id="pkPlay" type="button"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg><span>Play</span></button><div class="pt"><em></em><b></b></div><button id="pkMore" type="button">Details<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button></div>
 <div id="mini" hidden>
   <i id="miniBar"></i>
   <button id="miniOpen" type="button" aria-label="Show details"><img id="miniCov" alt=""><span><em></em><b></b></span><small class="more">Details</small><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 12.5 10 7.5l5 5"/></svg></button>
@@ -437,6 +466,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 <div id="enterHint" aria-live="polite"></div>
 <script src="booking/config.js"></script>
 <script src="catalogue.js"></script>
+<script src="extra.js"></script>
 <script>
 'use strict';
 /* Booking links appear once the booking script is connected. */
@@ -650,6 +680,7 @@ function draw(){
     }
     drawTile(e,a,gr,e===sel||e===peek.e||(mode==='browse'&&e.id===audio.id));
   });
+  drawHoverPlay();
 }
 /* The lens: covers near the cursor swell and push their neighbours aside, strongest when they are small. */
 const lens={x:0,y:0,on:false};
@@ -713,6 +744,17 @@ function updateLens(dt){
   return busy;
 }
 const intro={t0:null,gap:11,span:0};
+/* A faint play (or pause) mark on the cover under the mouse: clicking the mark plays, clicking the rest of the cover names it in the header. */
+function playMark(e){const s=T*cam.z*(e._g||1);return{x:sx(e.cx)+(e._dx||0),y:sy(e.cy)+(e._dy||0)+(e._iy||0),r:clamp(s*.2,9,30)}}
+function drawHoverPlay(){
+  const e=hover;if(!e||sel||mode!=='browse'||view.name!=='line'||W<=700||TOUCH||!biteOf(e)||intro.t0!==null)return;
+  const m=playMark(e),on=audioPlaying(e.id);
+  g.save();g.globalAlpha=.9;g.fillStyle='#11141bb3';g.beginPath();g.arc(m.x,m.y,m.r,0,Math.PI*2);g.fill();
+  g.strokeStyle='#ece8dc55';g.lineWidth=1;g.stroke();g.fillStyle='#ece8dc';const r=m.r*.42;
+  if(on){g.fillRect(m.x-r*.8,m.y-r,r*.55,r*2);g.fillRect(m.x+r*.25,m.y-r,r*.55,r*2)}
+  else{g.beginPath();g.moveTo(m.x-r*.6,m.y-r);g.lineTo(m.x+r*1.05,m.y);g.lineTo(m.x-r*.6,m.y+r);g.closePath();g.fill()}
+  g.restore();
+}
 /* The opening shot: one cover fills the screen, the others ripple in around it, and the camera pulls back to the whole career. */
 const cine={t0:null};
 function startCine(){
@@ -880,7 +922,7 @@ function flyTo(e){
   cam.tz=z;cam.tx=e.cx+(pw/2)/z;cam.ty=e.cy+(phone?(H/2-(headH+gap/2))/z:0);cam.tau=.28;dirty=true;
 }
 function select(e,opts={}){
-  clearTimeout(soundTimer);sel=e;hover=null;dirty=true;$('#tip').style.display='none';hidePeek();
+  clearTimeout(soundTimer);sel=e;hover=null;dirty=true;$('#tip').style.display='none';hidePeek();document.body.classList.toggle('selopen',!!e);
   if(!e){$('#panel').classList.remove('open');syncPlay();syncYears();return}
   if(orient==='v'&&view.name==='line')setFocus(e);
   renderPanel(e);$('#panel').classList.add('open');flyTo(e);syncYears();
@@ -911,30 +953,48 @@ function renderPanel(e){
     if(f.nomination)rows.push(['Nominated',esc(f.nomination)]);
   }
   /* the head says what it is and when it came out; the facts are the basics at a glance; the rest follows */
-  const when=longDate(e.date)||String(e.year);
+  const X=(window.EXTRA||{})[e.id]||{};
+  /* a 1 January date is a placeholder for "some time that year": use the sources' date when they have one */
+  const srcDate=(X.first||(X.released||'').replace(/-00/g,''));
+  const bestDate=(!e.date||/-01-01$/.test(e.date))&&srcDate&&srcDate.slice(0,4)<=String(e.year)?srcDate:(/-01-01$/.test(e.date||'')?String(e.year):e.date);
+  const when=longDate(bestDate)||String(e.year);
   const fmtTxt=[e.type,(e.formats||[]).join(' · ')].filter(Boolean).join(' · ');
-  const specs=[[e.film&&e.film.label?'Date':'Released',when],['Label',(e.labels||[]).join(', ')],['Format',fmtTxt]].filter(f=>f[1]);
+  const catno=(X.cat||[]).map(c=>c.split(' · ')[1]).filter(Boolean).join(', ');
+  const specs=[[e.film&&e.film.label?'Date':'Released',when,X.country||''],['Label',(e.labels||[]).join(', '),catno],['Format',fmtTxt,'']].filter(f=>f[1]);
   $('#pHead').innerHTML=`${e.cover?`<img class="pcov" src="${esc(e.cover)}" alt="">`:'<i class="pcov none"></i>'}<div><div class="when">${esc(when)}</div><h3>${esc(e.title)}</h3><h2>${esc(e.artist)}</h2></div>`;
   tintFrom(e);
   const part=e.roleText||(e.film?e.film.role:'')||'';
-  $('#pBody').innerHTML=`<div class="specs">${specs.map(f=>`<div><small>${f[0]}</small><b>${esc(f[1])}</b></div>`).join('')}</div>
+  $('#pBody').innerHTML=`<div class="specs">${specs.map(f=>`<div><small>${f[0]}</small><b>${esc(f[1])}</b>${f[2]?`<i>${esc(f[2])}</i>`:''}</div>`).join('')}</div>
     <div class="part" style="--c1:${C[e.roles[0]]||'var(--rule)'}"><div class="rl">${e.roles.map(r=>`<span style="--c:${C[r]}">${esc(ROLE[r][0])}</span>`).join('')}${e.confirm&&!PUBLIC?'<span class="flag">role to confirm</span>':''}</div>${part?`<p>${esc(part)}</p>`:''}</div>
     ${e.note?`<p class="note">${esc(e.note)}</p>`:''}
-    ${e.styles&&e.styles.length?`<div class="tags">${e.styles.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}`;
+    ${e.styles&&e.styles.length?`<div class="tags">${e.styles.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}
+    ${X.wiki?`<div class="sec"><h4>About</h4><div class="about${X.wiki.text.length>1?' fold':''}">${X.wiki.text.map(t=>`<p>${esc(t)}</p>`).join('')}<cite>From <a href="${esc(X.wiki.url)}" target="_blank" rel="noopener">Wikipedia</a>${X.wiki.lang==='is'?' (Icelandic)':''}, CC BY-SA</cite></div>${X.wiki.text.length>1?'<button class="xbtn" data-unfold>Read more</button>':''}</div>`:''}`;
   const people=new Map(),places=[];
   const tidy=r=>r.replace(/\s*\[[^\]]*\]/g,'').split(/,\s*/).filter(x=>x&&!/^other$/i.test(x)).map((x,i)=>i?x.toLowerCase():x[0]+x.slice(1).toLowerCase()).join(', ');
   (e.others||[]).forEach(l=>{const m=String(l).match(/^(.+?):\s*(.+)$/);if(!m)return;const role=tidy(m[1]),det=(m[1].match(/\[([^\]]+)\]/)||[])[1];
     m[2].split(/,\s*(?![^()]*\))/).forEach(n=>{n=n.trim();if(!n)return;const p=people.get(n)||{roles:[],dets:[]};if(role&&!p.roles.includes(role))p.roles.push(role);if(det&&!p.dets.includes(det))p.dets.push(det);people.set(n,p)})});
   (e.places||[]).forEach(l=>{const m=String(l).match(/^(.+?):\s*(.+)$/);places.push(m?{n:m[2],r:tidy(m[1])}:{n:l,r:''})});
-  const cr=[...people].map(([n,p])=>`<li><b>${esc(n)}</b><span>${esc(p.roles.join(', ').replace(/^./,c=>c.toUpperCase()))}${p.dets.length?` <q>${esc(p.dets.join(', ').toLowerCase())}</q>`:''}</span></li>`)
+  const cr=X.credits&&X.credits.length>=people.size?X.credits.map(c=>`<li${c.g?' class="me"':''}><b>${esc(c.n)}</b><span>${esc(c.r.join(' · '))}</span></li>`).concat(places.map(p=>`<li class="place"><b>${esc(p.n)}</b><span>${esc(p.r)}</span></li>`)):[...people].map(([n,p])=>`<li><b>${esc(n)}</b><span>${esc(p.roles.join(', ').replace(/^./,c=>c.toUpperCase()))}${p.dets.length?` <q>${esc(p.dets.join(', ').toLowerCase())}</q>`:''}</span></li>`)
     .concat(places.map(p=>`<li class="place"><b>${esc(p.n)}</b><span>${esc(p.r)}</span></li>`));
   const lst={spotify:'Spotify',apple:'Apple Music',bandcamp:'Bandcamp'},inf={discogs:'Discogs',musicbrainz:'MusicBrainz',imdb:'IMDb'};
   const L=e.links||{},lis=Object.keys(lst).filter(k=>L[k]),infs=Object.keys(inf).filter(k=>L[k]);
   const srcTxt=e.film&&e.film.label&&!(e.refs||[]).length&&(e.source||[]).length?`<span class="src">Source: ${(e.source||[]).map(esc).join(', ')}</span>`:'';
   const moreHtml=infs.map(k=>`<a href="${esc(L[k])}" target="_blank" rel="noopener">${inf[k]}</a>`).concat((e.refs||[]).map(r=>`<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.label)}</a>`)).join('')+srcTxt;
-  $('#pMore').innerHTML=(cr.length?`<div class="sec"><h4>Credits</h4><ul class="credits">${cr.join('')}</ul></div>`:'')
+  if(e.film){if(X.director&&!(e.film.director||[]).length)rows.push(['Director',esc(X.director.join(', '))]);if(X.writer)rows.push(['Written by',esc(X.writer.join(', '))]);if(X.cast)rows.push(['Cast',esc(X.cast.slice(0,6).join(', '))]);if(X.award)rows.push(['Awards',esc(X.award.join(', '))]);if(X.nominated)rows.push(['Nominated',esc(X.nominated.join(', '))])}
+  const made=[...(X.studios||[]),...(X.rights||[])];
+  const eds=X.editions||[],edYears=eds.map(d=>+d[0]).filter(Boolean),edCountries=[...new Set(eds.map(d=>d[1]).filter(Boolean))];
+  const myCat=catno.split(', ')[0];
+  const edHtml=eds.length>1?`<div class="sec"><h4>Editions<em>${X.editions_n||eds.length} · ${Math.min(...edYears)}–${Math.max(...edYears)} · ${edCountries.length} ${edCountries.length>1?'countries':'country'}</em></h4><table class="eds${eds.length>6?' fold':''}">${eds.map(d=>`<tr class="${d[4]&&d[4]===myCat?'this':''}"><td>${esc(d[0]||'—')}</td><td>${esc(d[1])}</td><td>${esc(d[2])}${d[4]?` <span style="color:var(--faint)">${esc(d[4])}</span>`:''}</td><td>${esc(d[3].split(', ').slice(0,2).join(', '))}</td></tr>`).join('')}</table>${eds.length>6?`<button class="xbtn" data-unfold>All ${eds.length} editions</button>`:''}${X.have?`<div class="collect"><b>${X.have.toLocaleString('en')}</b> people own it on Discogs · <b>${(X.want||0).toLocaleString('en')}</b> want it${X.rating?` · rated <b>${X.rating[0]}</b>/5 by ${X.rating[1]}`:''}</div>`:''}</div>`
+    :X.have?`<div class="sec"><h4>Collectors</h4><div class="collect" style="margin:0"><b>${X.have.toLocaleString('en')}</b> people own it on Discogs · <b>${(X.want||0).toLocaleString('en')}</b> want it${X.rating?` · rated <b>${X.rating[0]}</b>/5 by ${X.rating[1]}`:''}</div></div>`:'';
+  const extraLinks=[X.wiki&&!L.wikipedia?`<a href="${esc(X.wiki.url)}" target="_blank" rel="noopener">Wikipedia</a>`:'',X.dg&&!L.discogs?`<a href="https://www.discogs.com/release/${X.dg}" target="_blank" rel="noopener">Discogs</a>`:'',X.mb&&!L.musicbrainz?`<a href="https://musicbrainz.org/release-group/${esc(X.mb)}" target="_blank" rel="noopener">MusicBrainz</a>`:'',X.qid?`<a href="https://www.wikidata.org/wiki/${esc(X.qid)}" target="_blank" rel="noopener">Wikidata</a>`:''].join('');
+  const moreAll=moreHtml.replace(/(<span class="src">)/,extraLinks+'$1')+(moreHtml.includes('class="src"')?'':extraLinks);
+  $('#pMore').innerHTML=(cr.length?`<div class="sec"><h4>Credits<em>${cr.length} ${cr.length>1?'names':'name'}</em></h4><ul class="credits${cr.length>12?' fold':''}">${cr.join('')}</ul>${cr.length>12?`<button class="xbtn" data-unfold>All ${cr.length} credits</button>`:''}</div>`:'')
+    +(made.length?`<div class="sec"><h4>${X.studios?(X.rights?'Studios &amp; rights':'Studios'):'Rights'}</h4><ul class="rows">${made.map(m=>`<li><small>${esc(m[0].replace(/ (At|By)$/,''))}</small><span>${esc(m[1].join(', '))}</span></li>`).join('')}</ul></div>`:'')
+    +(X.notes?`<div class="sec"><h4>Release notes</h4><div class="dnotes">${esc(X.notes)}</div></div>`:'')
+    +edHtml
+    +(X.videos?`<div class="sec"><h4>Watch</h4><ul class="watch">${X.videos.map(v=>`<li><a href="${esc(v[1])}" target="_blank" rel="noopener">${esc(v[0])}</a></li>`).join('')}</ul></div>`:'')
     +(rows.length?`<div class="sec"><h4>${e.film?'On screen':'Details'}</h4><dl class="kv">${rows.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('')}</dl></div>`:'')
-    +(lis.length||moreHtml?`<div class="sec"><h4>${lis.length?'Listen':'More'}</h4>${lis.length?`<div class="listen">${lis.map(k=>`<a href="${esc(L[k])}" target="_blank" rel="noopener">${lst[k]}</a>`).join('')}</div>`:''}${moreHtml?`<div class="more"${lis.length?'':' style="margin-top:0"'}>${moreHtml}</div>`:''}</div>`:'');
+    +(lis.length||moreAll?`<div class="sec"><h4>${lis.length?'Listen':'More'}</h4>${lis.length?`<div class="listen">${lis.map(k=>`<a href="${esc(L[k])}" target="_blank" rel="noopener">${lst[k]}</a>`).join('')}</div>`:''}${moreAll?`<div class="more"${lis.length?'':' style="margin-top:0"'}>${moreAll}</div>`:''}</div>`:'');
   renderBite(e);
 }
 function renderBite(e){
@@ -951,7 +1011,7 @@ function renderBite(e){
   $('#linkIn').value=b&&b.kind==='url'&&!b.own?b.url:'';
   $('#play').disabled=!b;$('#play').style.opacity=b?1:.35;
   const tot=e.tracks.reduce((t,x)=>t+(x.ms||0),0);
-  const list=e.tracks.length?`<div class="sec"><h4>Tracks<em>${e.tracks.length} ${e.tracks.length>1?'tracks':'track'}${tot?' · '+Math.round(tot/60000)+' min':''}</em></h4><ol class="tracks">${e.tracks.map((t,i)=>{const on=b&&b.kind==='track'&&b.idx===i;return`<li class="${on?'on':''}"><small><span class="n">${t.n||i+1}</span><i class="eq"><b></b><b></b><b></b></i></small><button data-t="${i}" ${t.p?'':'disabled'}>${esc(t.t)}</button><small>${t.ms?fmt(t.ms/1000):''}</small></li>`}).join('')}</ol></div>`:'';
+  const list=e.tracks.length?`<div class="sec"><h4>Tracks<em>${e.tracks.length} ${e.tracks.length>1?'tracks':'track'}${tot?' · '+Math.round(tot/60000)+' min':''}</em></h4><ol class="tracks">${e.tracks.map((t,i)=>{const on=b&&b.kind==='track'&&b.idx===i;return`<li class="${on?'on':''}"><small><span class="n">${t.n||i+1}</span><i class="eq"><b></b><b></b><b></b></i></small><button data-t="${i}" ${t.p?'':'disabled'}>${esc(t.t)}${(()=>{const X=(window.EXTRA||{})[e.id],d=X&&X.tracks&&X.tracks[i];return d&&d[3]&&d[3].toLowerCase()!==String(e.artist).toLowerCase()&&d[1].toLowerCase().slice(0,8)===t.t.toLowerCase().slice(0,8)?`<span class="ta">${esc(d[3])}</span>`:''})()}</button><small>${t.ms?fmt(t.ms/1000):''}</small></li>`}).join('')}</ol></div>`:'';
   $('#biteTracks').innerHTML=list;
   drawWave(e);syncPlay();
 }
@@ -1016,22 +1076,29 @@ function closeInfo(){
    (then the new one follows on). A second click, or Details, opens the full info. */
 const peek={e:null};
 const anyPlaying=()=>!!audio.el&&!audio.el.paused&&!audio.fading.has(audio.el);
-function showPeek(h){peek.e=h;const p=$('#peek');p.querySelector('em').textContent=h.title;p.querySelector('b').textContent=`${h.artist} · ${h.year}`;
-  $('#pkPlay').disabled=!biteOf(h);p.classList.add('on');document.body.classList.add('peeking');$('#tip').style.display='none';syncPeek();positionPeek();dirty=true}
-function hidePeek(){if(!peek.e)return;peek.e=null;$('#peek').classList.remove('on');document.body.classList.remove('peeking');dirty=true}
-function syncPeek(){if(!peek.e)return;const on=audioPlaying(peek.e.id)||audio.wantId===peek.e.id&&!!audio.wantId,b=$('#pkPlay');b.classList.toggle('on',on);b.querySelector('span').textContent=!biteOf(peek.e)?'No preview':on?'Pause':'Play';b.setAttribute('aria-label',on?'Pause':'Play')}
-function positionPeek(){const e=peek.e;if(!e||W<=700)return;const p=$('#peek'),s=T*cam.z*(e._g||1),x=sx(e.cx)+(e._dx||0),y=sy(e.cy)+(e._dy||0),w=p.offsetWidth||320,h=p.offsetHeight||58;
+/* On a computer the card sits in the header, between the views and the menu, and also shows what is playing. */
+function placePeek(){const p=$('#peek'),inBar=W>700;if(inBar&&p.parentNode!==$('#bar'))$('#bar').insertBefore(p,$('#right'));else if(!inBar&&p.parentNode!==document.body)document.body.insertBefore(p,$('#mini'));syncPeek()}
+function peekItem(){return peek.e||(W>700&&player.e&&!player.closed&&view.name==='line'?player.e:null)}
+function fillPeek(h){const p=$('#peek');if(p.dataset.id===h.id)return;p.dataset.id=h.id;p.querySelector('em').textContent=h.title;p.querySelector('b').textContent=`${h.artist} · ${h.year}`;
+  const c=$('#pkCov');c.style.visibility=h.cover?'':'hidden';if(h.cover)c.src=h.cover;$('#pkPlay').disabled=!biteOf(h)}
+function showPeek(h){peek.e=h;fillPeek(h);$('#peek').classList.add('on');document.body.classList.toggle('peeking',W<=700);$('#tip').style.display='none';syncPeek();positionPeek();dirty=true}
+function hidePeek(){if(!peek.e)return;peek.e=null;document.body.classList.remove('peeking');syncPeek();dirty=true}
+function syncPeek(){const it=peekItem(),p=$('#peek');p.classList.toggle('on',!!it);if(!it)return;fillPeek(it);
+  const a=audio.el;let k=0;if(a&&audio.id===it.id&&a.duration)k=a.currentTime/a.duration;p.querySelector('.pbar').style.width=(k*100).toFixed(2)+'%';
+  peek.cur=it;const on=audioPlaying(it.id)||audio.wantId===it.id&&!!audio.wantId,b=$('#pkPlay');b.classList.toggle('on',on);b.querySelector('span').textContent=!biteOf(it)?'No preview':on?'Pause':'Play';b.setAttribute('aria-label',on?'Pause':'Play')}
+function positionPeek(){const e=peek.e;if(!e||W>700)return;const p=$('#peek'),s=T*cam.z*(e._g||1),x=sx(e.cx)+(e._dx||0),y=sy(e.cy)+(e._dy||0),w=p.offsetWidth||320,h=p.offsetHeight||58;
   let top=y-s/2-h-10;if(top<$('#bar').offsetHeight+8)top=y+s/2+10;top=clamp(top,$('#bar').offsetHeight+8,H-h-12);
   p.style.left=clamp(x-w/2,10,W-w-10)+'px';p.style.top=top+'px'}
-$('#pkPlay').addEventListener('click',()=>{if(peek.e){playerToggle(peek.e);setTimeout(syncPeek,40)}});
-$('#pkMore').addEventListener('click',()=>{const h=peek.e;if(!h)return;camBefore=camBefore||{x:cam.tx,y:cam.ty,z:cam.tz};select(h)});
-setInterval(syncPeek,250);
+$('#pkPlay').addEventListener('click',()=>{const h=peekItem();if(h){playerToggle(h);setTimeout(syncPeek,40)}});
+$('#pkMore').addEventListener('click',()=>{const h=peekItem();if(!h)return;camBefore=camBefore||{x:cam.tx,y:cam.ty,z:cam.tz};select(h)});
+setInterval(syncPeek,200);addEventListener('resize',placePeek);
 cv.addEventListener('click',ev=>{
   if(view.name==='disc'&&mode==='browse'){discClick(ev);return}
   if(!tapped||view.name!=='line'||mode!=='browse')return;
   const h=tapped.e;tapped=null;clearTimeout(tipTimer);
   const follow=()=>{if(soundOn&&anyPlaying()&&biteOf(h)&&audio.id!==h.id&&audio.wantId!==h.id){player.e=h;playBite(h,.25,.6)}};
   if(!h){if(sel)closeInfo();else hidePeek();$('#tip').style.display='none';return}
+  if(W>700&&!TOUCH&&!sel&&biteOf(h)){const m=playMark(h);if(Math.hypot(ev.clientX-m.x,ev.clientY-m.y)<=m.r*1.3){showPeek(h);playerToggle(h);setTimeout(syncPeek,40);dirty=true;return}}
   if(sel&&sel!==h){follow();armed=h;select(h);return}
   if(sel===h)return;
   if(peek.e===h){camBefore=camBefore||{x:cam.tx,y:cam.ty,z:cam.tz};select(h);return}
@@ -1165,6 +1232,7 @@ $('#startIn').onchange=ev=>{if(!sel)return;const b=Object.assign({},biteOf(sel))
 $('#pin').onchange=ev=>{if(!sel)return;if(ev.target.checked)pins[sel.id]=1;else delete pins[sel.id];store.set('gt.pins',pins)};
 $('#file').onchange=ev=>takeFile(ev.target.files[0]);
 $('#linkGo').onclick=()=>{const v=$('#linkIn').value.trim();if(sel&&v)setBite(sel,{kind:'url',url:v,start:0})};
+$('#panel').addEventListener('click',ev=>{const b=ev.target.closest('[data-unfold]');if(!b)return;const t=b.previousElementSibling;if(t)t.classList.remove('fold');b.remove()});
 $('#biteTracks').addEventListener('click',ev=>{const t=ev.target.closest('[data-t]');if(!t||!sel)return;setBite(sel,{kind:'track',idx:+t.dataset.t,start:0});playBite(sel)});
 $('#wave').addEventListener('click',ev=>{const c=ev.currentTarget;if(!sel||!c._dur)return;const r=c.getBoundingClientRect();const b=Object.assign({},biteOf(sel));b.start=Math.round((ev.clientX-r.left)/r.width*c._dur*10)/10;setBite(sel,b)});
 const dropEl=$('#drop');
@@ -1822,6 +1890,7 @@ if(wantStart||(!wantedView&&!seenWelcome)){
 syncLayout();
 /* Opening on the record always starts at the beginning of the career. */
 if(startDisc&&!wantStart&&(wantedView||seenWelcome)){setTimeout(()=>{focus=null;setView('disc')},REDUCED?0:500)}
+placePeek();
 requestAnimationFrame(frame);
 </script>
 </body>
