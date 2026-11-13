@@ -501,7 +501,18 @@ const wantLayout=(location.search.match(/[?&]layout=(vertical|horizontal)/)||[])
 /* A phone always opens the way it is held: upright, the years run down. */
 const PHONE=matchMedia('(hover: none)').matches&&Math.min(screen.width,screen.height)<=700;
 let orient=wantLayout?(wantLayout==='vertical'?'v':'h'):PHONE?(innerWidth>innerHeight?'h':'v'):store.get('gt.orient',innerWidth<900?'v':'h');
-const colsFor=w=>w<=700?4:w<=1100?6:8;
+/* Phones keep four covers a row. On a computer the first screen shows 1997-2004, as big as the window allows:
+   the column count whose covers come out biggest while those years still fit the height. */
+const V_FIRST_END=2004;
+function vFirstH(c){const by={};ALL.filter(e=>(showApp||e.tier==='core')&&e.year<=V_FIRST_END).forEach(e=>by[e.year]=(by[e.year]||0)+1);
+  let h=0;Object.values(by).forEach(n=>{h+=Math.ceil(n/c)*COLW+VGAP});return h-VGAP-GAP}
+function vFitZ(c,w,h){const top=($('#bar')?$('#bar').offsetHeight:46)+10;return Math.min((w-24)/(VGUT+c*COLW-GAP),(h-top-100)/vFirstH(c))}
+const vOldZ=w=>Math.min((w-24)/(VGUT+8*COLW-GAP),170/T);   /* never smaller than the old first view */
+function colsFor(w){
+  if(w<=700)return 4;
+  let best=8,bz=0;for(let c=3;c<=8;c++){const z=vFitZ(c,w,innerHeight);if(z>bz*1.02){bz=z;best=c}}
+  return bz>=vOldZ(w)?best:8;
+}
 function layout(){
   items=ALL.filter(e=>showApp||e.tier==='core');
   const by={};items.forEach(e=>(by[e.year]=by[e.year]||[]).push(e));
@@ -555,10 +566,10 @@ ALL.forEach(e=>{
 /* ---------- camera ---------- */
 let W=0,H=0,DPR=1,dirty=true;
 const cam={x:0,y:0,z:.3,tx:0,ty:0,tz:.3,tau:.35};
-function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;dirty=true;if(orient==='v'&&colsFor(W)!==vCols)layout();if(mode==='browse'&&!sel)fitAll(orient!=='v');else if(mode==='talk')aimTalk(true)}
+function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;dirty=true;if(orient==='v'&&colsFor(W)!==vCols){layout();if(mode==='browse'&&!sel){cam.ty=-1e9;clampCam();cam.y=cam.ty}}if(mode==='browse'&&!sel)fitAll(orient!=='v');else if(mode==='talk')aimTalk(true)}
 /* Whole catalogue: the time axis rests just above the reserved bottom band, like the baseline of a bar chart. */
 const barH=()=>$('#bar').offsetHeight;
-function vZoom(){return Math.min((W-24)/world.w,170/T)}
+function vZoom(){return W>700?Math.max(vFitZ(vCols,W,H),Math.min(vOldZ(W),(W-24)/world.w)):Math.min((W-24)/world.w,170/T)}
 function fitBox(top,bottom,mid){if(orient==='v'&&mode!=='talk'){const z=vZoom();return{z,x:world.w/2,y:(H/2-barH()-10)/z}}const z=Math.min((W*.975)/world.w,(H-top-bottom-30)/world.h),free=mid?Math.max(0,H-top-bottom-30-world.h*z)*.42:0;return{z,x:world.w/2,y:(bottom+30+free-H/2)/z}}
 const fitMain=()=>fitBox($('#bar').offsetHeight+10,matchMedia('(hover: none)').matches?40:14,true);
 function fitAll(snap){if(orient==='v'&&!snap&&mode!=='talk'){cam.tz=vZoom();clampCam();cam.tau=.3;dirty=true;return}const f=fitMain();cam.tx=f.x;cam.ty=f.y;cam.tz=f.z;cam.tau=.45;if(snap){cam.x=f.x;cam.y=f.y;cam.z=f.z}dirty=true}
