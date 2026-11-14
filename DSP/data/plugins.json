@@ -5,8 +5,8 @@
  },
  "plugins": [
   {
-   "id": "antiphon",
-   "name": "ANTIPHON",
+   "id": "experiment-01",
+   "name": "EXPERIMENT 01",
    "subtitle": "The Null-Space Engine",
    "kind": "Effect",
    "tags": [
@@ -19,17 +19,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/antiphon-1.webp",
-     "thumb": "images/antiphon-1-thumb.webp"
+     "src": "images/experiment-01-1.webp",
+     "thumb": "images/experiment-01-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "ANTIPHON is a stereo processor built on a single equation: **out = direct − shadow**.\n\nThe input is duplicated into a direct path and a shadow path, and the shadow is subtracted from the direct signal. Two identical copies null to silence, so the output consists only of the differences introduced into the shadow. Every control alters the shadow in a different way, and that deviation becomes the sound.\n\n### Shadow processing\n* **Filtering**: Produces the complementary response. A low-passed shadow leaves only the high band audible.\n* **SHEAR (delay)**: Offsets the shadow in time, producing comb filtering.\n* **RESIDUE (saturation)**: Isolates the harmonics added by distortion, with the original fundamental cancelled.\n* **SKEW, SCATTER, DRIFT (phase)**: Rotate phase without changing magnitude, so the residual is a hollow, phase-derived colour that no EQ can reproduce.\n* **MEMORY (spectral lag)**: Delays the shadow's spectrum, so onsets pass through while sustained material cancels.\n\n### The null surface\nThe main display is a spectral surface divided by a central null line. Drawing above the line lets a band leak through in phase; drawing below it returns the band with inverted polarity.\n\n* **VEIL**: The depth of subtraction, with optional tempo-synced pulsing or transient following.\n* **LIFT**: Make-up gain, since the residual of a near-complete null is often very quiet."
+   "body": "EXPERIMENT 01 is a stereo processor built on a single equation: **out = direct − shadow**.\n\nThe input is duplicated into a direct path and a shadow path, and the shadow is subtracted from the direct signal. Two identical copies null to silence, so the output consists only of the differences introduced into the shadow. Every control alters the shadow in a different way, and that deviation becomes the sound.\n\n### Shadow processing\n* **Filtering**: Produces the complementary response. A low-passed shadow leaves only the high band audible.\n* **SHEAR (delay)**: Offsets the shadow in time, producing comb filtering.\n* **RESIDUE (saturation)**: Isolates the harmonics added by distortion, with the original fundamental cancelled.\n* **SKEW, SCATTER, DRIFT (phase)**: Rotate phase without changing magnitude, so the residual is a hollow, phase-derived colour that no EQ can reproduce.\n* **MEMORY (spectral lag)**: Delays the shadow's spectrum, so onsets pass through while sustained material cancels.\n\n### The null surface\nThe main display is a spectral surface divided by a central null line. Drawing above the line lets a band leak through in phase; drawing below it returns the band with inverted polarity.\n\n* **VEIL**: The depth of subtraction, with optional tempo-synced pulsing or transient following.\n* **LIFT**: Make-up gain, since the residual of a near-complete null is often very quiet."
   },
   {
-   "id": "aphelion",
-   "name": "APHELION",
+   "id": "experiment-02",
+   "name": "EXPERIMENT 02",
    "subtitle": "The Distance Engine",
    "kind": "Effect",
    "tags": [
@@ -42,17 +42,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/aphelion-1.webp",
-     "thumb": "images/aphelion-1-thumb.webp"
+     "src": "images/experiment-02-1.webp",
+     "thumb": "images/experiment-02-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "APHELION treats playing dynamics as physical distance. Each attack is detected, measured and launched as a sound source travelling to a distance set by its intensity. Everything you hear afterwards is derived from that distance using the physics of sound in air.\n\n### Propagation model\n* **Arrival time**: The delay equals the travel time at 343 m/s.\n* **Attenuation and air absorption**: Level falls with distance and high frequencies are absorbed.\n* **Source width and diffusion**: Distant sources narrow to a point and feed more of the diffuse field.\n* **Doppler shift**: Applied only while a source is moving. A receding source goes flat, an approaching one sharp.\n\nBecause delay time is derived from dynamics, the performance re-orders itself. A crescendo returns as a deceleration, and a soft note played after a loud one can arrive first. These events are counted as OVERTAKES and drawn in THE ORDER, a display linking each strike to its arrival.\n\n### Controls\n* **THE FIELD**: HORIZON sets the maximum distance (3 m to 3 km); GRADIENT sets how strongly intensity maps to distance.\n* **THE AIR**: Absorption, ground reflection, wind, and DRIFT, the only parameter that affects tuning.\n* **THE VALLEY**: The diffuse reverberant field, fed more strongly by distant sources.\n* **SUMMON**: A momentary control that recalls every source still in flight, returning it up to an octave higher."
+   "body": "EXPERIMENT 02 treats playing dynamics as physical distance. Each attack is detected, measured and launched as a sound source travelling to a distance set by its intensity. Everything you hear afterwards is derived from that distance using the physics of sound in air.\n\n### Propagation model\n* **Arrival time**: The delay equals the travel time at 343 m/s.\n* **Attenuation and air absorption**: Level falls with distance and high frequencies are absorbed.\n* **Source width and diffusion**: Distant sources narrow to a point and feed more of the diffuse field.\n* **Doppler shift**: Applied only while a source is moving. A receding source goes flat, an approaching one sharp.\n\nBecause delay time is derived from dynamics, the performance re-orders itself. A crescendo returns as a deceleration, and a soft note played after a loud one can arrive first. These events are counted as OVERTAKES and drawn in THE ORDER, a display linking each strike to its arrival.\n\n### Controls\n* **THE FIELD**: HORIZON sets the maximum distance (3 m to 3 km); GRADIENT sets how strongly intensity maps to distance.\n* **THE AIR**: Absorption, ground reflection, wind, and DRIFT, the only parameter that affects tuning.\n* **THE VALLEY**: The diffuse reverberant field, fed more strongly by distant sources.\n* **SUMMON**: A momentary control that recalls every source still in flight, returning it up to an octave higher."
   },
   {
-   "id": "apophasis",
-   "name": "APOPHASIS",
+   "id": "experiment-03",
+   "name": "EXPERIMENT 03",
    "subtitle": "The Via Negativa Engine",
    "kind": "Effect",
    "tags": [
@@ -66,17 +66,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/apophasis-1.webp",
-     "thumb": "images/apophasis-1-thumb.webp"
+     "src": "images/experiment-03-1.webp",
+     "thumb": "images/experiment-03-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "APOPHASIS filters the instrument through its own playing from a few seconds earlier.\n\nAll input is written to a spectral buffer. A second read head scans that buffer at a point in the past, and the spectrum it finds becomes an EQ curve applied to the live signal. A single bipolar control, **VIA**, determines how that curve is used.\n\n### The VIA control\n* **Zero**: A flat curve. The input passes unchanged apart from latency.\n* **Positive**: The past acts as a boost, forcing new material to speak through the harmony of what came before.\n* **Negative**: The past acts as a notch, subtracting anything already played from what is being played now.\n\nThe negative range is the signature. A chord repeated in the same position returns roughly 16 dB quieter, while a different chord passes untouched. Repetition cancels; new material comes through.\n\nNo resynthesis takes place. The output is always the recorded signal through a time-varying EQ, so the instrument retains its identity, and the past is never played back as audio.\n\n### Controls\n* **RECALL**: Look-back time, 0 to 8 seconds. At zero the instrument filters itself: negative VIA strips the tone and leaves the transients; positive VIA sharpens the partials.\n* **FOCUS and DEPTH**: Filter resolution in Hz, and the maximum curve excursion.\n* **TRACE, SNAP, HOLD**: Read-head speed, re-cueing on note onsets, and freezing the buffer. HOLD combined with TRACE turns a captured passage into a looping sequence of filters, playable at any speed in either direction.\n* **GRAIN**: Analysis window (TIGHT, NATURAL, DEEP), with latencies of approximately 43, 85 and 171 ms."
+   "body": "EXPERIMENT 03 filters the instrument through its own playing from a few seconds earlier.\n\nAll input is written to a spectral buffer. A second read head scans that buffer at a point in the past, and the spectrum it finds becomes an EQ curve applied to the live signal. A single bipolar control, **VIA**, determines how that curve is used.\n\n### The VIA control\n* **Zero**: A flat curve. The input passes unchanged apart from latency.\n* **Positive**: The past acts as a boost, forcing new material to speak through the harmony of what came before.\n* **Negative**: The past acts as a notch, subtracting anything already played from what is being played now.\n\nThe negative range is the signature. A chord repeated in the same position returns roughly 16 dB quieter, while a different chord passes untouched. Repetition cancels; new material comes through.\n\nNo resynthesis takes place. The output is always the recorded signal through a time-varying EQ, so the instrument retains its identity, and the past is never played back as audio.\n\n### Controls\n* **RECALL**: Look-back time, 0 to 8 seconds. At zero the instrument filters itself: negative VIA strips the tone and leaves the transients; positive VIA sharpens the partials.\n* **FOCUS and DEPTH**: Filter resolution in Hz, and the maximum curve excursion.\n* **TRACE, SNAP, HOLD**: Read-head speed, re-cueing on note onsets, and freezing the buffer. HOLD combined with TRACE turns a captured passage into a looping sequence of filters, playable at any speed in either direction.\n* **GRAIN**: Analysis window (TIGHT, NATURAL, DEEP), with latencies of approximately 43, 85 and 171 ms."
   },
   {
-   "id": "deborah",
-   "name": "DEBORAH",
+   "id": "experiment-04",
+   "name": "EXPERIMENT 04",
    "subtitle": "The Deborah Number",
    "kind": "Effect",
    "tags": [
@@ -90,17 +90,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/deborah-1.webp",
-     "thumb": "images/deborah-1-thumb.webp"
+     "src": "images/experiment-04-1.webp",
+     "thumb": "images/experiment-04-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "DEBORAH is a delay in which each repeat is more diffuse than the last, until the echoes merge into a reverb. There is no mode switch: the transition is continuous.\n\nThe name refers to the Deborah number, which describes whether a material behaves as a solid or a fluid depending on the timescale of observation. Here it governs the spacing of the read taps around the loop. Closely spaced taps produce a clean delay; widely spaced taps smear each echo before it returns, producing reverberation. The region in between yields a distinctive viscous texture.\n\nThe architecture is based on diffusion rather than allpass networks or resonators, avoiding their characteristic metallic ringing. Echoes remain on the beat however diffuse they become, and the diffusion introduces no pitch modulation.\n\n### Controls\n* **RELAXATION**: The central parameter, 0.5 ms to 20 s. It sets the point at which discrete echoes become a wash.\n* **CIRCUIT and LAPS**: Delay time (free or tempo-synced) and the length of the regeneration.\n* **SET**: Closes the input and sustains the contents of the loop.\n* **THE MACHINE**: CHARGE adds saturation; GRADE is a single wear control combining hiss, wow, flutter and head bump.\n* **REACH**: Moves the diffuse field earlier or later without moving any delay line, and therefore without pitch artefacts.\n* **THE LISTENER**: Performance-driven modulation. Four detectors (LEVEL, ATTACK, BRIGHT, BUSY) can be routed to destinations, none of which can detune the signal."
+   "body": "EXPERIMENT 04 is a delay in which each repeat is more diffuse than the last, until the echoes merge into a reverb. There is no mode switch: the transition is continuous.\n\nThe design draws on the Deborah number, which describes whether a material behaves as a solid or a fluid depending on the timescale of observation. Here it governs the spacing of the read taps around the loop. Closely spaced taps produce a clean delay; widely spaced taps smear each echo before it returns, producing reverberation. The region in between yields a distinctive viscous texture.\n\nThe architecture is based on diffusion rather than allpass networks or resonators, avoiding their characteristic metallic ringing. Echoes remain on the beat however diffuse they become, and the diffusion introduces no pitch modulation.\n\n### Controls\n* **RELAXATION**: The central parameter, 0.5 ms to 20 s. It sets the point at which discrete echoes become a wash.\n* **CIRCUIT and LAPS**: Delay time (free or tempo-synced) and the length of the regeneration.\n* **SET**: Closes the input and sustains the contents of the loop.\n* **THE MACHINE**: CHARGE adds saturation; GRADE is a single wear control combining hiss, wow, flutter and head bump.\n* **REACH**: Moves the diffuse field earlier or later without moving any delay line, and therefore without pitch artefacts.\n* **THE LISTENER**: Performance-driven modulation. Four detectors (LEVEL, ATTACK, BRIGHT, BUSY) can be routed to destinations, none of which can detune the signal."
   },
   {
-   "id": "halation",
-   "name": "HALATION",
+   "id": "experiment-05",
+   "name": "EXPERIMENT 05",
    "subtitle": "The Re-Exposure Engine",
    "kind": "Effect",
    "tags": [
@@ -115,17 +115,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/halation-1.webp",
-     "thumb": "images/halation-1-thumb.webp"
+     "src": "images/experiment-05-1.webp",
+     "thumb": "images/experiment-05-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "HALATION is a distortion reverb and delay in which the saturation stage sits inside the feedback loop rather than before it. It is designed as a send effect, so DRY defaults to zero.\n\nThe name is a photographic term: light that passes through the film, reflects off the base and exposes the same frame a second time. Here the tail repeatedly passes through the same nonlinearity as incoming material, so new and old signals intermodulate rather than simply summing. The wall responds to what is played into it.\n\n### Controls\n* **EXPOSURE and STOCK**: Drive level and transfer curve.\n* **ORTHO**: Determines whether the low or high register is saturated; the principal character control.\n* **HALO**: Feedback. With saturation in the loop, more feedback also means more density and grit.\n* **SCATTER**: A continuous morph from discrete echoes to a diffuse wash, level-compensated.\n* **HOLD and RENEW (THE FRAME)**: Infinite sustain with constant stored energy, so new material displaces old rather than accumulating.\n* **DISSOLVE**: The crossfade behaviour between old and new material, modelled on a film lap dissolve.\n* **MASK and RADIUS**: A zero-latency resonance suppressor that detects and attenuates spectral peaks.\n* **FREEZE, REVERSE, SHIMMER, GLIDE, DUCK**: Tail hold, reversal, pitched interval, per-pass pitch drift, and ducking against the dry signal."
+   "body": "EXPERIMENT 05 is a distortion reverb and delay in which the saturation stage sits inside the feedback loop rather than before it. It is designed as a send effect, so DRY defaults to zero.\n\nThe concept comes from photographic halation: light that passes through the film, reflects off the base and exposes the same frame a second time. Here the tail repeatedly passes through the same nonlinearity as incoming material, so new and old signals intermodulate rather than simply summing. The wall responds to what is played into it.\n\n### Controls\n* **EXPOSURE and STOCK**: Drive level and transfer curve.\n* **ORTHO**: Determines whether the low or high register is saturated; the principal character control.\n* **HALO**: Feedback. With saturation in the loop, more feedback also means more density and grit.\n* **SCATTER**: A continuous morph from discrete echoes to a diffuse wash, level-compensated.\n* **HOLD and RENEW (THE FRAME)**: Infinite sustain with constant stored energy, so new material displaces old rather than accumulating.\n* **DISSOLVE**: The crossfade behaviour between old and new material, modelled on a film lap dissolve.\n* **MASK and RADIUS**: A zero-latency resonance suppressor that detects and attenuates spectral peaks.\n* **FREEZE, REVERSE, SHIMMER, GLIDE, DUCK**: Tail hold, reversal, pitched interval, per-pass pitch drift, and ducking against the dry signal."
   },
   {
-   "id": "larmor",
-   "name": "LARMOR",
+   "id": "experiment-06",
+   "name": "EXPERIMENT 06",
    "subtitle": "The Dephasing Engine",
    "kind": "Effect",
    "tags": [
@@ -140,17 +140,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/larmor-1.webp",
-     "thumb": "images/larmor-1-thumb.webp"
+     "src": "images/experiment-06-1.webp",
+     "thumb": "images/experiment-06-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "LARMOR is a sustain processor. From a few notes or a chord, it builds a continuous sound bed that does not behave like a loop, a reverb or a delay.\n\nThe concept comes from nuclear magnetic resonance: a signal decays not because its components stop, but because they fall out of phase with one another. LARMOR works with that principle directly.\n\n### Architecture\n* **Packets**: The signal is split into approximately 32 narrow bands. Each band captures a short segment and repeats it at its original speed, without resampling, so pitch is preserved exactly.\n* **Decoherence**: Each band uses a different repeat length, so the bands drift out of alignment. What would otherwise be an audible loop becomes a stationary texture.\n* **REFOCUS**: Realigns every band, so the original chord re-forms out of the bed.\n\nEach band's repeat is cut on a whole number of its own cycles, which keeps the splice points inaudible.\n\n### Controls\n* **FLATTEN**: Removes the natural decay of the captured material, so the envelope you set is the only one applied.\n* **SPREAD**: The variance between repeat lengths. Higher values sound less periodic.\n* **WANDER**: Offsets each band to a different moment in the capture, adding internal motion.\n* **ACCRUE**: Whether new input adds to the bed or replaces it.\n* **FREEZE**: Holds the bed and stops capturing."
+   "body": "EXPERIMENT 06 is a sustain processor. From a few notes or a chord, it builds a continuous sound bed that does not behave like a loop, a reverb or a delay.\n\nThe concept comes from nuclear magnetic resonance: a signal decays not because its components stop, but because they fall out of phase with one another. EXPERIMENT 06 works with that principle directly.\n\n### Architecture\n* **Packets**: The signal is split into approximately 32 narrow bands. Each band captures a short segment and repeats it at its original speed, without resampling, so pitch is preserved exactly.\n* **Decoherence**: Each band uses a different repeat length, so the bands drift out of alignment. What would otherwise be an audible loop becomes a stationary texture.\n* **REFOCUS**: Realigns every band, so the original chord re-forms out of the bed.\n\nEach band's repeat is cut on a whole number of its own cycles, which keeps the splice points inaudible.\n\n### Controls\n* **FLATTEN**: Removes the natural decay of the captured material, so the envelope you set is the only one applied.\n* **SPREAD**: The variance between repeat lengths. Higher values sound less periodic.\n* **WANDER**: Offsets each band to a different moment in the capture, adding internal motion.\n* **ACCRUE**: Whether new input adds to the bed or replaces it.\n* **FREEZE**: Holds the bed and stops capturing."
   },
   {
-   "id": "noctiluca",
-   "name": "NOCTILUCA",
+   "id": "experiment-07",
+   "name": "EXPERIMENT 07",
    "subtitle": "The Afterglow Engine",
    "kind": "Effect",
    "tags": [
@@ -164,17 +164,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/noctiluca-1.webp",
-     "thumb": "images/noctiluca-1-thumb.webp"
+     "src": "images/experiment-07-1.webp",
+     "thumb": "images/experiment-07-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "NOCTILUCA models phosphorescence. The energy of the signal is absorbed, held for a time and re-emitted as a soft tone that is always lower in pitch than its source.\n\nThere is no delay line, no reverb and no feedback path, and the input is never played back. Only energy is retained, so the afterglow has no attack and can never be brighter than what produced it.\n\n### Process\n* **Absorption**: Spectral content above the BAND GAP is taken in.\n* **Storage**: Energy waits in traps of varying depth, some releasing quickly, others very slowly.\n* **Emission**: It is released as tones below the input, on a pitch set tuned to the detected key.\n\n### Controls\n* **TEMPERATURE**: The primary control. When cold, the store only fills; when heated, everything absorbed in the last minute is released in a single bloom.\n* **HOLD, DEPTH, PERSIST**: Storage time and length of the tail.\n* **STOKES and SPREAD**: The downward shift of the emission, and how much of the pitch set a single note excites.\n* **ROOT, FOLLOW, LINES**: The tuning of the emission and how closely it tracks the harmony.\n* **SHADOW**: Attenuates the dry signal where energy has been absorbed.\n* **GLOW**: Emission level, up to 400 %, since the afterglow is inherently much quieter than the source.\n* **THE GLOW ONLY**: Solos the emission."
+   "body": "EXPERIMENT 07 models phosphorescence. The energy of the signal is absorbed, held for a time and re-emitted as a soft tone that is always lower in pitch than its source.\n\nThere is no delay line, no reverb and no feedback path, and the input is never played back. Only energy is retained, so the afterglow has no attack and can never be brighter than what produced it.\n\n### Process\n* **Absorption**: Spectral content above the BAND GAP is taken in.\n* **Storage**: Energy waits in traps of varying depth, some releasing quickly, others very slowly.\n* **Emission**: It is released as tones below the input, on a pitch set tuned to the detected key.\n\n### Controls\n* **TEMPERATURE**: The primary control. When cold, the store only fills; when heated, everything absorbed in the last minute is released in a single bloom.\n* **HOLD, DEPTH, PERSIST**: Storage time and length of the tail.\n* **STOKES and SPREAD**: The downward shift of the emission, and how much of the pitch set a single note excites.\n* **ROOT, FOLLOW, LINES**: The tuning of the emission and how closely it tracks the harmony.\n* **SHADOW**: Attenuates the dry signal where energy has been absorbed.\n* **GLOW**: Emission level, up to 400 %, since the afterglow is inherently much quieter than the source.\n* **THE GLOW ONLY**: Solos the emission."
   },
   {
-   "id": "kolmogorov",
-   "name": "KOLMOGOROV",
+   "id": "experiment-08",
+   "name": "EXPERIMENT 08",
    "subtitle": "The Description Engine",
    "kind": "Effect",
    "tags": [
@@ -188,17 +188,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/kolmogorov-1.webp",
-     "thumb": "images/kolmogorov-1-thumb.webp"
+     "src": "images/experiment-08-1.webp",
+     "thumb": "images/experiment-08-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "KOLMOGOROV is a reverb whose acoustic space is generated from the structure of a loaded file. The file's data is never played as audio; only its patterns of repetition are used.\n\n### Process\n* **Structural analysis**: The file is searched for its most frequent repeated patterns, then for patterns composed of those patterns, recursively. The result is a hierarchy describing how the file is constructed.\n* **Room construction**: Each pattern becomes a diffusion element, nested in the same way as the hierarchy. Pattern length sets a delay time; frequency of occurrence sets the reflection gain.\n* **Compressibility**: Highly repetitive files (text, source code) produce long, dense, resonant rooms. Incompressible files (ZIP, JPEG) produce short, sparse ones, and the interface indicates this.\n\nDifferent files therefore produce different spaces from identical settings: text is wide and resonant, compiled code metallic.\n\n### Controls\n* **ALPHABET**: The symbol set used for analysis (BYTE, NYBBLE, WORD, DELTA, BITS). It changes which repetitions exist, and therefore the room.\n* **DESCRIBE**: The depth of the hierarchy used to build the room.\n* **DECAY and DAMP**: Reverb time and high-frequency damping.\n* **REWRITE and MUTATE**: Step through the file's structures in order, so the room evolves over time.\n* **BLOOM and SHIMMER**: A regenerating octave layer above the tail.\n* **RECURSE and GIRTH**: A resonator bank and a sub layer.\n* **FREEZE**: Infinite hold.\n* **QUALITY**: Oversampling (off, 2x, 4x) for cleaner drive and shimmer."
+   "body": "EXPERIMENT 08 is a reverb whose acoustic space is generated from the structure of a loaded file. The file's data is never played as audio; only its patterns of repetition are used.\n\n### Process\n* **Structural analysis**: The file is searched for its most frequent repeated patterns, then for patterns composed of those patterns, recursively. The result is a hierarchy describing how the file is constructed.\n* **Room construction**: Each pattern becomes a diffusion element, nested in the same way as the hierarchy. Pattern length sets a delay time; frequency of occurrence sets the reflection gain.\n* **Compressibility**: Highly repetitive files (text, source code) produce long, dense, resonant rooms. Incompressible files (ZIP, JPEG) produce short, sparse ones, and the interface indicates this.\n\nDifferent files therefore produce different spaces from identical settings: text is wide and resonant, compiled code metallic.\n\n### Controls\n* **ALPHABET**: The symbol set used for analysis (BYTE, NYBBLE, WORD, DELTA, BITS). It changes which repetitions exist, and therefore the room.\n* **DESCRIBE**: The depth of the hierarchy used to build the room.\n* **DECAY and DAMP**: Reverb time and high-frequency damping.\n* **REWRITE and MUTATE**: Step through the file's structures in order, so the room evolves over time.\n* **BLOOM and SHIMMER**: A regenerating octave layer above the tail.\n* **RECURSE and GIRTH**: A resonator bank and a sub layer.\n* **FREEZE**: Infinite hold.\n* **QUALITY**: Oversampling (off, 2x, 4x) for cleaner drive and shimmer."
   },
   {
-   "id": "schweidler",
-   "name": "SCHWEIDLER",
+   "id": "experiment-09",
+   "name": "EXPERIMENT 09",
    "subtitle": "The Dielectric Memory Engine",
    "kind": "Effect",
    "tags": [
@@ -211,17 +211,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/schweidler-1.webp",
-     "thumb": "images/schweidler-1-thumb.webp"
+     "src": "images/experiment-09-1.webp",
+     "thumb": "images/experiment-09-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "SCHWEIDLER is a valve-stage distortion built around a phenomenon most models ignore: dielectric absorption. A coupling capacitor retains part of the signal that has passed through it, and that stored charge shifts the operating point of the following stage.\n\nConventional valve models place an ideal filter between stages and discard this memory. Here it is the instrument. Loud passages charge the capacitor, the charge biases the next stage away from its rest point, and the sound recovers afterwards, quickly at first and then slowly.\n\nThe capacitor is modelled from its physics, so a single component yields three behaviours: the low-cut corner, a gentler-than-ideal filter slope, and the memory effect.\n\n### Controls\n* **MATERIAL**: Ten real capacitor dielectrics with their published characteristics, from polypropylene (negligible memory) to electrolytic (roughly 500 times more).\n* **SOAK**: Scales the memory from its physical value up to 2000 times.\n* **RELAX**: Memory time constant, 2 ms to 120 s. Short settings smear, medium settings pump, long settings drift.\n* **DISPERSION**: The spread of time constants, from a single value to a broad distribution.\n* **BLOCKING**: How hard the following stage is driven into grid conduction. It behaves as a peak limiter with a slow, natural release and, at extreme settings, produces motorboating (low-frequency pulsing).\n* **COUPLING and STAGES**: The coupling corner frequency, which also sets how long the bias shift persists, and the number of valve stages."
+   "body": "EXPERIMENT 09 is a valve-stage distortion built around a phenomenon most models ignore: dielectric absorption. A coupling capacitor retains part of the signal that has passed through it, and that stored charge shifts the operating point of the following stage.\n\nConventional valve models place an ideal filter between stages and discard this memory. Here it is the instrument. Loud passages charge the capacitor, the charge biases the next stage away from its rest point, and the sound recovers afterwards, quickly at first and then slowly.\n\nThe capacitor is modelled from its physics, so a single component yields three behaviours: the low-cut corner, a gentler-than-ideal filter slope, and the memory effect.\n\n### Controls\n* **MATERIAL**: Ten real capacitor dielectrics with their published characteristics, from polypropylene (negligible memory) to electrolytic (roughly 500 times more).\n* **SOAK**: Scales the memory from its physical value up to 2000 times.\n* **RELAX**: Memory time constant, 2 ms to 120 s. Short settings smear, medium settings pump, long settings drift.\n* **DISPERSION**: The spread of time constants, from a single value to a broad distribution.\n* **BLOCKING**: How hard the following stage is driven into grid conduction. It behaves as a peak limiter with a slow, natural release and, at extreme settings, produces motorboating (low-frequency pulsing).\n* **COUPLING and STAGES**: The coupling corner frequency, which also sets how long the bias shift persists, and the number of valve stages."
   },
   {
-   "id": "vonneumann",
-   "name": "VONNEUMANN",
+   "id": "experiment-10",
+   "name": "EXPERIMENT 10",
    "subtitle": "The Stored-Program Engine",
    "kind": "Effect",
    "tags": [
@@ -234,17 +234,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/vonneumann-1.webp",
-     "thumb": "images/vonneumann-1-thumb.webp"
+     "src": "images/experiment-10-1.webp",
+     "thumb": "images/experiment-10-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "VONNEUMANN is a cut-up and glitch processor that executes a file as a program, with each instruction operating on the incoming audio.\n\nAudio is written to a circular buffer. A program counter steps through the file byte by byte, and each byte is decoded into an instruction that modifies the audio immediately before output. The file functions purely as a list of edits; it is never heard directly.\n\n### Instruction set\nEighteen instructions, including:\n\n* **Time**: Copy a block of the past forward (beat repeat), reverse, change speed, jump, and loop, with nesting for rolls.\n* **Timbre**: Gain, filter, stereo swap, bit and sample-rate reduction, and XOR, which rewrites the audio's bits with a byte from the file.\n* **Space**: Grid-locked echoes and granular blur.\n* **Rest**: No operation for one tick.\n\nThe opcode mapping is derived from each file's own statistics. The most common bytes become rests and the rarest receive the most dramatic instructions, so the repetitive regions of a file become silence and its structure becomes rhythm.\n\n### Controls\n* **DENSITY and instruction weights**: The proportion of rests and the relative frequency of each instruction. The mapping can also be drawn by hand on a 16 × 16 grid.\n* **SYNC, CUT, GRID**: Lock edits to host tempo at a chosen note value.\n* **LOOKAHEAD**: How far behind the input the edits occur. This defines the longest possible edit and is reported to the host as latency.\n* **MUTATE and DRIFT**: Alter bytes on input so the same file yields a different program, and traverse the file slowly for variation.\n* **FREEZE**: Holds the buffer once full."
+   "body": "EXPERIMENT 10 is a cut-up and glitch processor that executes a file as a program, with each instruction operating on the incoming audio.\n\nAudio is written to a circular buffer. A program counter steps through the file byte by byte, and each byte is decoded into an instruction that modifies the audio immediately before output. The file functions purely as a list of edits; it is never heard directly.\n\n### Instruction set\nEighteen instructions, including:\n\n* **Time**: Copy a block of the past forward (beat repeat), reverse, change speed, jump, and loop, with nesting for rolls.\n* **Timbre**: Gain, filter, stereo swap, bit and sample-rate reduction, and XOR, which rewrites the audio's bits with a byte from the file.\n* **Space**: Grid-locked echoes and granular blur.\n* **Rest**: No operation for one tick.\n\nThe opcode mapping is derived from each file's own statistics. The most common bytes become rests and the rarest receive the most dramatic instructions, so the repetitive regions of a file become silence and its structure becomes rhythm.\n\n### Controls\n* **DENSITY and instruction weights**: The proportion of rests and the relative frequency of each instruction. The mapping can also be drawn by hand on a 16 × 16 grid.\n* **SYNC, CUT, GRID**: Lock edits to host tempo at a chosen note value.\n* **LOOKAHEAD**: How far behind the input the edits occur. This defines the longest possible edit and is reported to the host as latency.\n* **MUTATE and DRIFT**: Alter bytes on input so the same file yields a different program, and traverse the file slowly for variation.\n* **FREEZE**: Holds the buffer once full."
   },
   {
-   "id": "chebyshev",
-   "name": "CHEBYSHEV",
+   "id": "experiment-11",
+   "name": "EXPERIMENT 11",
    "subtitle": "The Recipe Engine",
    "kind": "Effect",
    "tags": [
@@ -258,17 +258,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/chebyshev-1.webp",
-     "thumb": "images/chebyshev-1-thumb.webp"
+     "src": "images/experiment-11-1.webp",
+     "thumb": "images/experiment-11-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "CHEBYSHEV is a harmonic distortion that inverts the usual design process. Rather than offering a circuit and leaving its harmonic content to be discovered, it lets you specify the harmonics, and constructs the waveshaping curve that produces them.\n\nEight faders set the level and polarity of harmonics 2 to 9. Using Chebyshev polynomials, these faders define the transfer function exactly: a full-scale sine produces precisely the spectrum written. The character ranges from pristine to heavily analogue, in the tradition of the Culture Vulture.\n\n### Controls\n* **The recipe (H2–H9)**: Level and polarity per harmonic.\n* **DRIVE and CEILING**: Input level into the curve, and its behaviour beyond the designed range (SOFT, HARD or FOLD, with HEADROOM).\n* **IRON**: A modelled input transformer with frequency-dependent core saturation.\n* **BIAS, SAG, RECOVERY**: A dynamic operating point, so the distortion responds to playing level.\n* **SOFTEN and FOCUS**: Tame the upper added harmonics, and tilt which region of the spectrum is distorted.\n* **EVEN / ODD**: Balance between even and odd orders.\n* **LEARN**: Analyses the output of a hardware unit and sets recipe, polarity and drive to match.\n* **LISTEN**: Monitor the output, the added harmonics only, the transformer only, the sub only, or the input.\n\n### THE SUB (v1.1)\nA sub-harmonic generator producing a clean sine one octave below the input. Three bands are set directly on the display, with ROOT and DIVIDER modes, plus SHAPE, TIGHT and MONO BELOW for low-end control."
+   "body": "EXPERIMENT 11 is a harmonic distortion that inverts the usual design process. Rather than offering a circuit and leaving its harmonic content to be discovered, it lets you specify the harmonics, and constructs the waveshaping curve that produces them.\n\nEight faders set the level and polarity of harmonics 2 to 9. Using Chebyshev polynomials, these faders define the transfer function exactly: a full-scale sine produces precisely the spectrum written. The character ranges from pristine to heavily analogue, in the tradition of the Culture Vulture.\n\n### Controls\n* **The recipe (H2–H9)**: Level and polarity per harmonic.\n* **DRIVE and CEILING**: Input level into the curve, and its behaviour beyond the designed range (SOFT, HARD or FOLD, with HEADROOM).\n* **IRON**: A modelled input transformer with frequency-dependent core saturation.\n* **BIAS, SAG, RECOVERY**: A dynamic operating point, so the distortion responds to playing level.\n* **SOFTEN and FOCUS**: Tame the upper added harmonics, and tilt which region of the spectrum is distorted.\n* **EVEN / ODD**: Balance between even and odd orders.\n* **LEARN**: Analyses the output of a hardware unit and sets recipe, polarity and drive to match.\n* **LISTEN**: Monitor the output, the added harmonics only, the transformer only, the sub only, or the input.\n\n### THE SUB (v1.1)\nA sub-harmonic generator producing a clean sine one octave below the input. Three bands are set directly on the display, with ROOT and DIVIDER modes, plus SHAPE, TIGHT and MONO BELOW for low-end control."
   },
   {
-   "id": "nyquist",
-   "name": "NYQUIST",
+   "id": "experiment-12",
+   "name": "EXPERIMENT 12",
    "subtitle": "The Stability Engine",
    "kind": "Effect",
    "tags": [
@@ -282,17 +282,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/nyquist-1.webp",
-     "thumb": "images/nyquist-1-thumb.webp"
+     "src": "images/experiment-12-1.webp",
+     "thumb": "images/experiment-12-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "NYQUIST is a character delay designed for live performance, as the companion to CHEBYSHEV. It is built to run at high level through a PA without feedback while sounding warm, gritty and analogue.\n\n### Architecture\n* **Per-generation processing**: Repeats run through a chain of 24 stages, one per generation, so each repeat can be driven, compressed and panned independently. A limiter in every stage bounds the level, so the loop cannot run away internally.\n* **Acoustic feedback protection**: The real danger on stage is the loop from the PA back into the microphone. RING OUT plays a one-second sweep, measures that loop, and notches only the problem frequencies of the room from the output.\n\n### Controls\n* **FEEDBACK**: 0 to 120 %. Above 100 % the repeats build into a controlled self-oscillation, held at a safe level.\n* **DIVISION**: Delay time as a tempo-synced note value.\n* **MEDIUM, AGE, HISS**: Delay-line character (wire, bucket-brigade, tape, oil can), degree of wear, and noise floor.\n* **GRIT, SQUASH, BOIL**: Per-repeat drive, per-repeat limiting that extends the tail, and progressively increasing drive with each generation.\n* **TAIL, TAIL TIME, RISE**: Behaviour when playing stops (decay or bloom) and its rate.\n* **BUILD and FREEZE**: A momentary feedback swell, and a loop of the last echo.\n* **DUCK, COLOR, HAZE**: Ducking against the input, tonal tilt, and blur.\n* **GUARD and PROTECT**: Stability margin against room feedback, and the maximum attenuation allowed (zero monitors only)."
+   "body": "EXPERIMENT 12 is a character delay designed for live performance, as the companion to EXPERIMENT 11. It is built to run at high level through a PA without feedback while sounding warm, gritty and analogue.\n\n### Architecture\n* **Per-generation processing**: Repeats run through a chain of 24 stages, one per generation, so each repeat can be driven, compressed and panned independently. A limiter in every stage bounds the level, so the loop cannot run away internally.\n* **Acoustic feedback protection**: The real danger on stage is the loop from the PA back into the microphone. RING OUT plays a one-second sweep, measures that loop, and notches only the problem frequencies of the room from the output.\n\n### Controls\n* **FEEDBACK**: 0 to 120 %. Above 100 % the repeats build into a controlled self-oscillation, held at a safe level.\n* **DIVISION**: Delay time as a tempo-synced note value.\n* **MEDIUM, AGE, HISS**: Delay-line character (wire, bucket-brigade, tape, oil can), degree of wear, and noise floor.\n* **GRIT, SQUASH, BOIL**: Per-repeat drive, per-repeat limiting that extends the tail, and progressively increasing drive with each generation.\n* **TAIL, TAIL TIME, RISE**: Behaviour when playing stops (decay or bloom) and its rate.\n* **BUILD and FREEZE**: A momentary feedback swell, and a loop of the last echo.\n* **DUCK, COLOR, HAZE**: Ducking against the input, tonal tilt, and blur.\n* **GUARD and PROTECT**: Stability margin against room feedback, and the maximum attenuation allowed (zero monitors only)."
   },
   {
-   "id": "castigliano",
-   "name": "CASTIGLIANO",
+   "id": "experiment-13",
+   "name": "EXPERIMENT 13",
    "subtitle": "The Helical Engine",
    "kind": "Effect",
    "tags": [
@@ -306,17 +306,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/castigliano-1.webp",
-     "thumb": "images/castigliano-1-thumb.webp"
+     "src": "images/experiment-13-1.webp",
+     "thumb": "images/experiment-13-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "CASTIGLIANO is a spring reverb built as a physical model: sound propagates as a dispersive wave along a coiled spring. It aims for the character of a strange, organic piece of vintage hardware, without pitch shifting or digital modulation.\n\n### What makes it a spring\n* **Dispersion (the chirp)**: Low frequencies arrive before high ones, producing the characteristic rising drip, which lengthens with every reflection.\n* **Coil collision (the crash)**: Driven hard, the coils collide and rattle, as when a spring tank is struck.\n* **Valve driver**: A valve stage feeds the transducer; its drive determines how readily the coils collide.\n\n### Controls\n* **SPRINGS, LENGTH, TENSION, DRIP**: Number of springs, their length, the chirp frequency and its intensity.\n* **DECAY and DAMP**: Reverb time and high-frequency damping.\n* **DRIVE and CRASH**: Valve drive and proximity to coil collision.\n* **REGEN**: Output feedback for trailing echoes, held below self-oscillation so it never collapses into a single tone.\n* **SUSTAIN (THE RESERVOIR)**: A dense secondary tail, 0.6 to 60 seconds, that preserves the harmonic content of the input where the springs would impose their own.\n* **HOLD**: A momentary sustain pedal.\n* **DISSOLVE**: Fades the current tail naturally while new material builds in a fresh tank.\n* **THE WIRE (HARDEN, HEAT, FELT)**: The spring stiffens with intensity, warms and darkens under sustained level, and can be damped with felt.\n* **MEDIUM**: Switches from the helix to THE BOARD, a stiff plate or soundboard in which high frequencies arrive first. GRAIN sets the wood grain.\n* **STRIKE and KICK**: Send only transients into the spring, or strike the tank."
+   "body": "EXPERIMENT 13 is a spring reverb built as a physical model: sound propagates as a dispersive wave along a coiled spring. It aims for the character of a strange, organic piece of vintage hardware, without pitch shifting or digital modulation.\n\n### What makes it a spring\n* **Dispersion (the chirp)**: Low frequencies arrive before high ones, producing the characteristic rising drip, which lengthens with every reflection.\n* **Coil collision (the crash)**: Driven hard, the coils collide and rattle, as when a spring tank is struck.\n* **Valve driver**: A valve stage feeds the transducer; its drive determines how readily the coils collide.\n\n### Controls\n* **SPRINGS, LENGTH, TENSION, DRIP**: Number of springs, their length, the chirp frequency and its intensity.\n* **DECAY and DAMP**: Reverb time and high-frequency damping.\n* **DRIVE and CRASH**: Valve drive and proximity to coil collision.\n* **REGEN**: Output feedback for trailing echoes, held below self-oscillation so it never collapses into a single tone.\n* **SUSTAIN (THE RESERVOIR)**: A dense secondary tail, 0.6 to 60 seconds, that preserves the harmonic content of the input where the springs would impose their own.\n* **HOLD**: A momentary sustain pedal.\n* **DISSOLVE**: Fades the current tail naturally while new material builds in a fresh tank.\n* **THE WIRE (HARDEN, HEAT, FELT)**: The spring stiffens with intensity, warms and darkens under sustained level, and can be damped with felt.\n* **MEDIUM**: Switches from the helix to THE BOARD, a stiff plate or soundboard in which high frequencies arrive first. GRAIN sets the wood grain.\n* **STRIKE and KICK**: Send only transients into the spring, or strike the tank."
   },
   {
-   "id": "bode",
-   "name": "BODE",
+   "id": "experiment-14",
+   "name": "EXPERIMENT 14",
    "subtitle": "The Gain Margin Engine",
    "kind": "Effect",
    "tags": [
@@ -330,17 +330,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/bode-1.webp",
-     "thumb": "images/bode-1-thumb.webp"
+     "src": "images/experiment-14-1.webp",
+     "thumb": "images/experiment-14-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "BODE is a live channel strip for a floor drum: transistor preamp, fast FET compressor and tape. It allows extreme compression on stage without acoustic feedback, and was developed for intimate performances alongside acoustic instruments.\n\nHeavy compression normally provokes feedback because it raises microphone gain between hits. BODE addresses this in two ways.\n\n### Feedback strategy\n* **The governor**: Continuously computes the loop gain the chain applies to the microphone at each frequency and holds it below a safe limit.\n* **The ghost**: In the first 12 ms after a strike, before the PA has responded, the drum's resonance is measured precisely. That resonance is then continued by internal resonators that do not listen to the room, yielding a long, loud, compressed tail that cannot feed back.\n\nA watchdog also detects the onset of a howl and reduces microphone gain while the ghost continues.\n\n### Sections\n* **Preamp, FET compressor, tape**: The core character. SMASH blends in the uncompressed preamp in parallel.\n* **PUNCH / TAIL**: Transient shaping for attack and body.\n* **STRIKE**: Shapes the ghost resonance (SKIN, DAMP, AIR, and DROP for the pitch fall after a hard hit).\n* **RESIDUE**: Pitch-locked harmonics drawn on eight bars, adapted from SCHOUTEN.\n* **CLICK**: A tunable click on each strike.\n* **RING OUT**: A measurement sweep that sets up to three notches; GUARD sets the safety margin.\n* **LEARN**: Captures the drum's own modes.\n* **Trigger sidechain**: Optional input for a contact microphone on the shell."
+   "body": "EXPERIMENT 14 is a live channel strip for a floor drum: transistor preamp, fast FET compressor and tape. It allows extreme compression on stage without acoustic feedback, and was developed for intimate performances alongside acoustic instruments.\n\nHeavy compression normally provokes feedback because it raises microphone gain between hits. EXPERIMENT 14 addresses this in two ways.\n\n### Feedback strategy\n* **The governor**: Continuously computes the loop gain the chain applies to the microphone at each frequency and holds it below a safe limit.\n* **The ghost**: In the first 12 ms after a strike, before the PA has responded, the drum's resonance is measured precisely. That resonance is then continued by internal resonators that do not listen to the room, yielding a long, loud, compressed tail that cannot feed back.\n\nA watchdog also detects the onset of a howl and reduces microphone gain while the ghost continues.\n\n### Sections\n* **Preamp, FET compressor, tape**: The core character. SMASH blends in the uncompressed preamp in parallel.\n* **PUNCH / TAIL**: Transient shaping for attack and body.\n* **STRIKE**: Shapes the ghost resonance (SKIN, DAMP, AIR, and DROP for the pitch fall after a hard hit).\n* **RESIDUE**: Pitch-locked harmonics drawn on eight bars, adapted from EXPERIMENT 15.\n* **CLICK**: A tunable click on each strike.\n* **RING OUT**: A measurement sweep that sets up to three notches; GUARD sets the safety margin.\n* **LEARN**: Captures the drum's own modes.\n* **Trigger sidechain**: Optional input for a contact microphone on the shell."
   },
   {
-   "id": "schouten",
-   "name": "SCHOUTEN",
+   "id": "experiment-15",
+   "name": "EXPERIMENT 15",
    "subtitle": "The Residue Engine",
    "kind": "Effect",
    "tags": [
@@ -353,17 +353,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/schouten-1.webp",
-     "thumb": "images/schouten-1-thumb.webp"
+     "src": "images/experiment-15-1.webp",
+     "thumb": "images/experiment-15-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "SCHOUTEN is a bass enhancer that generates a sub-octave and harmonics locked in phase to the source note. Because every generated component is phase-coherent with the original, it reinforces the signal cleanly instead of beating against it.\n\nA pitch tracker identifies the fundamental, and a new voice is synthesised from it.\n\n### The voice\n* **ROOT**: The interval of the generated voice relative to the source: two octaves down, a twelfth down, an octave, a fifth, a fourth, a major or minor third, or unison.\n* **Harmonic bars**: Eight drawable bars setting the level of each harmonic.\n* **RESIDUE**: Transfers energy from the fundamental into harmonics 2 to 6. Through the missing-fundamental effect the ear still perceives the low note, making sub-bass audible on small speakers.\n\n### Controls\n* **PLUCK**: A brighter attack or a swell per harmonic.\n* **STRETCH**: Slight inharmonic spreading, as in a stiff string.\n* **HEAT**: Level-independent saturation.\n* **THUMP and TAIL**: An 808-style initial pitch drop, and the voice's decay time.\n* **SNAP and GLIDE**: Semitone quantisation and portamento.\n* **WIDTH**: Odd harmonics left, even harmonics right, root centred; sums exactly to mono.\n* **ORIGINAL, SPLIT, MONO**: Dry level, crossover frequency, and mono below it.\n* **AHEAD**: 40 ms of look-ahead for more accurate tracking. Without it the plugin is zero-latency, with the voice entering about 38 ms after each attack."
+   "body": "EXPERIMENT 15 is a bass enhancer that generates a sub-octave and harmonics locked in phase to the source note. Because every generated component is phase-coherent with the original, it reinforces the signal cleanly instead of beating against it.\n\nA pitch tracker identifies the fundamental, and a new voice is synthesised from it.\n\n### The voice\n* **ROOT**: The interval of the generated voice relative to the source: two octaves down, a twelfth down, an octave, a fifth, a fourth, a major or minor third, or unison.\n* **Harmonic bars**: Eight drawable bars setting the level of each harmonic.\n* **RESIDUE**: Transfers energy from the fundamental into harmonics 2 to 6. Through the missing-fundamental effect the ear still perceives the low note, making sub-bass audible on small speakers.\n\n### Controls\n* **PLUCK**: A brighter attack or a swell per harmonic.\n* **STRETCH**: Slight inharmonic spreading, as in a stiff string.\n* **HEAT**: Level-independent saturation.\n* **THUMP and TAIL**: An 808-style initial pitch drop, and the voice's decay time.\n* **SNAP and GLIDE**: Semitone quantisation and portamento.\n* **WIDTH**: Odd harmonics left, even harmonics right, root centred; sums exactly to mono.\n* **ORIGINAL, SPLIT, MONO**: Dry level, crossover frequency, and mono below it.\n* **AHEAD**: 40 ms of look-ahead for more accurate tracking. Without it the plugin is zero-latency, with the voice entering about 38 ms after each attack."
   },
   {
-   "id": "kilburn",
-   "name": "KILBURN",
+   "id": "experiment-16",
+   "name": "EXPERIMENT 16",
    "subtitle": "The Charge-Storage Engine",
    "kind": "Effect",
    "tags": [
@@ -377,17 +377,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/kilburn-1.webp",
-     "thumb": "images/kilburn-1-thumb.webp"
+     "src": "images/experiment-16-1.webp",
+     "thumb": "images/experiment-16-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "KILBURN is a time and texture processor modelled on the Williams–Kilburn tube, an early computer memory that stored data as electrostatic charge on the face of a cathode-ray tube. Here, the stored data is audio.\n\nMemory is organised as raster lines, like a television image, and the stored charge spreads over time. That spreading defines the character of the effect.\n\n### Charge behaviour\n* **BLUR**: Charge spreads along each line, progressively darkening older material.\n* **BLEED**: Charge spreads between adjacent lines. Content that does not repeat at the line rate cancels, so older echoes converge on a pitched tone at the line frequency. The older the material, the more it has crystallised into that pitch.\n* **LEAK and CHARGE**: The decay rate of stored material, and how a saturated memory softens new writes.\n\n### Three read guns\nPlayback uses three independent guns, each with two controls:\n\n* **PITCH**: Scan rate, which transposes the output.\n* **TIME**: Movement through the stored history. At 1 the gun follows the input like a delay; at 0 it holds a single position; below 0 it plays in reverse.\n\n### Further controls\n* **LINE and ROWS**: Line frequency (free, note-quantised or tempo-synced) and number of lines; together they set the memory length, 0.25 to 6 seconds.\n* **PERSIST and FREEZE**: Recirculation, or indefinite hold.\n* **HALO, FOCUS, SAG, DRIFT**: Tube behaviours: notches at the line pitch, a softer read spot, a pitch dip under high input, and wow and flutter.\n* **HARMONY (v1.1)**: Gun pitches follow a chosen scale and key. The detected note is stored alongside the audio, so each gun harmonises the note it is reading.\n* **DRIVE (v1.1)**: A subtle per-gun valve stage, hotter on older material, with WARMTH and TONE."
+   "body": "EXPERIMENT 16 is a time and texture processor modelled on the Williams–Kilburn tube, an early computer memory that stored data as electrostatic charge on the face of a cathode-ray tube. Here, the stored data is audio.\n\nMemory is organised as raster lines, like a television image, and the stored charge spreads over time. That spreading defines the character of the effect.\n\n### Charge behaviour\n* **BLUR**: Charge spreads along each line, progressively darkening older material.\n* **BLEED**: Charge spreads between adjacent lines. Content that does not repeat at the line rate cancels, so older echoes converge on a pitched tone at the line frequency. The older the material, the more it has crystallised into that pitch.\n* **LEAK and CHARGE**: The decay rate of stored material, and how a saturated memory softens new writes.\n\n### Three read guns\nPlayback uses three independent guns, each with two controls:\n\n* **PITCH**: Scan rate, which transposes the output.\n* **TIME**: Movement through the stored history. At 1 the gun follows the input like a delay; at 0 it holds a single position; below 0 it plays in reverse.\n\n### Further controls\n* **LINE and ROWS**: Line frequency (free, note-quantised or tempo-synced) and number of lines; together they set the memory length, 0.25 to 6 seconds.\n* **PERSIST and FREEZE**: Recirculation, or indefinite hold.\n* **HALO, FOCUS, SAG, DRIFT**: Tube behaviours: notches at the line pitch, a softer read spot, a pitch dip under high input, and wow and flutter.\n* **HARMONY (v1.1)**: Gun pitches follow a chosen scale and key. The detected note is stored alongside the audio, so each gun harmonises the note it is reading.\n* **DRIVE (v1.1)**: A subtle per-gun valve stage, hotter on older material, with WARMTH and TONE."
   },
   {
-   "id": "helmholtz",
-   "name": "HELMHOLTZ",
+   "id": "experiment-17",
+   "name": "EXPERIMENT 17",
    "subtitle": "88 Key Amplifiers",
    "kind": "Effect",
    "tags": [
@@ -401,17 +401,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/helmholtz-1.webp",
-     "thumb": "images/helmholtz-1-thumb.webp"
+     "src": "images/experiment-17-1.webp",
+     "thumb": "images/experiment-17-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "HELMHOLTZ is a distortion designed to keep chords clear. Conventional distortion turns dense harmony to mud because every pair of notes intermodulates, creating sum and difference tones that belong to neither. HELMHOLTZ distorts each key separately, so this intermodulation does not occur.\n\n### Architecture\n* **88 resonators**: A filter bank with one band tuned to each of the 88 keys from A0 to C8.\n* **One amplifier per key**: Each band is distorted in isolation.\n* **Synthesised harmonics**: Instead of clipping the waveform, the plugin adds the harmonics the selected transfer curve would produce. The result is free of aliasing, and DRIVE changes character without changing level.\n\nMeasured on a C-major chord, around 2 % of the added energy falls outside the notes' own harmonic series, compared with around 61 % for a single shared amplifier.\n\n### Controls\n* **DRIVE and CURVE**: Intensity and character (SATURATE, CLIP, FOLD, STARVE).\n* **SERIES**: Permitted harmonics: all, odd, even, octaves, organ-style, fifths or primes.\n* **EVEN, ODD, BRIGHT, REACH**: Balance and extent of the added harmonics.\n* **TOUCH**: At 0 decaying notes retain their grit; at 1 they clean up as they fade, as in a real amplifier.\n* **FOCUS, TUNE, SCATTER**: Band isolation, filter-bank tuning, and per-key stereo placement.\n* **INTERMOD**: Crossfades to a single shared amplifier for direct comparison with conventional distortion.\n* **HAMMER**: Restores attack definition, compensating for the roughly 25 ms response time of the resonators."
+   "body": "EXPERIMENT 17 is a distortion designed to keep chords clear. Conventional distortion turns dense harmony to mud because every pair of notes intermodulates, creating sum and difference tones that belong to neither. EXPERIMENT 17 distorts each key separately, so this intermodulation does not occur.\n\n### Architecture\n* **88 resonators**: A filter bank with one band tuned to each of the 88 keys from A0 to C8.\n* **One amplifier per key**: Each band is distorted in isolation.\n* **Synthesised harmonics**: Instead of clipping the waveform, the plugin adds the harmonics the selected transfer curve would produce. The result is free of aliasing, and DRIVE changes character without changing level.\n\nMeasured on a C-major chord, around 2 % of the added energy falls outside the notes' own harmonic series, compared with around 61 % for a single shared amplifier.\n\n### Controls\n* **DRIVE and CURVE**: Intensity and character (SATURATE, CLIP, FOLD, STARVE).\n* **SERIES**: Permitted harmonics: all, odd, even, octaves, organ-style, fifths or primes.\n* **EVEN, ODD, BRIGHT, REACH**: Balance and extent of the added harmonics.\n* **TOUCH**: At 0 decaying notes retain their grit; at 1 they clean up as they fade, as in a real amplifier.\n* **FOCUS, TUNE, SCATTER**: Band isolation, filter-bank tuning, and per-key stereo placement.\n* **INTERMOD**: Crossfades to a single shared amplifier for direct comparison with conventional distortion.\n* **HAMMER**: Restores attack definition, compensating for the roughly 25 ms response time of the resonators."
   },
   {
-   "id": "oram",
-   "name": "ORAM",
+   "id": "experiment-18",
+   "name": "EXPERIMENT 18",
    "subtitle": "The Radiophonic Laboratory",
    "kind": "Effect",
    "tags": [
@@ -425,21 +425,21 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/oram-1.webp",
-     "thumb": "images/oram-1-thumb.webp"
+     "src": "images/experiment-18-1.webp",
+     "thumb": "images/experiment-18-1-thumb.webp"
     },
     {
-     "src": "images/oram-2.webp",
-     "thumb": "images/oram-2-thumb.webp"
+     "src": "images/experiment-18-2.webp",
+     "thumb": "images/experiment-18-2-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "ORAM is a sound-transformation laboratory, designed to colour a source before it is recorded so that the transformed sound informs the performance. It is a homage to Daphne Oram and always runs 100 % wet.\n\n### Architecture\n* **Four parallel chambers**: Harmonic, time, depth and bend. Each has four reorderable slots, and slot order changes the result.\n* **88 machines**: Each slot hosts one machine with three parameters, chosen from 22 per chamber, including textures and evolving machines that change as you play.\n* **The pin board**: A 5 × 5 routing matrix connecting the input and chambers to one another, including self-feedback.\n* **Mixer**: LEVEL, INTENSITY and FOCUS per chamber.\n\n### Two views\nDETAIL exposes the full architecture. MACRO provides fast access to broad timbral regions:\n\n* **THE COMPASS**: A single point moved or thrown between eight characters: VAST, GLASS, ALIVE, BROKEN, CLOSE, WARM, SUNKEN, HAUNTED. DRIFT lets it wander autonomously.\n* **BLEND**: A puck balancing the four chambers.\n* **PITCH**: A single control for consonant transposition or tape-style wobble.\n\n### Exploration\n* **TRANSMUTE**: Generates an entirely new laboratory, with full undo history.\n* **NUDGE, EVOLVE, GLIDE**: Incremental steps, slow autonomous change, and smooth transitions between states.\n* **JARS and captures**: Store states and morph between them. Captures are time-stamped and can be saved as presets.\n* **THE EAR and MOTION**: Input analysis (level, brightness, onsets, pitch), two LFOs and a 16-step sequencer, assignable to any parameter or pin.\n\n### Performance\n* **DISSOLVE**: Releases the current sound naturally while new material starts clean.\n* **FLOOD**: Drives the current laboratory to its extreme while held.\n* **THE WARP**: Gestural speed control over a tape of the output.\n* **HOLD**: Sustains the current sound.\n* **DRY, TONE, MIX**: Blend and overall tone.\n\n### ORAM REMOTE\nA phone or tablet controller connected by QR code, with tilt control and user-designed layouts, built on the shared REMOTE KIT."
+   "body": "EXPERIMENT 18 is a sound-transformation laboratory, designed to colour a source before it is recorded so that the transformed sound informs the performance. It is a homage to Daphne Oram and always runs 100 % wet.\n\n### Architecture\n* **Four parallel chambers**: Harmonic, time, depth and bend. Each has four reorderable slots, and slot order changes the result.\n* **88 machines**: Each slot hosts one machine with three parameters, chosen from 22 per chamber, including textures and evolving machines that change as you play.\n* **The pin board**: A 5 × 5 routing matrix connecting the input and chambers to one another, including self-feedback.\n* **Mixer**: LEVEL, INTENSITY and FOCUS per chamber.\n\n### Two views\nDETAIL exposes the full architecture. MACRO provides fast access to broad timbral regions:\n\n* **THE COMPASS**: A single point moved or thrown between eight characters: VAST, GLASS, ALIVE, BROKEN, CLOSE, WARM, SUNKEN, HAUNTED. DRIFT lets it wander autonomously.\n* **BLEND**: A puck balancing the four chambers.\n* **PITCH**: A single control for consonant transposition or tape-style wobble.\n\n### Exploration\n* **TRANSMUTE**: Generates an entirely new laboratory, with full undo history.\n* **NUDGE, EVOLVE, GLIDE**: Incremental steps, slow autonomous change, and smooth transitions between states.\n* **JARS and captures**: Store states and morph between them. Captures are time-stamped and can be saved as presets.\n* **THE EAR and MOTION**: Input analysis (level, brightness, onsets, pitch), two LFOs and a 16-step sequencer, assignable to any parameter or pin.\n\n### Performance\n* **DISSOLVE**: Releases the current sound naturally while new material starts clean.\n* **FLOOD**: Drives the current laboratory to its extreme while held.\n* **THE WARP**: Gestural speed control over a tape of the output.\n* **HOLD**: Sustains the current sound.\n* **DRY, TONE, MIX**: Blend and overall tone.\n\n### EXPERIMENT 18 REMOTE\nA phone or tablet controller connected by QR code, with tilt control and user-designed layouts, built on the shared REMOTE KIT."
   },
   {
-   "id": "remanence",
-   "name": "REMANENCE",
+   "id": "experiment-19",
+   "name": "EXPERIMENT 19",
    "subtitle": "What the Tape Keeps",
    "kind": "Effect",
    "tags": [
@@ -452,17 +452,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/remanence-1.webp",
-     "thumb": "images/remanence-1-thumb.webp"
+     "src": "images/experiment-19-1.webp",
+     "thumb": "images/experiment-19-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "REMANENCE is a tape delay whose behaviour responds to the performance. It is built exclusively from tape-machine components (heads, transport, filters and saturation), with no note detection and no splicing, so it cannot click on chords.\n\nThe tape passes up to six playback heads, positioned directly on the display:\n\n* **Horizontal drag**: Sets a head's delay time.\n* **Vertical drag**: Sets its level.\n* **Per head**: Pan, reverse, and normal or inverted feedback.\n\n### Performance mapping\nThe input envelope can drive six destinations. Only the first affects pitch:\n\n* **PULL**: Tape speed. Echoes lengthen and darken as the tape slows, pitch bends during speed changes, and the bend accumulates on each pass. Off by default.\n* **REACH**: Shifts emphasis toward the distant heads, so the echo feels later without any head moving.\n* **BLOOM, HEAT, SHADE, DUCK**: Feedback, saturation, darkness and wet level.\n\n### Transport and tape\n* **MASS and SLIP**: Flywheel inertia and damping. A loose flywheel continues to oscillate for seconds after a chord.\n* **GRADE**: Machine class, from worn cassette to mastering deck; higher grades are cleaner and quieter.\n* **DRIVE, BIAS, WEAR, HISS, DROPOUT, WOBBLE**: Tape character, with a genuinely clean setting at zero.\n* **CRAWL and STRETCH**: Heads wander along the tape, and the tape is elastic between them.\n* **REGEN, HOLD, WIPE**: Feedback up to 110 %, record-head lift to retain the loop, and erase.\n* **SYNC, SNAP, LOCK, AUTO WIPE**: Tempo sync. SNAP quantises head positions to note values, LOCK pulls tape speed onto the grid, and AUTO WIPE erases the tape every few bars."
+   "body": "EXPERIMENT 19 is a tape delay whose behaviour responds to the performance. It is built exclusively from tape-machine components (heads, transport, filters and saturation), with no note detection and no splicing, so it cannot click on chords.\n\nThe tape passes up to six playback heads, positioned directly on the display:\n\n* **Horizontal drag**: Sets a head's delay time.\n* **Vertical drag**: Sets its level.\n* **Per head**: Pan, reverse, and normal or inverted feedback.\n\n### Performance mapping\nThe input envelope can drive six destinations. Only the first affects pitch:\n\n* **PULL**: Tape speed. Echoes lengthen and darken as the tape slows, pitch bends during speed changes, and the bend accumulates on each pass. Off by default.\n* **REACH**: Shifts emphasis toward the distant heads, so the echo feels later without any head moving.\n* **BLOOM, HEAT, SHADE, DUCK**: Feedback, saturation, darkness and wet level.\n\n### Transport and tape\n* **MASS and SLIP**: Flywheel inertia and damping. A loose flywheel continues to oscillate for seconds after a chord.\n* **GRADE**: Machine class, from worn cassette to mastering deck; higher grades are cleaner and quieter.\n* **DRIVE, BIAS, WEAR, HISS, DROPOUT, WOBBLE**: Tape character, with a genuinely clean setting at zero.\n* **CRAWL and STRETCH**: Heads wander along the tape, and the tape is elastic between them.\n* **REGEN, HOLD, WIPE**: Feedback up to 110 %, record-head lift to retain the loop, and erase.\n* **SYNC, SNAP, LOCK, AUTO WIPE**: Tempo sync. SNAP quantises head positions to note values, LOCK pulls tape speed onto the grid, and AUTO WIPE erases the tape every few bars."
   },
   {
-   "id": "bergson",
-   "name": "BERGSON",
+   "id": "experiment-20",
+   "name": "EXPERIMENT 20",
    "subtitle": "The Durée Engine",
    "kind": "Effect",
    "tags": [
@@ -475,17 +475,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/bergson-1.webp",
-     "thumb": "images/bergson-1-thumb.webp"
+     "src": "images/experiment-20-1.webp",
+     "thumb": "images/experiment-20-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "BERGSON is a multi-head delay that responds to how it is played, without altering pitch. The name refers to Henri Bergson's concept of *durée*: lived time as distinct from the time a clock measures.\n\nA single control signal is derived from the performance: its deviation above or below the player's own running average. **LISTEN** selects the source:\n\n* **PRESSURE**: Playing intensity.\n* **MOTION**: Rate of spectral change.\n* **DENSITY**: Notes per second.\n* **HEIGHT**: Register.\n\n### Destinations\nThe control signal feeds six destinations, each with its own depth:\n\n* **BLOOM**: Wet level, so the echo recedes or swells.\n* **DWELL**: Feedback, so the tail grows or releases.\n* **HAZE**: Echo tone, from dark and distant to open and near.\n* **REACH**: Which heads sound. Higher intensity brings up the distant heads, so the echo seems later while no head moves. Timing shifts with zero pitch change.\n* **SPILL**: Stereo width.\n* **BEND**: The delay time itself; the only destination that can detune, set to zero by default.\n\n### Controls\n* **AUTO POISE**: Enabled by default. Continuously estimates the player's average level so responses centre on their own dynamics.\n* **SLACK**: Response smoothing.\n* **HEADS, DURÉE, SPREAD, REGEN**: One to six heads, base delay time (with SYNC), head spacing and feedback.\n* **SPLIT**: Separates transients from sustain, so attacks can stay on the beat while the tonal component drifts.\n* **ARROW, SPAN, GLIDE, STRATA**: Active only when BEND is used. ARROW lets time run backwards on release at original pitch; STRATA gives low, mid and high bands independent clocks.\n* **FREEZE**: Holds the section of tape being read."
+   "body": "EXPERIMENT 20 is a multi-head delay that responds to how it is played, without altering pitch. It draws on Henri Bergson's concept of *durée*: lived time as distinct from the time a clock measures.\n\nA single control signal is derived from the performance: its deviation above or below the player's own running average. **LISTEN** selects the source:\n\n* **PRESSURE**: Playing intensity.\n* **MOTION**: Rate of spectral change.\n* **DENSITY**: Notes per second.\n* **HEIGHT**: Register.\n\n### Destinations\nThe control signal feeds six destinations, each with its own depth:\n\n* **BLOOM**: Wet level, so the echo recedes or swells.\n* **DWELL**: Feedback, so the tail grows or releases.\n* **HAZE**: Echo tone, from dark and distant to open and near.\n* **REACH**: Which heads sound. Higher intensity brings up the distant heads, so the echo seems later while no head moves. Timing shifts with zero pitch change.\n* **SPILL**: Stereo width.\n* **BEND**: The delay time itself; the only destination that can detune, set to zero by default.\n\n### Controls\n* **AUTO POISE**: Enabled by default. Continuously estimates the player's average level so responses centre on their own dynamics.\n* **SLACK**: Response smoothing.\n* **HEADS, DURÉE, SPREAD, REGEN**: One to six heads, base delay time (with SYNC), head spacing and feedback.\n* **SPLIT**: Separates transients from sustain, so attacks can stay on the beat while the tonal component drifts.\n* **ARROW, SPAN, GLIDE, STRATA**: Active only when BEND is used. ARROW lets time run backwards on release at original pitch; STRATA gives low, mid and high bands independent clocks.\n* **FREEZE**: Holds the section of tape being read."
   },
   {
-   "id": "ictus",
-   "name": "ICTUS",
+   "id": "experiment-21",
+   "name": "EXPERIMENT 21",
    "subtitle": "The Strike-Point Engine",
    "kind": "Effect",
    "tags": [
@@ -499,17 +499,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/ictus-1.webp",
-     "thumb": "images/ictus-1-thumb.webp"
+     "src": "images/experiment-21-1.webp",
+     "thumb": "images/experiment-21-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "ICTUS changes where the hammers strike the strings, after the fact, on a recorded struck-string instrument.\n\nIn a struck-string instrument the hammer meets the string at a fixed point, typically about one eighth of its length. That point determines the amplitude of each overtone: any mode with a node at the strike point is suppressed. Builders fixed this ratio in the nineteenth century and it has never been adjustable. ICTUS makes it a parameter.\n\nEach note is detected, decomposed into its individual partials, and every partial is rescaled to the amplitude a different strike point would have produced. Because the processing is indexed by partial number rather than frequency, every note of a chord is treated correctly, which a conventional filter cannot do.\n\n### Controls\n* **POINT**: The new strike point, from mid-string (1/2) to very near the end (1/64). A central strike removes every even partial and sounds hollow, like a stopped pipe.\n* **SOURCE**: The original strike point, measured automatically and applied with USE.\n* **DEPTH**: Amount of correction. At 0 the output is identical to the input.\n* **EXCITE**: Excitation model: HAMMER, PLUCK, BOW or GLASS (a physically impossible exciter favouring upper partials).\n* **WIDTH and HARDNESS**: Felt contact width, and its dependence on dynamics.\n* **COMPASS**: A fixed strike ratio across the range, or one that varies with register.\n* **HAMMERS, SPREAD, FLAM**: Up to eight hammers at different points. With FLAM at zero they fuse into a single blow with a new timbre; as FLAM increases they separate into a rhythm of repeated strikes, optionally tempo-synced.\n* **KNOCK**: The amount of hammer noise carried by each additional strike.\n* **MOTION, SWEEP, RATE**: Moves the strike point over time, autonomously or following dynamics.\n* **GRIP, REACH, VOICES**: Chord decomposition resolution and polyphony."
+   "body": "EXPERIMENT 21 changes where the hammers strike the strings, after the fact, on a recorded struck-string instrument.\n\nIn a struck-string instrument the hammer meets the string at a fixed point, typically about one eighth of its length. That point determines the amplitude of each overtone: any mode with a node at the strike point is suppressed. Builders fixed this ratio in the nineteenth century and it has never been adjustable. EXPERIMENT 21 makes it a parameter.\n\nEach note is detected, decomposed into its individual partials, and every partial is rescaled to the amplitude a different strike point would have produced. Because the processing is indexed by partial number rather than frequency, every note of a chord is treated correctly, which a conventional filter cannot do.\n\n### Controls\n* **POINT**: The new strike point, from mid-string (1/2) to very near the end (1/64). A central strike removes every even partial and sounds hollow, like a stopped pipe.\n* **SOURCE**: The original strike point, measured automatically and applied with USE.\n* **DEPTH**: Amount of correction. At 0 the output is identical to the input.\n* **EXCITE**: Excitation model: HAMMER, PLUCK, BOW or GLASS (a physically impossible exciter favouring upper partials).\n* **WIDTH and HARDNESS**: Felt contact width, and its dependence on dynamics.\n* **COMPASS**: A fixed strike ratio across the range, or one that varies with register.\n* **HAMMERS, SPREAD, FLAM**: Up to eight hammers at different points. With FLAM at zero they fuse into a single blow with a new timbre; as FLAM increases they separate into a rhythm of repeated strikes, optionally tempo-synced.\n* **KNOCK**: The amount of hammer noise carried by each additional strike.\n* **MOTION, SWEEP, RATE**: Moves the strike point over time, autonomously or following dynamics.\n* **GRIP, REACH, VOICES**: Chord decomposition resolution and polyphony."
   },
   {
-   "id": "hopfield",
-   "name": "HOPFIELD",
+   "id": "experiment-22",
+   "name": "EXPERIMENT 22",
    "subtitle": "The Associative Memory Engine",
    "kind": "Effect",
    "tags": [
@@ -523,17 +523,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/hopfield-1.webp",
-     "thumb": "images/hopfield-1-thumb.webp"
+     "src": "images/experiment-22-1.webp",
+     "thumb": "images/experiment-22-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "HOPFIELD is a live performance processor that memorises phrases and replays them when the performer approaches them again. It is the companion to SOSTENUTO: where SOSTENUTO captures and holds a moment, HOPFIELD remembers entire phrases.\n\n### Process\n* **Storage**: The input is segmented into phrases at rests. Each is stored as the original recording, up to 12 phrases of 7 seconds each.\n* **Recognition**: The live input is continuously compared with stored phrases. When a fragment matches, the system identifies both the phrase and the position within it.\n* **Recall**: The memory enters at the corresponding point and at the current tempo. Playback is the original recording, never a resynthesis.\n\n### Controls\n* **SHARPNESS**: High values converge on a single memory, so the earlier performance plays along; low values blend several memories.\n* **LEAD**: At 0 the memory plays in unison. Positive values anticipate the next notes by up to 900 ms; negative values follow as a canon by up to 700 ms.\n* **ANY KEY**: Recognises transposed repetitions and transposes the memory to match.\n* **FOLLOW**: How far the memory adapts its tempo to the performer.\n* **SUPPRESS**: Attenuates the live signal when a memory is recognised. At 100 % only the past is heard.\n* **DRIFT**: When playing stops, each phrase recalls the one that most plausibly follows it, continuing until HORIZON.\n* **FORGET and reinforcement**: Repetition strengthens a memory, disuse weakens it, and older memories darken.\n* **Modes**: COMPLETE, ANSWER and HAUNT.\n* **RECALL, FREEZE, FORGET ALL**: Header controls."
+   "body": "EXPERIMENT 22 is a live performance processor that memorises phrases and replays them when the performer approaches them again. It is the companion to EXPERIMENT 24: where EXPERIMENT 24 captures and holds a moment, EXPERIMENT 22 remembers entire phrases.\n\n### Process\n* **Storage**: The input is segmented into phrases at rests. Each is stored as the original recording, up to 12 phrases of 7 seconds each.\n* **Recognition**: The live input is continuously compared with stored phrases. When a fragment matches, the system identifies both the phrase and the position within it.\n* **Recall**: The memory enters at the corresponding point and at the current tempo. Playback is the original recording, never a resynthesis.\n\n### Controls\n* **SHARPNESS**: High values converge on a single memory, so the earlier performance plays along; low values blend several memories.\n* **LEAD**: At 0 the memory plays in unison. Positive values anticipate the next notes by up to 900 ms; negative values follow as a canon by up to 700 ms.\n* **ANY KEY**: Recognises transposed repetitions and transposes the memory to match.\n* **FOLLOW**: How far the memory adapts its tempo to the performer.\n* **SUPPRESS**: Attenuates the live signal when a memory is recognised. At 100 % only the past is heard.\n* **DRIFT**: When playing stops, each phrase recalls the one that most plausibly follows it, continuing until HORIZON.\n* **FORGET and reinforcement**: Repetition strengthens a memory, disuse weakens it, and older memories darken.\n* **Modes**: COMPLETE, ANSWER and HAUNT.\n* **RECALL, FREEZE, FORGET ALL**: Header controls."
   },
   {
-   "id": "cancrizans",
-   "name": "CANCRIZANS",
+   "id": "experiment-23",
+   "name": "EXPERIMENT 23",
    "subtitle": "The Canon Engine",
    "kind": "Effect",
    "tags": [
@@ -547,17 +547,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/cancrizans-1.webp",
-     "thumb": "images/cancrizans-1-thumb.webp"
+     "src": "images/experiment-23-1.webp",
+     "thumb": "images/experiment-23-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "CANCRIZANS answers the performer in counterpoint. It is the third of a family with SOSTENUTO and HOPFIELD: those hold a moment and recall phrases; CANCRIZANS composes a response to a phrase and plays it back.\n\n### Process\n* **Segmentation**: The input is divided into individual notes, each stored as a recording with its detected pitch.\n* **The subject**: A sequence of notes between two rests forms one phrase.\n* **The answer**: The phrase is played back transformed, after a delay measured in beats, in up to four voices.\n\nTransformations operate on note events, not on audio. In a retrograde answer the order and rhythm are reversed, but every note still sounds forwards; nothing is reversed audio.\n\nThe answer is assembled entirely from the performer's own notes. To play a B♭, the engine retrieves a B♭ recorded earlier in the performance. Only pitches not yet heard are borrowed from a neighbour or transposed by an octave. Nothing is resynthesised.\n\n### Controls\n* **Form**: Prime, retrograde, inversion, retrograde inversion, augmentation, diminution, or automatic.\n* **Interval and entry**: Transposition of the answer and its entry delay in beats.\n* **PLAN**: Voice arrangement, for example stacked, mirrored, or all four forms simultaneously.\n* **CRITIC, CONCORD, NO PARALLELS**: A counterpoint evaluator selects the interval; CONCORD biases it toward consonance or dissonance.\n* **PURITY and TOLERANCE**: Minimum quality of a stored note, and how far a neighbouring pitch may be borrowed.\n* **PEDAL and RELEASE**: Sustain of the answering notes.\n* **TAPE**: Wow, flutter, saturation and a tempo-synced tape echo on the answer.\n* **PERPETUUS**: Feeds each answer back as the next subject, so the canon continues autonomously until HORIZON.\n* **RESOLUTIO, ANSWER NOW, FREEZE, FORGET ALL**: Header controls. RESOLUTIO returns every voice to the prime form."
+   "body": "EXPERIMENT 23 answers the performer in counterpoint. It is the third of a family with EXPERIMENT 24 and EXPERIMENT 22: those hold a moment and recall phrases; EXPERIMENT 23 composes a response to a phrase and plays it back.\n\n### Process\n* **Segmentation**: The input is divided into individual notes, each stored as a recording with its detected pitch.\n* **The subject**: A sequence of notes between two rests forms one phrase.\n* **The answer**: The phrase is played back transformed, after a delay measured in beats, in up to four voices.\n\nTransformations operate on note events, not on audio. In a retrograde answer the order and rhythm are reversed, but every note still sounds forwards; nothing is reversed audio.\n\nThe answer is assembled entirely from the performer's own notes. To play a B♭, the engine retrieves a B♭ recorded earlier in the performance. Only pitches not yet heard are borrowed from a neighbour or transposed by an octave. Nothing is resynthesised.\n\n### Controls\n* **Form**: Prime, retrograde, inversion, retrograde inversion, augmentation, diminution, or automatic.\n* **Interval and entry**: Transposition of the answer and its entry delay in beats.\n* **PLAN**: Voice arrangement, for example stacked, mirrored, or all four forms simultaneously.\n* **CRITIC, CONCORD, NO PARALLELS**: A counterpoint evaluator selects the interval; CONCORD biases it toward consonance or dissonance.\n* **PURITY and TOLERANCE**: Minimum quality of a stored note, and how far a neighbouring pitch may be borrowed.\n* **PEDAL and RELEASE**: Sustain of the answering notes.\n* **TAPE**: Wow, flutter, saturation and a tempo-synced tape echo on the answer.\n* **PERPETUUS**: Feeds each answer back as the next subject, so the canon continues autonomously until HORIZON.\n* **RESOLUTIO, ANSWER NOW, FREEZE, FORGET ALL**: Header controls. RESOLUTIO returns every voice to the prime form."
   },
   {
-   "id": "sostenuto",
-   "name": "SOSTENUTO",
+   "id": "experiment-24",
+   "name": "EXPERIMENT 24",
    "subtitle": "The Held Note Engine",
    "kind": "Effect",
    "tags": [
@@ -572,17 +572,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/sostenuto-1.webp",
-     "thumb": "images/sostenuto-1-thumb.webp"
+     "src": "images/experiment-24-1.webp",
+     "thumb": "images/experiment-24-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "SOSTENUTO is a live sustain processor named after the sostenuto pedal. On a trigger it captures the most recent moment of the performance and holds it, while the performer continues dry above it.\n\nTriggers can come from a contact microphone via the sidechain, from onsets in the signal, from a button, or from the host's bar line. Each capture becomes a layer, with up to four layers held simultaneously.\n\n### Four engines\nThe held material is always the original recording, never a resynthesis, rendered by four mixable engines:\n\n* **BLOOM**: A cloud of long overlapping grains, shaped by DENSITY, SCATTER, COLOUR and JITTER.\n* **TAPE**: A loop with wow, flutter, saturation and gradual erosion. SHUFFLE reorders the loop to avoid repetition.\n* **STRINGS**: Sympathetic resonators tuned to the captured notes and excited by subsequent playing. SUB adds a bank an octave below.\n* **SPACE**: A reverb capable of infinite hold.\n\n### Controls\n* **WINDOW and VARY**: Capture length (free or in note values) and its variation between captures.\n* **ATTACK, CURVE, DECAY**: Fade-in shape and duration of each layer.\n* **ON A HIT**: What a new capture does: add, replace, swell or stutter.\n* **PULSE**: Rhythmic modulation of the hold, host-synced by default, gating level or sweeping a filter.\n* **DUCK and RECOVER**: Ducking of the hold against the live signal.\n* **WARMTH, HAZE, DRIFT, TUNE**: Soft saturation, edgeless blur, phase wander, and master tuning of ±100 cents.\n* **DISSOLVE and CLEAR**: Slow or fast release of all layers, both MIDI-assignable.\n\n### Remote control\nSOSTENUTO runs on REMOTE KIT with a 12-page phone controller. Beyond full parameter access it adds pages a plugin window cannot: FIELD (store complete states as stars and navigate between them), BREATHE (draw a gesture that loops), and MOTION (knock or clap to capture, tilt, and the phone's microphone as a modulation source)."
+   "body": "EXPERIMENT 24 is a live sustain processor modelled on the sostenuto pedal. On a trigger it captures the most recent moment of the performance and holds it, while the performer continues dry above it.\n\nTriggers can come from a contact microphone via the sidechain, from onsets in the signal, from a button, or from the host's bar line. Each capture becomes a layer, with up to four layers held simultaneously.\n\n### Four engines\nThe held material is always the original recording, never a resynthesis, rendered by four mixable engines:\n\n* **BLOOM**: A cloud of long overlapping grains, shaped by DENSITY, SCATTER, COLOUR and JITTER.\n* **TAPE**: A loop with wow, flutter, saturation and gradual erosion. SHUFFLE reorders the loop to avoid repetition.\n* **STRINGS**: Sympathetic resonators tuned to the captured notes and excited by subsequent playing. SUB adds a bank an octave below.\n* **SPACE**: A reverb capable of infinite hold.\n\n### Controls\n* **WINDOW and VARY**: Capture length (free or in note values) and its variation between captures.\n* **ATTACK, CURVE, DECAY**: Fade-in shape and duration of each layer.\n* **ON A HIT**: What a new capture does: add, replace, swell or stutter.\n* **PULSE**: Rhythmic modulation of the hold, host-synced by default, gating level or sweeping a filter.\n* **DUCK and RECOVER**: Ducking of the hold against the live signal.\n* **WARMTH, HAZE, DRIFT, TUNE**: Soft saturation, edgeless blur, phase wander, and master tuning of ±100 cents.\n* **DISSOLVE and CLEAR**: Slow or fast release of all layers, both MIDI-assignable.\n\n### Remote control\nEXPERIMENT 24 runs on REMOTE KIT with a 12-page phone controller. Beyond full parameter access it adds pages a plugin window cannot: FIELD (store complete states as stars and navigate between them), BREATHE (draw a gesture that loops), and MOTION (knock or clap to capture, tilt, and the phone's microphone as a modulation source)."
   },
   {
-   "id": "weinreich",
-   "name": "WEINREICH",
+   "id": "experiment-25",
+   "name": "EXPERIMENT 25",
    "subtitle": "The Decay-Law Engine",
    "kind": "Effect",
    "tags": [
@@ -597,17 +597,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/weinreich-1.webp",
-     "thumb": "images/weinreich-1-thumb.webp"
+     "src": "images/experiment-25-1.webp",
+     "thumb": "images/experiment-25-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "WEINREICH changes how notes decay. In a struck string, high partials decay quickly and low partials sustain, following a fixed physical law. WEINREICH turns that law into a parameter.\n\nIt completes a trio with RAILSBACK and ICTUS: RAILSBACK changes the tuning of the partials, ICTUS their initial amplitude, and WEINREICH their duration.\n\nEach partial of the input is tracked and, as the natural sound decays, continued at the requested decay time. Partials can also be shortened.\n\n### Controls\n* **SUSTAIN**: Decay time at the pivot frequency, 0.05 to 60 seconds.\n* **LAW**: How decay time scales with frequency. The default matches a concert grand; at 0 every partial decays at the same rate, like a struck organ; below 0 the law inverts, so the low register fades first and brightness outlasts it.\n* **PIVOT**: The frequency at which SUSTAIN is exact; LAW rotates around this point.\n* **DAMP**: Shortens notes, as a damper would.\n* **AFTERSOUND and BLOOM**: A second, much longer and quieter decay stage, as found in real coupled strings, and its delay. A late arrival produces a dip followed by a swell.\n* **BLUR**: Introduces slight irregularity into the held partials. Without it they are perfect sinusoids and sound synthetic.\n* **DRIFT, WIDTH, TILT**: Slow pitch movement in the tail, stereo spread of the tail only, and spectral tilt.\n* **PEDAL**: Sustains everything.\n* **SENSE**: The threshold below which partials are not extended."
+   "body": "EXPERIMENT 25 changes how notes decay. In a struck string, high partials decay quickly and low partials sustain, following a fixed physical law. EXPERIMENT 25 turns that law into a parameter.\n\nIt completes a trio with EXPERIMENT 26 and EXPERIMENT 21: EXPERIMENT 26 changes the tuning of the partials, EXPERIMENT 21 their initial amplitude, and EXPERIMENT 25 their duration.\n\nEach partial of the input is tracked and, as the natural sound decays, continued at the requested decay time. Partials can also be shortened.\n\n### Controls\n* **SUSTAIN**: Decay time at the pivot frequency, 0.05 to 60 seconds.\n* **LAW**: How decay time scales with frequency. The default matches a concert grand; at 0 every partial decays at the same rate, like a struck organ; below 0 the law inverts, so the low register fades first and brightness outlasts it.\n* **PIVOT**: The frequency at which SUSTAIN is exact; LAW rotates around this point.\n* **DAMP**: Shortens notes, as a damper would.\n* **AFTERSOUND and BLOOM**: A second, much longer and quieter decay stage, as found in real coupled strings, and its delay. A late arrival produces a dip followed by a swell.\n* **BLUR**: Introduces slight irregularity into the held partials. Without it they are perfect sinusoids and sound synthetic.\n* **DRIFT, WIDTH, TILT**: Slow pitch movement in the tail, stereo spread of the tail only, and spectral tilt.\n* **PEDAL**: Sustains everything.\n* **SENSE**: The threshold below which partials are not extended."
   },
   {
-   "id": "railsback",
-   "name": "RAILSBACK",
+   "id": "experiment-26",
+   "name": "EXPERIMENT 26",
    "subtitle": "The Stretch Engine",
    "kind": "Effect",
    "tags": [
@@ -621,17 +621,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/railsback-1.webp",
-     "thumb": "images/railsback-1-thumb.webp"
+     "src": "images/experiment-26-1.webp",
+     "thumb": "images/experiment-26-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "RAILSBACK changes the tuning of an instrument's partials while leaving the notes themselves in tune. It was developed for live concert use.\n\nA real string is stiff, so its partials lie slightly above exact integer multiples of the fundamental. This inharmonicity is a defining part of the timbre of string instruments. RAILSBACK measures it for every note, extracts each partial and reinserts it at a new frequency. The fundamental never moves, so intonation is preserved however far the timbre is pushed.\n\n### Target spectra\n* **String**: The instrument's own stiffness as a parameter, scaled up, down or negative.\n* **Harmonic**: Exact integer multiples, for a glass, organ or vocal quality.\n* **Bell, Bar, Membrane**: The modal series of a bell, a metal bar (as in gamelan) and a gong.\n* **Golden, Odd, Octaves**: A series without octaves, odd partials only, and octaves only.\n\n### Controls\n* **MORPH**: Interpolation toward the target series, with smooth glides. At 0 the output is bit-identical to the input.\n* **GRIP**: Extraction strength per partial; effective results also depend on the instrument's tuning.\n* **DRY and WET**: DRY is everything not extracted, such as hammer noise and air. At DRY 0 only the reconstructed partials remain.\n* **AUTO**: Enabled by default. Holds the output at input loudness so other controls change only timbre.\n* **TRACK (NOTES or MODES)**: NOTES for pitched sources; MODES for percussion, reading a drum's resonances directly. It can turn an unpitched drum into a pitched one.\n* **FREEZE**: Holds the current sound."
+   "body": "EXPERIMENT 26 changes the tuning of an instrument's partials while leaving the notes themselves in tune. It was developed for live concert use.\n\nA real string is stiff, so its partials lie slightly above exact integer multiples of the fundamental. This inharmonicity is a defining part of the timbre of string instruments. EXPERIMENT 26 measures it for every note, extracts each partial and reinserts it at a new frequency. The fundamental never moves, so intonation is preserved however far the timbre is pushed.\n\n### Target spectra\n* **String**: The instrument's own stiffness as a parameter, scaled up, down or negative.\n* **Harmonic**: Exact integer multiples, for a glass, organ or vocal quality.\n* **Bell, Bar, Membrane**: The modal series of a bell, a metal bar (as in gamelan) and a gong.\n* **Golden, Odd, Octaves**: A series without octaves, odd partials only, and octaves only.\n\n### Controls\n* **MORPH**: Interpolation toward the target series, with smooth glides. At 0 the output is bit-identical to the input.\n* **GRIP**: Extraction strength per partial; effective results also depend on the instrument's tuning.\n* **DRY and WET**: DRY is everything not extracted, such as hammer noise and air. At DRY 0 only the reconstructed partials remain.\n* **AUTO**: Enabled by default. Holds the output at input loudness so other controls change only timbre.\n* **TRACK (NOTES or MODES)**: NOTES for pitched sources; MODES for percussion, reading a drum's resonances directly. It can turn an unpitched drum into a pitched one.\n* **FREEZE**: Holds the current sound."
   },
   {
-   "id": "aliquot",
-   "name": "ALIQUOT",
+   "id": "experiment-27",
+   "name": "EXPERIMENT 27",
    "subtitle": "Soft Valve and Sympathetic Sustain",
    "kind": "Effect",
    "tags": [
@@ -646,17 +646,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/aliquot-1.webp",
-     "thumb": "images/aliquot-1-thumb.webp"
+     "src": "images/experiment-27-1.webp",
+     "thumb": "images/experiment-27-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "ALIQUOT is a soft valve distortion with a sustain section that adds no room sound. Its range extends from gentle compression to heavy distortion while remaining fat and soft, with a sustaining smudge that stays crisp and close, in the tradition of the Thermionic Culture Vulture.\n\nThe name refers to aliquot stringing: additional undamped strings that are never struck and ring in sympathy.\n\n### VALVE: distortion\n* **FAT and GRIT**: The valve's output is split exactly into even (FAT) and odd (GRIT) harmonics, each adjustable from 0 to 200 %.\n* **SAG**: Makes the valve's clean gain follow playing level. This is the compressor, and it shares its mechanism with the distortion.\n* **VALVE A, VALVE B, MORPH**: Twelve characters (triode, pentode, germanium, silicon, tape, fuzz, fold and others) with continuous interpolation between any two.\n* **SOFTEN**: Darkens only the added harmonics, leaving the dry signal's high end untouched, which keeps the result crisp at high drive.\n\n### MELT: sustain\n* **Principle**: The partials of decaying notes are tracked and sustained. Lingering notes then glide slowly toward the next notes played, or toward the key when playing stops.\n* **Controls**: SUSTAIN, DAMP, GLIDE, and KEY, with automatic key detection.\n\n### STRINGS: sympathetic resonance\nA bank of 48 tuned strings resonating in sympathy, like undamped strings, sitting quietly beneath MELT.\n\n### WARP: tape drift\n* **WARP**: A slow, delicate pitch drift, set in cents.\n* **RECUE**: Pulls the drift back toward true pitch on each new attack, so every note begins close to in tune."
+   "body": "EXPERIMENT 27 is a soft valve distortion with a sustain section that adds no room sound. Its range extends from gentle compression to heavy distortion while remaining fat and soft, with a sustaining smudge that stays crisp and close, in the tradition of the Thermionic Culture Vulture.\n\nIts sustain draws on aliquot stringing: additional undamped strings that are never struck and ring in sympathy.\n\n### VALVE: distortion\n* **FAT and GRIT**: The valve's output is split exactly into even (FAT) and odd (GRIT) harmonics, each adjustable from 0 to 200 %.\n* **SAG**: Makes the valve's clean gain follow playing level. This is the compressor, and it shares its mechanism with the distortion.\n* **VALVE A, VALVE B, MORPH**: Twelve characters (triode, pentode, germanium, silicon, tape, fuzz, fold and others) with continuous interpolation between any two.\n* **SOFTEN**: Darkens only the added harmonics, leaving the dry signal's high end untouched, which keeps the result crisp at high drive.\n\n### MELT: sustain\n* **Principle**: The partials of decaying notes are tracked and sustained. Lingering notes then glide slowly toward the next notes played, or toward the key when playing stops.\n* **Controls**: SUSTAIN, DAMP, GLIDE, and KEY, with automatic key detection.\n\n### STRINGS: sympathetic resonance\nA bank of 48 tuned strings resonating in sympathy, like undamped strings, sitting quietly beneath MELT.\n\n### WARP: tape drift\n* **WARP**: A slow, delicate pitch drift, set in cents.\n* **RECUE**: Pulls the drift back toward true pitch on each new attack, so every note begins close to in tune."
   },
   {
-   "id": "kotekan",
-   "name": "KOTEKAN",
+   "id": "experiment-28",
+   "name": "EXPERIMENT 28",
    "subtitle": "Percussion That Knows What You Played",
    "kind": "Effect",
    "tags": [
@@ -670,17 +670,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/kotekan-1.webp",
-     "thumb": "images/kotekan-1-thumb.webp"
+     "src": "images/experiment-28-1.webp",
+     "thumb": "images/experiment-28-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "KOTEKAN is a percussion trigger that analyses the performance and selects each drum sound according to the musical content of what was played. It is named after the Balinese technique in which two parts interlock into a single line.\n\n### Principle\n* **The kit is measured.** Source material (a drum break by default) is sliced, and each slice is analysed and placed in a two-dimensional space: dark to bright on one axis, short to resonant on the other. The corners are BOOM, EDGE, WASH and TONE, with BODY at the centre.\n* **The performance aims.** Each note moves a target within that space, and the nearest slice is triggered.\n\n### Features driving the target\nSix features of the performance move the target, each with a depth per axis:\n\n* **REGISTER**: Pitch height.\n* **WEIGHT**: Intensity.\n* **FUNCTION**: The note's harmonic role, from root through fifth, third and seventh to non-chord tone. A root produces a kick; a dissonant note produces a rimshot.\n* **LEAP**: Interval from the previous note.\n* **DENSITY**: Activity level.\n* **CHANGE**: Harmonic movement, affecting only the next hit, like a cymbal on a chord change.\n\n### Controls\n* **RANK**: Redistributes the kit evenly across the space, since slices from one break tend to cluster.\n* **LEVEL MATCH**: Raises quiet slices toward the kit's average loudness.\n* **AVOID and LOOSE**: Prevents immediate repetition and adds controlled randomness.\n* **HANDS**: One to four simultaneous hits, kept apart in the space.\n* **TUNE, TONAL ONLY, TRANSIENT LOCK**: Tonal slices follow the harmony while drums remain unpitched, with attacks left unshifted.\n* **Decision window**: Hits are delayed by about 18 ms so the played note can be identified; this is reported as latency.\n\n### THE CONSTELLATION\nThe main display shows the slices as points and the target as a crosshair, with a coloured vector for each feature that moved it. Slices can be repositioned by hand."
+   "body": "EXPERIMENT 28 is a percussion trigger that analyses the performance and selects each drum sound according to the musical content of what was played. Its approach echoes kotekan, the Balinese technique in which two parts interlock into a single line.\n\n### Principle\n* **The kit is measured.** Source material (a drum break by default) is sliced, and each slice is analysed and placed in a two-dimensional space: dark to bright on one axis, short to resonant on the other. The corners are BOOM, EDGE, WASH and TONE, with BODY at the centre.\n* **The performance aims.** Each note moves a target within that space, and the nearest slice is triggered.\n\n### Features driving the target\nSix features of the performance move the target, each with a depth per axis:\n\n* **REGISTER**: Pitch height.\n* **WEIGHT**: Intensity.\n* **FUNCTION**: The note's harmonic role, from root through fifth, third and seventh to non-chord tone. A root produces a kick; a dissonant note produces a rimshot.\n* **LEAP**: Interval from the previous note.\n* **DENSITY**: Activity level.\n* **CHANGE**: Harmonic movement, affecting only the next hit, like a cymbal on a chord change.\n\n### Controls\n* **RANK**: Redistributes the kit evenly across the space, since slices from one break tend to cluster.\n* **LEVEL MATCH**: Raises quiet slices toward the kit's average loudness.\n* **AVOID and LOOSE**: Prevents immediate repetition and adds controlled randomness.\n* **HANDS**: One to four simultaneous hits, kept apart in the space.\n* **TUNE, TONAL ONLY, TRANSIENT LOCK**: Tonal slices follow the harmony while drums remain unpitched, with attacks left unshifted.\n* **Decision window**: Hits are delayed by about 18 ms so the played note can be identified; this is reported as latency.\n\n### THE CONSTELLATION\nThe main display shows the slices as points and the target as a crosshair, with a coloured vector for each feature that moved it. Slices can be repositioned by hand."
   },
   {
-   "id": "parsimony",
-   "name": "PARSIMONY",
+   "id": "experiment-29",
+   "name": "EXPERIMENT 29",
    "subtitle": "The Harmonic Obedience Engine",
    "kind": "Effect",
    "tags": [
@@ -695,17 +695,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/parsimony-1.webp",
-     "thumb": "images/parsimony-1-thumb.webp"
+     "src": "images/experiment-29-1.webp",
+     "thumb": "images/experiment-29-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "PARSIMONY turns a live instrument into the trigger for a sampler and keeps the sampler in tune with the harmony being played.\n\n### Process\n* **Analysis**: Onsets and the implied chord are extracted from the live input.\n* **Triggering**: Each onset fires a slice of the loaded sample.\n* **Retuning**: Slices are pitch-shifted to fit the current harmony, so any sample follows the progression.\n\nThe retuning is based on parsimonious voice leading. The engine maintains several voices, each holding its own pitch. On a chord change it solves for the assignment in which the voices move the smallest total distance, each to a different chord tone. A change of harmony therefore sounds like a choir turning a corner together rather than collapsing onto a single note.\n\n### Controls\n* **OBEY**: Strictness of harmonic correction.\n* **VOICING**: How many voices take part in the joint solution. At 0 each moves independently to its nearest tone and may converge.\n* **PULL**: Attracts the voices toward a common register.\n* **Glide**: Portamento, in seconds per octave.\n* **Shifter**: TAPE (duration scales with pitch, suited to drum breaks), GRAIN (duration preserved) or VOX (for voice, with independent FORMANT).\n* **ROOT**: The sample's native pitch, estimated on load, with DETECT ROOT.\n* **LISTEN SOURCE**: Analysis input (left, right, mid or side).\n* **SYMPATHY**: A sympathetic string bank tuned to the current chord.\n* **SPACE**: Reverb and output effects."
+   "body": "EXPERIMENT 29 turns a live instrument into the trigger for a sampler and keeps the sampler in tune with the harmony being played.\n\n### Process\n* **Analysis**: Onsets and the implied chord are extracted from the live input.\n* **Triggering**: Each onset fires a slice of the loaded sample.\n* **Retuning**: Slices are pitch-shifted to fit the current harmony, so any sample follows the progression.\n\nThe retuning is based on parsimonious voice leading. The engine maintains several voices, each holding its own pitch. On a chord change it solves for the assignment in which the voices move the smallest total distance, each to a different chord tone. A change of harmony therefore sounds like a choir turning a corner together rather than collapsing onto a single note.\n\n### Controls\n* **OBEY**: Strictness of harmonic correction.\n* **VOICING**: How many voices take part in the joint solution. At 0 each moves independently to its nearest tone and may converge.\n* **PULL**: Attracts the voices toward a common register.\n* **Glide**: Portamento, in seconds per octave.\n* **Shifter**: TAPE (duration scales with pitch, suited to drum breaks), GRAIN (duration preserved) or VOX (for voice, with independent FORMANT).\n* **ROOT**: The sample's native pitch, estimated on load, with DETECT ROOT.\n* **LISTEN SOURCE**: Analysis input (left, right, mid or side).\n* **SYMPATHY**: A sympathetic string bank tuned to the current chord.\n* **SPACE**: Reverb and output effects."
   },
   {
-   "id": "scion",
-   "name": "SCION",
+   "id": "experiment-30",
+   "name": "EXPERIMENT 30",
    "subtitle": "The Grafting Engine",
    "kind": "Effect",
    "tags": [
@@ -719,17 +719,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/scion-1.webp",
-     "thumb": "images/scion-1-thumb.webp"
+     "src": "images/experiment-30-1.webp",
+     "thumb": "images/experiment-30-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "SCION imposes the timbral envelope of a live input onto a loaded sample. The name comes from horticultural grafting: the live input is the rootstock, the sample is the scion.\n\n### Process\n* **The mould**: The spectral envelope of the live input (its formant structure and tonal colour) is measured continuously.\n* **Whitening**: The sample's own spectral envelope is removed, leaving its fine structure and texture.\n* **The graft**: The whitened sample is shaped by the mould. The result carries the sample's texture with the live instrument's timbre and dynamics.\n\n### Controls\n* **GRAFT**: Depth of the transfer. At 0 the output is unchanged.\n* **STRIP**: How much of the sample's own envelope is removed first.\n* **GRAIN**: Envelope resolution, from overall body to individual partials.\n* **BITE**: Contrast of the mould.\n* **BODY**: Shifts the envelope up or down, as if resizing the instrument.\n* **HOLD and CAST**: HOLD extends the mould beyond the note; CAST freezes it, turning a played chord into a fixed filter.\n* **CALLUS and SPLAY**: Upward spectral smearing, and stereo width derived from the mould.\n* **WINDOW**: Analysis size, which also determines latency.\n\n### Sample engine\n* **CHOP**: Equal divisions, strongest transients, or full onset detection (DETECT), with RESLICE.\n* **SYNC and LENGTH**: Fit the full sample to a number of beats at host tempo.\n* **SHAPE**: Per-slice ATTACK, LOOP, RATCHET (repeated retriggers) and CRUSH.\n* **HARVEST**: Playback order, including ping-pong and random walk.\n\nA sidechain input allows one live signal to be grafted onto another with no file loaded."
+   "body": "EXPERIMENT 30 imposes the timbral envelope of a live input onto a loaded sample. The process borrows from horticultural grafting: the live input is the rootstock, the sample is the scion.\n\n### Process\n* **The mould**: The spectral envelope of the live input (its formant structure and tonal colour) is measured continuously.\n* **Whitening**: The sample's own spectral envelope is removed, leaving its fine structure and texture.\n* **The graft**: The whitened sample is shaped by the mould. The result carries the sample's texture with the live instrument's timbre and dynamics.\n\n### Controls\n* **GRAFT**: Depth of the transfer. At 0 the output is unchanged.\n* **STRIP**: How much of the sample's own envelope is removed first.\n* **GRAIN**: Envelope resolution, from overall body to individual partials.\n* **BITE**: Contrast of the mould.\n* **BODY**: Shifts the envelope up or down, as if resizing the instrument.\n* **HOLD and CAST**: HOLD extends the mould beyond the note; CAST freezes it, turning a played chord into a fixed filter.\n* **CALLUS and SPLAY**: Upward spectral smearing, and stereo width derived from the mould.\n* **WINDOW**: Analysis size, which also determines latency.\n\n### Sample engine\n* **CHOP**: Equal divisions, strongest transients, or full onset detection (DETECT), with RESLICE.\n* **SYNC and LENGTH**: Fit the full sample to a number of beats at host tempo.\n* **SHAPE**: Per-slice ATTACK, LOOP, RATCHET (repeated retriggers) and CRUSH.\n* **HARVEST**: Playback order, including ping-pong and random walk.\n\nA sidechain input allows one live signal to be grafted onto another with no file loaded."
   },
   {
-   "id": "larsen",
-   "name": "LARSEN",
+   "id": "experiment-31",
+   "name": "EXPERIMENT 31",
    "subtitle": "The Regeneration Governor",
    "kind": "Effect",
    "tags": [
@@ -743,17 +743,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/larsen-1.webp",
-     "thumb": "images/larsen-1-thumb.webp"
+     "src": "images/experiment-31-1.webp",
+     "thumb": "images/experiment-31-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "LARSEN is a feedback governor designed for a specific configuration: a contact microphone on an acoustic instrument feeding an exciter mounted on that same instrument's soundboard. The instrument rings and blooms through its own feedback, and LARSEN keeps that loop from running away.\n\nConventional feedback suppressors cannot work here. In this configuration the feedback frequencies coincide with the instrument's own resonances, so they are indistinguishable from the music by frequency alone. The one reliable difference is decay: a struck note dies away, whereas a feedback loop at unity gain does not.\n\nLARSEN therefore regulates decay time, independently in 28 bands:\n\n* **SUSTAIN**: A target decay time, for example 4 seconds. In each band the loop gain is raised until that band rings for exactly that long, and held there.\n* **HOLD**: A target of infinite sustain. Gain approaches the stability limit from below and never crosses it.\n\nSustain control and feedback protection are a single mechanism, so there is no configuration in which protection is disabled.\n\nIf a band still becomes unstable, a ladder of escalating responses applies: the band's gain is reduced, then notched, then the entire output is ducked.\n\n### Further sections\n* **Calibration**: A sweep through the exciter measures the instrument's response per band. The result is stored with the session and is not overwritten by presets.\n* **ROOM MIC**: An optional sidechain for an air microphone, analysed but never mixed, which detects acoustic feedback through the room that a contact microphone cannot hear.\n* **Exciter protection**: High-pass filtering, a thermal model and a limiter.\n* **Output ceiling**: −1 dBFS."
+   "body": "EXPERIMENT 31 is a feedback governor designed for a specific configuration: a contact microphone on an acoustic instrument feeding an exciter mounted on that same instrument's soundboard. The instrument rings and blooms through its own feedback, and EXPERIMENT 31 keeps that loop from running away.\n\nConventional feedback suppressors cannot work here. In this configuration the feedback frequencies coincide with the instrument's own resonances, so they are indistinguishable from the music by frequency alone. The one reliable difference is decay: a struck note dies away, whereas a feedback loop at unity gain does not.\n\nEXPERIMENT 31 therefore regulates decay time, independently in 28 bands:\n\n* **SUSTAIN**: A target decay time, for example 4 seconds. In each band the loop gain is raised until that band rings for exactly that long, and held there.\n* **HOLD**: A target of infinite sustain. Gain approaches the stability limit from below and never crosses it.\n\nSustain control and feedback protection are a single mechanism, so there is no configuration in which protection is disabled.\n\nIf a band still becomes unstable, a ladder of escalating responses applies: the band's gain is reduced, then notched, then the entire output is ducked.\n\n### Further sections\n* **Calibration**: A sweep through the exciter measures the instrument's response per band. The result is stored with the session and is not overwritten by presets.\n* **ROOM MIC**: An optional sidechain for an air microphone, analysed but never mixed, which detects acoustic feedback through the room that a contact microphone cannot hear.\n* **Exciter protection**: High-pass filtering, a thermal model and a limiter.\n* **Output ceiling**: −1 dBFS."
   },
   {
-   "id": "banshee",
-   "name": "BANSHEE",
+   "id": "experiment-32",
+   "name": "EXPERIMENT 32",
    "subtitle": "Vocal Strip and Feedback Engine",
    "kind": "Effect",
    "tags": [
@@ -767,17 +767,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/banshee-1.webp",
-     "thumb": "images/banshee-1-thumb.webp"
+     "src": "images/experiment-32-1.webp",
+     "thumb": "images/experiment-32-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "BANSHEE is a live vocal channel strip ending in a feedback engine that can either eliminate a howl or cultivate it as a musical tone.\n\n### Signal chain\n* **Input**: EQ and de-esser.\n* **SCREAM**: Saturation.\n* **IRON**: Compression.\n* **BANSHEE**: The feedback engine, with two modes.\n\n### KILL: suppression\n* **Detection**: Steady tones are tracked and scored on stability, growth rate and harmonicity. A sung note belongs to a harmonic series; a howl is typically an isolated tone, which is how the two are distinguished.\n* **Notches**: Each confirmed howl receives a notch filter, held for a period after the tone disappears, since releasing it immediately allows the howl to return.\n* **Panic duck**: If the system still runs away, the output is attenuated.\n\n### WAIL: performance\n* **Cultivation**: A single feedback tone is selected, quantised to the nearest semitone and held at a controlled level, alive but stable.\n* **Bloom and climb**: The tone builds autonomously and ascends through its harmonics, as guitar feedback jumps to the octave.\n* **Protection**: Any other frequency that begins to feed back is handled as in KILL."
+   "body": "EXPERIMENT 32 is a live vocal channel strip ending in a feedback engine that can either eliminate a howl or cultivate it as a musical tone.\n\n### Signal chain\n* **Input**: EQ and de-esser.\n* **SCREAM**: Saturation.\n* **IRON**: Compression.\n* **EXPERIMENT 32**: The feedback engine, with two modes.\n\n### KILL: suppression\n* **Detection**: Steady tones are tracked and scored on stability, growth rate and harmonicity. A sung note belongs to a harmonic series; a howl is typically an isolated tone, which is how the two are distinguished.\n* **Notches**: Each confirmed howl receives a notch filter, held for a period after the tone disappears, since releasing it immediately allows the howl to return.\n* **Panic duck**: If the system still runs away, the output is attenuated.\n\n### WAIL: performance\n* **Cultivation**: A single feedback tone is selected, quantised to the nearest semitone and held at a controlled level, alive but stable.\n* **Bloom and climb**: The tone builds autonomously and ascends through its harmonics, as guitar feedback jumps to the octave.\n* **Protection**: Any other frequency that begins to feed back is handled as in KILL."
   },
   {
-   "id": "palimpsest",
-   "name": "PALIMPSEST",
+   "id": "experiment-33",
+   "name": "EXPERIMENT 33",
    "subtitle": "The Generation Loss Engine",
    "kind": "Effect",
    "tags": [
@@ -790,17 +790,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/palimpsest-1.webp",
-     "thumb": "images/palimpsest-1-thumb.webp"
+     "src": "images/experiment-33-1.webp",
+     "thumb": "images/experiment-33-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "PALIMPSEST models media degradation: the way a recording ages when it is copied repeatedly, on tape and in the digital domain.\n\nThe core principle is serial re-recording. The signal is dubbed onto the medium up to eight times, and each generation adds its own wow, noise and loss while re-recording the damage of every generation before it. The result differs fundamentally from a single heavily degraded pass.\n\n### Controls\n* **GENERATIONS**: Number of copies, 1 to 8.\n* **MEDIUM**: Analogue to digital. The midpoint is a distinct third medium, a corrupted digital stream on worn tape, rather than a blend.\n* **DAMAGE**: A single macro traversing an ordered sequence of faults, from gentle high-frequency loss to stutter. Individual fault controls set a floor that DAMAGE extends beyond.\n* **SMOOTH**: Softens the hard edges of digital faults.\n* **EVOLVE**: Progressive degradation over time: once, cyclically, or following the host transport.\n\nThe analogue domain includes wow, flutter, saturation, bandwidth narrowing, hiss, dropouts and VHS tracking errors. The digital domain includes aliasing, bit reduction, circuit bending and datamosh, in which the signal smears across stale frames.\n\n### Texture sections\n* **FOG**: Spectral blur, TONAL (consonant), INHARMONIC (dissonant) or EVOLVING.\n* **GHOSTS**: Echoes, grains and print-through, a faint pre-echo of each sound. FREEZE holds it.\n* **BLOOM**: A long ambient reverb, with SHIMMER adding an upper octave.\n* **THE LOOM**: An 8-second loop pad with up to four voices at musical intervals, holdable without clicks."
+   "body": "EXPERIMENT 33 models media degradation: the way a recording ages when it is copied repeatedly, on tape and in the digital domain.\n\nThe core principle is serial re-recording. The signal is dubbed onto the medium up to eight times, and each generation adds its own wow, noise and loss while re-recording the damage of every generation before it. The result differs fundamentally from a single heavily degraded pass.\n\n### Controls\n* **GENERATIONS**: Number of copies, 1 to 8.\n* **MEDIUM**: Analogue to digital. The midpoint is a distinct third medium, a corrupted digital stream on worn tape, rather than a blend.\n* **DAMAGE**: A single macro traversing an ordered sequence of faults, from gentle high-frequency loss to stutter. Individual fault controls set a floor that DAMAGE extends beyond.\n* **SMOOTH**: Softens the hard edges of digital faults.\n* **EVOLVE**: Progressive degradation over time: once, cyclically, or following the host transport.\n\nThe analogue domain includes wow, flutter, saturation, bandwidth narrowing, hiss, dropouts and VHS tracking errors. The digital domain includes aliasing, bit reduction, circuit bending and datamosh, in which the signal smears across stale frames.\n\n### Texture sections\n* **FOG**: Spectral blur, TONAL (consonant), INHARMONIC (dissonant) or EVOLVING.\n* **GHOSTS**: Echoes, grains and print-through, a faint pre-echo of each sound. FREEZE holds it.\n* **BLOOM**: A long ambient reverb, with SHIMMER adding an upper octave.\n* **THE LOOM**: An 8-second loop pad with up to four voices at musical intervals, holdable without clicks."
   },
   {
-   "id": "risset",
-   "name": "RISSET",
+   "id": "experiment-34",
+   "name": "EXPERIMENT 34",
    "subtitle": "The Endless Glide Engine",
    "kind": "Effect",
    "tags": [
@@ -813,17 +813,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/risset-1.webp",
-     "thumb": "images/risset-1-thumb.webp"
+     "src": "images/experiment-34-1.webp",
+     "thumb": "images/experiment-34-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "RISSET is a pitch shifter capable of continuous ascent or descent without ever arriving, after the Shepard–Risset glissando. It is the sequel to ORNSTEIN.\n\nSeventeen copies of the input play simultaneously, an octave apart, gliding in parallel through a fixed spectral loudness window. As one copy rises out of the top and fades, another enters at the bottom at the same rate, so pitch appears to move indefinitely while the overall sound remains stable.\n\n### Controls\n* **RATE**: Glide speed and direction.\n* **SPREAD**: Width of the loudness window, which constitutes the illusion itself. At minimum, sixteen copies are disabled and the plugin becomes a single high-quality pitch shifter.\n* **MOVE**: A conventional fixed transposition applied to all copies.\n* **ANCHOR**: Reference for the loudness window: a fixed frequency range or the source's own pitch.\n* **FORMANT**: Preserves the spectral envelope during transposition, so voices and instruments retain their character.\n* **TRANSIENTS and FOCUS**: Transient handling and phase coherence.\n* **REGEN**: Output feedback, specified as a decay time.\n* **Quality**: Three analysis sizes, with latency equal to the size (2048, 4096 or 8192 samples).\n\n### THE TRIGGER (v1.1)\nGestural control of the glide. ENGAGE offers four modes:\n\n* **Free**: The glide runs continuously.\n* **Throttle**: Motion only while pushed; holds position on release.\n* **Bend**: Motion while pushed; returns home over the RETURN time.\n* **Gate**: Dry until pushed; each push restarts the glide from the same point."
+   "body": "EXPERIMENT 34 is a pitch shifter capable of continuous ascent or descent without ever arriving, after the Shepard–Risset glissando. It is the sequel to EXPERIMENT 35.\n\nSeventeen copies of the input play simultaneously, an octave apart, gliding in parallel through a fixed spectral loudness window. As one copy rises out of the top and fades, another enters at the bottom at the same rate, so pitch appears to move indefinitely while the overall sound remains stable.\n\n### Controls\n* **RATE**: Glide speed and direction.\n* **SPREAD**: Width of the loudness window, which constitutes the illusion itself. At minimum, sixteen copies are disabled and the plugin becomes a single high-quality pitch shifter.\n* **MOVE**: A conventional fixed transposition applied to all copies.\n* **ANCHOR**: Reference for the loudness window: a fixed frequency range or the source's own pitch.\n* **FORMANT**: Preserves the spectral envelope during transposition, so voices and instruments retain their character.\n* **TRANSIENTS and FOCUS**: Transient handling and phase coherence.\n* **REGEN**: Output feedback, specified as a decay time.\n* **Quality**: Three analysis sizes, with latency equal to the size (2048, 4096 or 8192 samples).\n\n### THE TRIGGER (v1.1)\nGestural control of the glide. ENGAGE offers four modes:\n\n* **Free**: The glide runs continuously.\n* **Throttle**: Motion only while pushed; holds position on release.\n* **Bend**: Motion while pushed; returns home over the RETURN time.\n* **Gate**: Dry until pushed; each push restarts the glide from the same point."
   },
   {
-   "id": "ornstein",
-   "name": "ORNSTEIN",
+   "id": "experiment-35",
+   "name": "EXPERIMENT 35",
    "subtitle": "Micro-Pitch Drift",
    "kind": "Effect",
    "tags": [
@@ -836,17 +836,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/ornstein-1.webp",
-     "thumb": "images/ornstein-1-thumb.webp"
+     "src": "images/experiment-35-1.webp",
+     "thumb": "images/experiment-35-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "ORNSTEIN is a mastering-grade processor for subtle pitch movement: wow, flutter, slow organic drift, and a pitch bend that can be held. It was designed with quality as the priority, with latency permitted.\n\nPitch is modulated by moving the read position of a delay line, as varying tape speed does. In normal use, nothing is segmented or granulated.\n\n### Sections\n* **DRIFT**: Slow, organic pitch wander based on a mean-reverting (Ornstein–Uhlenbeck) process, so the set depth is a true bound.\n* **FLUTTER**: Faster periodic modulation with natural irregularity. Depth in cents is exact at any rate.\n* **Pitch bend**: A non-returning wheel that holds its position; double-click to recentre.\n* **MIX**: At 100 % the dry signal is fully removed.\n\nControls are scaled for fine work: 80 % of their travel covers the range from zero to a quarter tone.\n\n### The held bend\nA sustained pitch offset requires the read position to jump back periodically. ORNSTEIN uses a single clean read head almost all the time and, when a jump is needed, locates a point of waveform similarity so the splice is inaudible. A typical bend gesture (bend, hold for about a second, release) never requires a jump at the highest quality setting."
+   "body": "EXPERIMENT 35 is a mastering-grade processor for subtle pitch movement: wow, flutter, slow organic drift, and a pitch bend that can be held. It was designed with quality as the priority, with latency permitted.\n\nPitch is modulated by moving the read position of a delay line, as varying tape speed does. In normal use, nothing is segmented or granulated.\n\n### Sections\n* **DRIFT**: Slow, organic pitch wander based on a mean-reverting (Ornstein–Uhlenbeck) process, so the set depth is a true bound.\n* **FLUTTER**: Faster periodic modulation with natural irregularity. Depth in cents is exact at any rate.\n* **Pitch bend**: A non-returning wheel that holds its position; double-click to recentre.\n* **MIX**: At 100 % the dry signal is fully removed.\n\nControls are scaled for fine work: 80 % of their travel covers the range from zero to a quarter tone.\n\n### The held bend\nA sustained pitch offset requires the read position to jump back periodically. EXPERIMENT 35 uses a single clean read head almost all the time and, when a jump is needed, locates a point of waveform similarity so the splice is inaudible. A typical bend gesture (bend, hold for about a second, release) never requires a jump at the highest quality setting."
   },
   {
-   "id": "piranesi",
-   "name": "PIRANESI",
+   "id": "experiment-36",
+   "name": "EXPERIMENT 36",
    "subtitle": "The Architectural Resonator",
    "kind": "Effect",
    "tags": [
@@ -860,17 +860,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/piranesi-1.webp",
-     "thumb": "images/piranesi-1-thumb.webp"
+     "src": "images/experiment-36-1.webp",
+     "thumb": "images/experiment-36-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "PIRANESI is a reverb whose geometry is constructed from the bytes of a file. It is named after Giovanni Battista Piranesi's etchings of vast, impossible interiors.\n\n### Architecture\n* **Sixteen chambers**: A 16-line feedback delay network, as in many algorithmic reverbs.\n* **Geometry from data**: A 256-byte window of the file forms a 16 × 16 matrix. The diagonal sets the size of each chamber; the remaining entries set the coupling between every pair.\n* **Guaranteed stability**: An arbitrary matrix would cause the network to explode or collapse. The matrix is transformed so that it cannot, while preserving the file's pattern.\n\nBy default PIRANESI reads its own binary, so the initial room is built from itself. Ten files are included, and any file can be loaded.\n\n### Controls\n* **SEEK, STRIDE, READ**: Window position, step size, and byte interpretation (six modes).\n* **PLUMB**: At 0, the nearest lossless, unitary version of the file's pattern. Higher values reveal the file's true, skewed geometry; combined with FREEZE, the room converges on a single dominant mode.\n* **VOIDS**: Removes the weakest couplings, reducing sixteen chambers to a few corridors.\n* **SNAP and LATTICE**: Quantise chamber sizes to a set of musical ratios, so the room resolves into a chord rather than a texture.\n* **DRIFT and GLIDE**: Move the window through the file during playback; the walls move and the room bends in pitch.\n* **SIZE, DECAY, DAMP, DIFFUSE, PREDELAY**: Standard reverb parameters.\n* **FREEZE**: Infinite hold."
+   "body": "EXPERIMENT 36 is a reverb whose geometry is constructed from the bytes of a file. Its spaces recall Giovanni Battista Piranesi's etchings of vast, impossible interiors.\n\n### Architecture\n* **Sixteen chambers**: A 16-line feedback delay network, as in many algorithmic reverbs.\n* **Geometry from data**: A 256-byte window of the file forms a 16 × 16 matrix. The diagonal sets the size of each chamber; the remaining entries set the coupling between every pair.\n* **Guaranteed stability**: An arbitrary matrix would cause the network to explode or collapse. The matrix is transformed so that it cannot, while preserving the file's pattern.\n\nBy default EXPERIMENT 36 reads its own binary, so the initial room is built from itself. Ten files are included, and any file can be loaded.\n\n### Controls\n* **SEEK, STRIDE, READ**: Window position, step size, and byte interpretation (six modes).\n* **PLUMB**: At 0, the nearest lossless, unitary version of the file's pattern. Higher values reveal the file's true, skewed geometry; combined with FREEZE, the room converges on a single dominant mode.\n* **VOIDS**: Removes the weakest couplings, reducing sixteen chambers to a few corridors.\n* **SNAP and LATTICE**: Quantise chamber sizes to a set of musical ratios, so the room resolves into a chord rather than a texture.\n* **DRIFT and GLIDE**: Move the window through the file during playback; the walls move and the room bends in pitch.\n* **SIZE, DECAY, DAMP, DIFFUSE, PREDELAY**: Standard reverb parameters.\n* **FREEZE**: Infinite hold."
   },
   {
-   "id": "entropia",
-   "name": "ENTROPIA",
+   "id": "experiment-37",
+   "name": "EXPERIMENT 37",
    "subtitle": "The Data-Density Engine",
    "kind": "Effect",
    "tags": [
@@ -883,17 +883,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/entropia-1.webp",
-     "thumb": "images/entropia-1-thumb.webp"
+     "src": "images/experiment-37-1.webp",
+     "thumb": "images/experiment-37-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "ENTROPIA reads through any file with a playhead and converts statistical measurements of the data into modulation signals that drive its internal effects.\n\n### Measurements\nThe file is read in chunks, and six measures are computed per chunk, each becoming a modulation lane:\n\n* **ENTROPY**: Shannon entropy of the bytes.\n* **ORDER**: Predictability of the byte sequence.\n* **NOVELTY**: Dissimilarity from preceding chunks. It spikes at boundaries between data types.\n* **PERIOD**: Periodicity. Tabular data produces a steady pulse.\n* **ROUGH and LEVEL**: Byte-to-byte variation, and mean distance from the midpoint.\n\nSix patch cords route these lanes to 16 internal destinations, each with independent depth.\n\n### Processing\n* **THE SIEVE**: A filter bank shaped by the chunk's byte histogram, so the shape of the data becomes a spectrum. English text yields vowel-like formants; sparse files yield a single bass resonance.\n* **VOICE**: Four tuned resonators whose pitch is derived from the data's repeat length, quantised to a scale, so successive chunks form an arpeggio.\n* **RAW**: The bytes themselves as audio, fed before THE SIEVE.\n* **Further stages**: Resonant filter, bit reduction, wavefolder, data-clocked gate and delay.\n\n### Reader\n* **Chunk size and rate**: Free or host-synced.\n* **Motion**: Forward, reverse, ping-pong, random, or seeking the densest or sparsest regions.\n* **DISTILL**: Skips low-information regions and retains active ones; applied automatically to sparse files.\n* **MUTATE**: Alters bytes as they are read, changing both the measurements and the sound.\n* **INFECT**: Writes incoming audio back into the file in memory, so the data being read gradually becomes the signal itself. Nothing is written to disk; REVERT restores the source."
+   "body": "EXPERIMENT 37 reads through any file with a playhead and converts statistical measurements of the data into modulation signals that drive its internal effects.\n\n### Measurements\nThe file is read in chunks, and six measures are computed per chunk, each becoming a modulation lane:\n\n* **ENTROPY**: Shannon entropy of the bytes.\n* **ORDER**: Predictability of the byte sequence.\n* **NOVELTY**: Dissimilarity from preceding chunks. It spikes at boundaries between data types.\n* **PERIOD**: Periodicity. Tabular data produces a steady pulse.\n* **ROUGH and LEVEL**: Byte-to-byte variation, and mean distance from the midpoint.\n\nSix patch cords route these lanes to 16 internal destinations, each with independent depth.\n\n### Processing\n* **THE SIEVE**: A filter bank shaped by the chunk's byte histogram, so the shape of the data becomes a spectrum. English text yields vowel-like formants; sparse files yield a single bass resonance.\n* **VOICE**: Four tuned resonators whose pitch is derived from the data's repeat length, quantised to a scale, so successive chunks form an arpeggio.\n* **RAW**: The bytes themselves as audio, fed before THE SIEVE.\n* **Further stages**: Resonant filter, bit reduction, wavefolder, data-clocked gate and delay.\n\n### Reader\n* **Chunk size and rate**: Free or host-synced.\n* **Motion**: Forward, reverse, ping-pong, random, or seeking the densest or sparsest regions.\n* **DISTILL**: Skips low-information regions and retains active ones; applied automatically to sparse files.\n* **MUTATE**: Alters bytes as they are read, changing both the measurements and the sound.\n* **INFECT**: Writes incoming audio back into the file in memory, so the data being read gradually becomes the signal itself. Nothing is written to disk; REVERT restores the source."
   },
   {
-   "id": "asphyx",
-   "name": "ASPHYX",
+   "id": "experiment-38",
+   "name": "EXPERIMENT 38",
    "subtitle": "The Slew-Rate Asphyxiator",
    "kind": "Effect",
    "tags": [
@@ -906,17 +906,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/asphyx-1.webp",
-     "thumb": "images/asphyx-1-thumb.webp"
+     "src": "images/experiment-38-1.webp",
+     "thumb": "images/experiment-38-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "ASPHYX is a dynamics processor that acts on the rate of change of the signal rather than its amplitude. A conventional compressor attenuates anything above a level threshold; ASPHYX limits anything changing too quickly, regardless of level.\n\nIn practice it catches fast, sharp movement such as harsh high-frequency content and hard edges, while leaving slow movement such as bass untouched. When nothing exceeds the slew limit, the output is identical to the input.\n\nThe threshold is expressed as a frequency: the frequency at which a full-scale sine begins to be limited, for example 2.2 kHz.\n\n### Controls\n* **CHOKE**: The core slew compressor, with threshold, ratio and knee. SKEW sets separate limits for rising and falling slopes, adding transformer-like weight. RANGE caps the maximum reduction.\n* **INERTIA**: MASS rounds the corners left by pure slew limiting, avoiding buzz. With high MASS and low damping it overshoots and rings, producing a level-dependent resonance.\n* **SLIP**: Allows the signal to sag off-centre and recover, like an overdriven transformer.\n* **SMOOTH and GRAIN**: SMOOTH moves from an instantaneous clamp, which generates harmonics, to a smoothed response closer to filtering. GRAIN quantises the permitted slope, a bit-crusher acting on motion.\n* **FOCUS**: Targets the high end (de-harshing) or the low end (pumping, thickening).\n* **ADAPT**: Threshold follows programme level.\n* **LISTEN = Removed**: Monitors only the material removed.\n\nMid/side operation, channel linking and 1×, 2× or 4× oversampling are included."
+   "body": "EXPERIMENT 38 is a dynamics processor that acts on the rate of change of the signal rather than its amplitude. A conventional compressor attenuates anything above a level threshold; EXPERIMENT 38 limits anything changing too quickly, regardless of level.\n\nIn practice it catches fast, sharp movement such as harsh high-frequency content and hard edges, while leaving slow movement such as bass untouched. When nothing exceeds the slew limit, the output is identical to the input.\n\nThe threshold is expressed as a frequency: the frequency at which a full-scale sine begins to be limited, for example 2.2 kHz.\n\n### Controls\n* **CHOKE**: The core slew compressor, with threshold, ratio and knee. SKEW sets separate limits for rising and falling slopes, adding transformer-like weight. RANGE caps the maximum reduction.\n* **INERTIA**: MASS rounds the corners left by pure slew limiting, avoiding buzz. With high MASS and low damping it overshoots and rings, producing a level-dependent resonance.\n* **SLIP**: Allows the signal to sag off-centre and recover, like an overdriven transformer.\n* **SMOOTH and GRAIN**: SMOOTH moves from an instantaneous clamp, which generates harmonics, to a smoothed response closer to filtering. GRAIN quantises the permitted slope, a bit-crusher acting on motion.\n* **FOCUS**: Targets the high end (de-harshing) or the low end (pumping, thickening).\n* **ADAPT**: Threshold follows programme level.\n* **LISTEN = Removed**: Monitors only the material removed.\n\nMid/side operation, channel linking and 1×, 2× or 4× oversampling are included."
   },
   {
-   "id": "codex",
-   "name": "CODEX",
+   "id": "experiment-39",
+   "name": "EXPERIMENT 39",
    "subtitle": "The Data Convolution Engine",
    "kind": "Effect",
    "tags": [
@@ -930,17 +930,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/codex-1.webp",
-     "thumb": "images/codex-1-thumb.webp"
+     "src": "images/experiment-39-1.webp",
+     "thumb": "images/experiment-39-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "CODEX convolves audio with the raw bytes of any file. Convolution is the technique behind sampled reverb, in which an impulse response of a room shapes the signal. Here the impulse response is a file's data: a program, a script, an image, anything.\n\nBy default CODEX loads its own binary and processes the signal through itself.\n\nRead naively, most modern files sound alike, because compressed and compiled data approaches randomness. The method of reading is therefore the instrument. Nine read modes each expose a different genuine structure in the data: one renders source code as pitched resonance, one turns text into discrete echoes, and one reads an image's scan lines as a comb tuned to its width.\n\n### Controls\n* **SEEK, SPAN, STRIDE**: Read position, length and step.\n* **SMEAR**: From the raw, abrasive impulse to a diffuse reverb tail of the same colour.\n* **SIEVE**: Retains only the largest values, producing discrete echoes.\n* **ETCH and CARVE**: Exaggerate the file's character. ETCH keeps only its dominant landmarks; CARVE deepens its resonant peaks.\n* **LOCK and NOTE**: Tune the response to a pitch, turning the file into a tuned resonator.\n* **SCAN**: Moves the read position during playback.\n* **SHATTER**: Up to eight read heads at different positions, heard as a sequence of differently coloured echoes.\n\n### Beyond convolution\n* **IMPRINT and STREAM**: The byte stream gates the wet signal. At low rates the file's structure chops the tail; at audio rate it behaves like ring modulation.\n* **MANGLE**: The file's bytes operate directly on the audio's bits (XOR, AND, OR, ADD, rotate), overwriting rather than colouring the signal."
+   "body": "EXPERIMENT 39 convolves audio with the raw bytes of any file. Convolution is the technique behind sampled reverb, in which an impulse response of a room shapes the signal. Here the impulse response is a file's data: a program, a script, an image, anything.\n\nBy default EXPERIMENT 39 loads its own binary and processes the signal through itself.\n\nRead naively, most modern files sound alike, because compressed and compiled data approaches randomness. The method of reading is therefore the instrument. Nine read modes each expose a different genuine structure in the data: one renders source code as pitched resonance, one turns text into discrete echoes, and one reads an image's scan lines as a comb tuned to its width.\n\n### Controls\n* **SEEK, SPAN, STRIDE**: Read position, length and step.\n* **SMEAR**: From the raw, abrasive impulse to a diffuse reverb tail of the same colour.\n* **SIEVE**: Retains only the largest values, producing discrete echoes.\n* **ETCH and CARVE**: Exaggerate the file's character. ETCH keeps only its dominant landmarks; CARVE deepens its resonant peaks.\n* **LOCK and NOTE**: Tune the response to a pitch, turning the file into a tuned resonator.\n* **SCAN**: Moves the read position during playback.\n* **SHATTER**: Up to eight read heads at different positions, heard as a sequence of differently coloured echoes.\n\n### Beyond convolution\n* **IMPRINT and STREAM**: The byte stream gates the wet signal. At low rates the file's structure chops the tail; at audio rate it behaves like ring modulation.\n* **MANGLE**: The file's bytes operate directly on the audio's bits (XOR, AND, OR, ADD, rotate), overwriting rather than colouring the signal."
   },
   {
-   "id": "mixtur",
-   "name": "MIXTUR",
+   "id": "experiment-40",
+   "name": "EXPERIMENT 40",
    "subtitle": "The Undertone Engine",
    "kind": "Effect",
    "tags": [
@@ -953,17 +953,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/mixtur-1.webp",
-     "thumb": "images/mixtur-1-thumb.webp"
+     "src": "images/experiment-40-1.webp",
+     "thumb": "images/experiment-40-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "MIXTUR generates undertones beneath the played note. The undertone series mirrors the overtone series: where overtones are integer multiples of the fundamental, undertones are integer divisions of it.\n\nIt is modelled on the Mixtur-Trautonium, Oskar Sala's 1952 instrument, which passed its oscillator through four frequency dividers, each with its own level control.\n\nA pitch tracker identifies the note, and four voices each produce it divided by an integer from 1 to 24. Division by 2 gives the octave below, by 3 a further fifth below that, and higher divisors increasingly remote and dark intervals.\n\n### Controls\n* **Four voices**: Divisor (1 to 24) and level per voice, with the resulting note and interval displayed.\n* **TEMPER**: Interpolates between just undertone tuning and equal temperament. The 7th undertone, naturally 31 cents flat, can be retained or corrected.\n* **Waveform**: Per-divider morph from sine through triangle and sawtooth to pulse.\n* **Sympathy blend**: An alternative undertone generator that gates the actual input, so the undertone carries the source's own character. TENSION adds resonance.\n* **DRIFT and GROWL**: Slow pitch wander and a rough, guttural edge.\n* **THROAT**: A vocoder that imposes the input's spectral envelope on the undertones, so they articulate with the performance.\n* **HOLD**: Freezes pitch and level as a drone that still responds to articulation through THROAT.\n* **FOLD**: Raises inaudibly low undertones by octaves.\n* **DIRECT and UNDERTONE**: Dry and undertone levels. With DIRECT at 0 only the undertones are heard."
+   "body": "EXPERIMENT 40 generates undertones beneath the played note. The undertone series mirrors the overtone series: where overtones are integer multiples of the fundamental, undertones are integer divisions of it.\n\nIt is modelled on the Mixtur-Trautonium, Oskar Sala's 1952 instrument, which passed its oscillator through four frequency dividers, each with its own level control.\n\nA pitch tracker identifies the note, and four voices each produce it divided by an integer from 1 to 24. Division by 2 gives the octave below, by 3 a further fifth below that, and higher divisors increasingly remote and dark intervals.\n\n### Controls\n* **Four voices**: Divisor (1 to 24) and level per voice, with the resulting note and interval displayed.\n* **TEMPER**: Interpolates between just undertone tuning and equal temperament. The 7th undertone, naturally 31 cents flat, can be retained or corrected.\n* **Waveform**: Per-divider morph from sine through triangle and sawtooth to pulse.\n* **Sympathy blend**: An alternative undertone generator that gates the actual input, so the undertone carries the source's own character. TENSION adds resonance.\n* **DRIFT and GROWL**: Slow pitch wander and a rough, guttural edge.\n* **THROAT**: A vocoder that imposes the input's spectral envelope on the undertones, so they articulate with the performance.\n* **HOLD**: Freezes pitch and level as a drone that still responds to articulation through THROAT.\n* **FOLD**: Raises inaudibly low undertones by octaves.\n* **DIRECT and UNDERTONE**: Dry and undertone levels. With DIRECT at 0 only the undertones are heard."
   },
   {
-   "id": "cagework",
-   "name": "CAGEWORK",
+   "id": "experiment-41",
+   "name": "EXPERIMENT 41",
    "subtitle": "The Mechanical Obstruction Engine",
    "kind": "Effect",
    "tags": [
@@ -977,17 +977,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/cagework-1.webp",
-     "thumb": "images/cagework-1-thumb.webp"
+     "src": "images/experiment-41-1.webp",
+     "thumb": "images/experiment-41-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "CAGEWORK is inspired by John Cage's practice of preparing strings with objects such as screws, felt, coins and erasers, which transform the sound physically.\n\nThe signal is divided into five frequency bands, presented as five string courses in a frame. Objects are dragged from a tray onto a course. Ten materials are available: OPEN, FELT, RUBBER, WAX, SCREW, BOLT, COIN, PAPER, TAPE and SPRING.\n\n### Object behaviour\nEach object acts on its band in four ways, weighted by its material:\n\n* **MASS**: Damps the string. The attack passes while the sustain is choked, high frequencies first, with a small added knock.\n* **RATTLE**: A loose object bouncing on the string. High dynamics set it in motion; low dynamics leave it at rest. It never repeats identically.\n* **BUZZ**: Periodic contact with the string, producing a sitar-like jangle. The short segment beyond the object rings at its own pitch.\n* **FRICTION**: Scraping and rasping as the string slides against the object.\n\n### Controls\n* **PLACEMENT**: Position along the string. Toward the left: low, dull and heavily damped; toward the right: high, bright and resonant. Each object displays its ringing pitch.\n* **TUNE and SNAP**: Transpose the jangle by up to two octaves either way, with optional semitone quantisation.\n* **TONAL**: From percussive and dry to resonant and pitched.\n* **NOISE and CLANG**: Reduce pitch definition. NOISE turns the ring into a noise band; CLANG pushes metallic tones toward a gong.\n* **BLEED**: Level of the unprepared string. At 0 only the objects are heard.\n* **LID**: The sound of a closed lid."
+   "body": "EXPERIMENT 41 is inspired by John Cage's practice of preparing strings with objects such as screws, felt, coins and erasers, which transform the sound physically.\n\nThe signal is divided into five frequency bands, presented as five string courses in a frame. Objects are dragged from a tray onto a course. Ten materials are available: OPEN, FELT, RUBBER, WAX, SCREW, BOLT, COIN, PAPER, TAPE and SPRING.\n\n### Object behaviour\nEach object acts on its band in four ways, weighted by its material:\n\n* **MASS**: Damps the string. The attack passes while the sustain is choked, high frequencies first, with a small added knock.\n* **RATTLE**: A loose object bouncing on the string. High dynamics set it in motion; low dynamics leave it at rest. It never repeats identically.\n* **BUZZ**: Periodic contact with the string, producing a sitar-like jangle. The short segment beyond the object rings at its own pitch.\n* **FRICTION**: Scraping and rasping as the string slides against the object.\n\n### Controls\n* **PLACEMENT**: Position along the string. Toward the left: low, dull and heavily damped; toward the right: high, bright and resonant. Each object displays its ringing pitch.\n* **TUNE and SNAP**: Transpose the jangle by up to two octaves either way, with optional semitone quantisation.\n* **TONAL**: From percussive and dry to resonant and pitched.\n* **NOISE and CLANG**: Reduce pitch definition. NOISE turns the ring into a noise band; CLANG pushes metallic tones toward a gong.\n* **BLEED**: Level of the unprepared string. At 0 only the objects are heard.\n* **LID**: The sound of a closed lid."
   },
   {
-   "id": "poulsen",
-   "name": "POULSEN",
+   "id": "experiment-42",
+   "name": "EXPERIMENT 42",
    "subtitle": "The Steel Thread",
    "kind": "Effect",
    "tags": [
@@ -1000,17 +1000,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/poulsen-1.webp",
-     "thumb": "images/poulsen-1-thumb.webp"
+     "src": "images/experiment-42-1.webp",
+     "thumb": "images/experiment-42-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "POULSEN is a looper and delay modelled on the telegraphone, Valdemar Poulsen's 1898 wire recorder, which recorded sound magnetically onto steel wire.\n\nIt is built around a real property of the medium: wire is round, so it twists as it passes the playback head. When the wire has rotated since recording, the head reads the magnetisation at the wrong angle. POULSEN models this exactly:\n\n* **No twist**: Full playback.\n* **Quarter turn**: A hollow, phase-cancelled ghost at the same level.\n* **Half turn**: Exact polarity inversion.\n\nEach layer of the loop retains the angle at which it was recorded, so as the twist evolves, layers fade into ghosts and return. This breathing between layers defines the character of the plugin.\n\n### Controls\n* **LENGTH and RETENTION**: Loop length (free or synced) and the proportion of material retained per pass. At full retention it is an infinite looper.\n* **TWIST, ROLL, WAVE**: Twist amount, rate of change, and number of standing twists along the wire.\n* **ANCHOR and AZIMUTH**: A fixed head misalignment and its associated high-frequency loss.\n* **WOW, GRAIN, HISS, MAGNETISE**: Speed instability, recording irregularity, noise and saturation.\n* **HOLD**: Stops recording and retains the loop.\n\n### Stress\n* **TENSION**: Stress accumulates with tension, high retention and high input level until the wire snaps.\n* **Snap**: Produces a splice where playback jumps, occasionally a reversed fragment, and a scrape of steel.\n* **KNOTS**: Up to 16 permanent knots at fixed positions, producing a dropout and rattle at the same point on every pass. They heal over the MEMORY time.\n* **SNAP and MEND**: Manual break and repair. Clicking the wire in the display plants a knot."
+   "body": "EXPERIMENT 42 is a looper and delay modelled on the telegraphone, Valdemar Poulsen's 1898 wire recorder, which recorded sound magnetically onto steel wire.\n\nIt is built around a real property of the medium: wire is round, so it twists as it passes the playback head. When the wire has rotated since recording, the head reads the magnetisation at the wrong angle. EXPERIMENT 42 models this exactly:\n\n* **No twist**: Full playback.\n* **Quarter turn**: A hollow, phase-cancelled ghost at the same level.\n* **Half turn**: Exact polarity inversion.\n\nEach layer of the loop retains the angle at which it was recorded, so as the twist evolves, layers fade into ghosts and return. This breathing between layers defines the character of the plugin.\n\n### Controls\n* **LENGTH and RETENTION**: Loop length (free or synced) and the proportion of material retained per pass. At full retention it is an infinite looper.\n* **TWIST, ROLL, WAVE**: Twist amount, rate of change, and number of standing twists along the wire.\n* **ANCHOR and AZIMUTH**: A fixed head misalignment and its associated high-frequency loss.\n* **WOW, GRAIN, HISS, MAGNETISE**: Speed instability, recording irregularity, noise and saturation.\n* **HOLD**: Stops recording and retains the loop.\n\n### Stress\n* **TENSION**: Stress accumulates with tension, high retention and high input level until the wire snaps.\n* **Snap**: Produces a splice where playback jumps, occasionally a reversed fragment, and a scrape of steel.\n* **KNOTS**: Up to 16 permanent knots at fixed positions, producing a dropout and rattle at the same point on every pass. They heal over the MEMORY time.\n* **SNAP and MEND**: Manual break and repair. Clicking the wire in the display plants a knot."
   },
   {
-   "id": "monodromy",
-   "name": "MONODROMY",
+   "id": "experiment-43",
+   "name": "EXPERIMENT 43",
    "subtitle": "The Spectral Circle Engine",
    "kind": "Effect",
    "tags": [
@@ -1024,17 +1024,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/monodromy-1.webp",
-     "thumb": "images/monodromy-1-thumb.webp"
+     "src": "images/experiment-43-1.webp",
+     "thumb": "images/experiment-43-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "MONODROMY distributes a stereo signal around a ring of six loudspeakers, frequency by frequency.\n\n### Principle\n* **Per-bin azimuth**: Every frequency bin is assigned its own angle on the circle, derived from its stereo position, its pitch class (so octaves align), a slow orbit and a random walk.\n* **Transient scattering**: Each onset is thrown to a new position.\n* **Slow glide**: The field evolves gradually, so the ring drifts rather than spins.\n\n### Extended modes\n* **CYCLOTRON**: Energy circulates from speaker to speaker.\n* **LIGHTHOUSE**: A rotating directional beam sweeps the ring.\n* **PHASON**: A small per-speaker frequency shift, creating slow spatial beating."
+   "body": "EXPERIMENT 43 distributes a stereo signal around a ring of six loudspeakers, frequency by frequency.\n\n### Principle\n* **Per-bin azimuth**: Every frequency bin is assigned its own angle on the circle, derived from its stereo position, its pitch class (so octaves align), a slow orbit and a random walk.\n* **Transient scattering**: Each onset is thrown to a new position.\n* **Slow glide**: The field evolves gradually, so the ring drifts rather than spins.\n\n### Extended modes\n* **CYCLOTRON**: Energy circulates from speaker to speaker.\n* **LIGHTHOUSE**: A rotating directional beam sweeps the ring.\n* **PHASON**: A small per-speaker frequency shift, creating slow spatial beating."
   },
   {
-   "id": "lagrange",
-   "name": "LAGRANGE",
+   "id": "experiment-44",
+   "name": "EXPERIMENT 44",
    "subtitle": "The Celestial Granular Engine",
    "kind": "Effect",
    "tags": [
@@ -1048,17 +1048,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/lagrange-1.webp",
-     "thumb": "images/lagrange-1-thumb.webp"
+     "src": "images/experiment-44-1.webp",
+     "thumb": "images/experiment-44-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "LAGRANGE takes the opposite approach to MONODROMY for the same six-speaker ring. The signal is divided into grains, and each grain is a body in a gravitational simulation.\n\n### The system\n* **A sun**: A central mass, which can also repel.\n* **Two planets**: Draggable masses that perturb the orbits.\n* **Swirl, drag, bounce and flocking**: The dynamics and interaction of the bodies.\n* **Launch modes**: ORBIT, FOUNTAIN, COMET, STREAM and SWARM.\n* **SUPERNOVA**: Transients release a burst of grains.\n\n### Per grain\n* **Doppler**: Physically derived pitch shift from each grain's velocity.\n* **Distance**: Attenuation and air absorption as grains recede.\n* **FLOAT**: Long chained grains for smooth, sustained motion.\n\nUser presets and MORPH allow continuous transitions between complete systems."
+   "body": "EXPERIMENT 44 takes the opposite approach to EXPERIMENT 43 for the same six-speaker ring. The signal is divided into grains, and each grain is a body in a gravitational simulation.\n\n### The system\n* **A sun**: A central mass, which can also repel.\n* **Two planets**: Draggable masses that perturb the orbits.\n* **Swirl, drag, bounce and flocking**: The dynamics and interaction of the bodies.\n* **Launch modes**: ORBIT, FOUNTAIN, COMET, STREAM and SWARM.\n* **SUPERNOVA**: Transients release a burst of grains.\n\n### Per grain\n* **Doppler**: Physically derived pitch shift from each grain's velocity.\n* **Distance**: Attenuation and air absorption as grains recede.\n* **FLOAT**: Long chained grains for smooth, sustained motion.\n\nUser presets and MORPH allow continuous transitions between complete systems."
   },
   {
-   "id": "petzval",
-   "name": "PETZVAL",
+   "id": "experiment-45",
+   "name": "EXPERIMENT 45",
    "subtitle": "Acoustic Depth of Field",
    "kind": "Effect",
    "tags": [
@@ -1072,17 +1072,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/petzval-1.webp",
-     "thumb": "images/petzval-1-thumb.webp"
+     "src": "images/experiment-45-1.webp",
+     "thumb": "images/experiment-45-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "PETZVAL applies the optics of a camera lens to the spectrum.\n\n### Principle\n* **FOCUS**: The frequency that remains sharp.\n* **APERTURE**: How rapidly sharpness falls off away from the focal plane.\n* **SUBJECT**: Whether tonal content or transients are rendered out of focus.\n\n### Rendering the bokeh\nOut-of-focus material is blurred in frequency, smeared in time and swirled across the stereo field, with optical aberrations as further controls:\n\n* **ASTIGMATISM, CHROMATIC, GRAIN, VIGNETTE**: The characteristic flaws of real lenses, translated to sound."
+   "body": "EXPERIMENT 45 applies the optics of a camera lens to the spectrum.\n\n### Principle\n* **FOCUS**: The frequency that remains sharp.\n* **APERTURE**: How rapidly sharpness falls off away from the focal plane.\n* **SUBJECT**: Whether tonal content or transients are rendered out of focus.\n\n### Rendering the bokeh\nOut-of-focus material is blurred in frequency, smeared in time and swirled across the stereo field, with optical aberrations as further controls:\n\n* **ASTIGMATISM, CHROMATIC, GRAIN, VIGNETTE**: The characteristic flaws of real lenses, translated to sound."
   },
   {
-   "id": "tartini",
-   "name": "TARTINI",
+   "id": "experiment-46",
+   "name": "EXPERIMENT 46",
    "subtitle": "The Resonant Difference Engine",
    "kind": "Effect",
    "tags": [
@@ -1096,17 +1096,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/tartini-1.webp",
-     "thumb": "images/tartini-1-thumb.webp"
+     "src": "images/experiment-46-1.webp",
+     "thumb": "images/experiment-46-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "TARTINI adds a tuned, resonant harmonic bed to any source. It is named after Giuseppe Tartini, who described the combination tones heard between two sounding notes.\n\n### Principle\n* **The ghost**: The signal is squared, a nonlinearity that generates the difference tones between all of its partials.\n* **The strings**: That ghost excites up to 12 tuned, string-like resonators, set by KEY and CHORD.\n* **No pitch tracking**: Nothing is detected, so nothing wavers. The harmony arises from the physics of the signal itself.\n\n### Performance\n* **MIDI input**: Play the chords to which the resonators are tuned.\n* **ADSR**: Shapes how the bed swells and releases."
+   "body": "EXPERIMENT 46 adds a tuned, resonant harmonic bed to any source. It builds on the combination tones described by Giuseppe Tartini: the tones heard between two sounding notes.\n\n### Principle\n* **The ghost**: The signal is squared, a nonlinearity that generates the difference tones between all of its partials.\n* **The strings**: That ghost excites up to 12 tuned, string-like resonators, set by KEY and CHORD.\n* **No pitch tracking**: Nothing is detected, so nothing wavers. The harmony arises from the physics of the signal itself.\n\n### Performance\n* **MIDI input**: Play the chords to which the resonators are tuned.\n* **ADSR**: Shapes how the bed swells and releases."
   },
   {
-   "id": "klein",
-   "name": "KLEIN",
+   "id": "experiment-47",
+   "name": "EXPERIMENT 47",
    "subtitle": "The Non-Euclidean Feedback Engine",
    "kind": "Effect",
    "tags": [
@@ -1120,17 +1120,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/klein-1.webp",
-     "thumb": "images/klein-1-thumb.webp"
+     "src": "images/experiment-47-1.webp",
+     "thumb": "images/experiment-47-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "KLEIN is a delay whose feedback loop passes through non-orientable geometry: a Möbius strip or a Klein bottle.\n\n### Topology\n* **TWIST**: Rotates phase on each pass. At maximum, every second echo cancels the one before it.\n* **INVERT**: Mirrors the spectrum around a PIVOT frequency on each pass, so high frequencies fold downward and low frequencies fold upward.\n\nThe delay line itself runs in the time domain, so echoes retain full bandwidth, with tempo sync and long feedback times."
+   "body": "EXPERIMENT 47 is a delay whose feedback loop passes through non-orientable geometry: a Möbius strip or a Klein bottle.\n\n### Topology\n* **TWIST**: Rotates phase on each pass. At maximum, every second echo cancels the one before it.\n* **INVERT**: Mirrors the spectrum around a PIVOT frequency on each pass, so high frequencies fold downward and low frequencies fold upward.\n\nThe delay line itself runs in the time domain, so echoes retain full bandwidth, with tempo sync and long feedback times."
   },
   {
-   "id": "mycelium",
-   "name": "MYCELIUM",
+   "id": "experiment-48",
+   "name": "EXPERIMENT 48",
    "subtitle": "The Mycelial Network Engine",
    "kind": "Effect",
    "tags": [
@@ -1144,17 +1144,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/mycelium-1.webp",
-     "thumb": "images/mycelium-1-thumb.webp"
+     "src": "images/experiment-48-1.webp",
+     "thumb": "images/experiment-48-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "MYCELIUM treats the input as nutrient for a colony of up to 48 tuned resonators.\n\n### Life cycle\n* **Germination**: Resonators sprout on the strongest spectral peaks of the input, distributed so the colony spreads across the whole spectrum.\n* **Growth**: Nodes grow while fed and bloom into sustained drones when well nourished.\n* **Starvation**: Unfed nodes sag, waver and die.\n\n### Display\nThe colony is shown in a petri dish, which can be clicked to feed it directly."
+   "body": "EXPERIMENT 48 treats the input as nutrient for a colony of up to 48 tuned resonators.\n\n### Life cycle\n* **Germination**: Resonators sprout on the strongest spectral peaks of the input, distributed so the colony spreads across the whole spectrum.\n* **Growth**: Nodes grow while fed and bloom into sustained drones when well nourished.\n* **Starvation**: Unfed nodes sag, waver and die.\n\n### Display\nThe colony is shown in a petri dish, which can be clicked to feed it directly."
   },
   {
-   "id": "oobleck",
-   "name": "OOBLECK",
+   "id": "experiment-49",
+   "name": "EXPERIMENT 49",
    "subtitle": "The Non-Newtonian Spatializer",
    "kind": "Effect",
    "tags": [
@@ -1168,17 +1168,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/oobleck-1.webp",
-     "thumb": "images/oobleck-1-thumb.webp"
+     "src": "images/experiment-49-1.webp",
+     "thumb": "images/experiment-49-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "OOBLECK gives the stereo field the behaviour of a non-Newtonian fluid, like cornstarch in water.\n\n### Behaviour\n* **Impact**: A transient solidifies the signal: dry, mono and centred.\n* **Relaxation**: The tail flows back out to full width.\n* **RHEOLOGY**: Inverts the response, so impacts splash wide instead.\n\nThe transformation extends beyond width: the solid and liquid states also differ in tone and dynamics, making the contrast between them pronounced."
+   "body": "EXPERIMENT 49 gives the stereo field the behaviour of a non-Newtonian fluid, like cornstarch in water.\n\n### Behaviour\n* **Impact**: A transient solidifies the signal: dry, mono and centred.\n* **Relaxation**: The tail flows back out to full width.\n* **RHEOLOGY**: Inverts the response, so impacts splash wide instead.\n\nThe transformation extends beyond width: the solid and liquid states also differ in tone and dynamics, making the contrast between them pronounced."
   },
   {
-   "id": "engram",
-   "name": "ENGRAM",
+   "id": "experiment-50",
+   "name": "EXPERIMENT 50",
    "subtitle": "The Synaptic Memory Looper",
    "kind": "Effect",
    "tags": [
@@ -1192,17 +1192,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/engram-1.webp",
-     "thumb": "images/engram-1-thumb.webp"
+     "src": "images/experiment-50-1.webp",
+     "thumb": "images/experiment-50-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "ENGRAM is a long delay that attempts to remember what was played and fails in the way biological memory does. Rather than simply decaying, each repeat acquires new character.\n\n### Failure modes\n* **PRUNING**: Frequency bands that are no longer played are forgotten.\n* **CONFABULATION**: False notes grow into the gaps.\n* **DRIFT**: Pitch shifts slightly further on each pass.\n* **TRAUMA**: A sufficiently loud event is permanently imprinted and never forgotten."
+   "body": "EXPERIMENT 50 is a long delay that attempts to remember what was played and fails in the way biological memory does. Rather than simply decaying, each repeat acquires new character.\n\n### Failure modes\n* **PRUNING**: Frequency bands that are no longer played are forgotten.\n* **CONFABULATION**: False notes grow into the gaps.\n* **DRIFT**: Pitch shifts slightly further on each pass.\n* **TRAUMA**: A sufficiently loud event is permanently imprinted and never forgotten."
   },
   {
-   "id": "entangle",
-   "name": "ENTANGLE",
+   "id": "experiment-51",
+   "name": "EXPERIMENT 51",
    "subtitle": "The Quantum Entanglement Bus",
    "kind": "Effect",
    "tags": [
@@ -1216,17 +1216,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/entangle-1.webp",
-     "thumb": "images/entangle-1-thumb.webp"
+     "src": "images/experiment-51-1.webp",
+     "thumb": "images/experiment-51-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "ENTANGLE links two tracks so that each shapes the other.\n\n### Establishing the bond\nInsert one instance on each track, assign both the same BOND letter and opposite SPIN. Instances discover each other only within the same project, and a bond indicator confirms the link.\n\n### Interactions\n* **EXCLUSION**: Each track ducks the frequencies where its partner is dominant.\n* **UNCERTAINTY**: Each track takes on its partner's timbre.\n* **COLLAPSE**: The partner's transients pull this track's phase toward its own."
+   "body": "EXPERIMENT 51 links two tracks so that each shapes the other.\n\n### Establishing the bond\nInsert one instance on each track, assign both the same BOND letter and opposite SPIN. Instances discover each other only within the same project, and a bond indicator confirms the link.\n\n### Interactions\n* **EXCLUSION**: Each track ducks the frequencies where its partner is dominant.\n* **UNCERTAINTY**: Each track takes on its partner's timbre.\n* **COLLAPSE**: The partner's transients pull this track's phase toward its own."
   },
   {
-   "id": "platen",
-   "name": "PLATEN",
+   "id": "experiment-52",
+   "name": "EXPERIMENT 52",
    "subtitle": "The Plate Reverb Driver",
    "kind": "Effect",
    "tags": [
@@ -1240,17 +1240,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/platen-1.webp",
-     "thumb": "images/platen-1-thumb.webp"
+     "src": "images/experiment-52-1.webp",
+     "thumb": "images/experiment-52-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "PLATEN is a channel strip for the send that drives a physical plate reverb: a transducer mounted on a steel plate, with contact microphones on the return.\n\n### Protection\n* **Filtering**: A steep high-pass and a resonance notch.\n* **Dynamics**: Compressor, transient softener and limiter.\n* **Metering**: Excursion and thermal load, keeping the exciter within safe limits.\n\n### Voicing\n* **EQ and tilt**: Shape the signal sent to the plate.\n* **Pickup compensation**: Corrects the response of two contact microphones, with a continuous blend between them."
+   "body": "EXPERIMENT 52 is a channel strip for the send that drives a physical plate reverb: a transducer mounted on a steel plate, with contact microphones on the return.\n\n### Protection\n* **Filtering**: A steep high-pass and a resonance notch.\n* **Dynamics**: Compressor, transient softener and limiter.\n* **Metering**: Excursion and thermal load, keeping the exciter within safe limits.\n\n### Voicing\n* **EQ and tilt**: Shape the signal sent to the plate.\n* **Pickup compensation**: Corrects the response of two contact microphones, with a continuous blend between them."
   },
   {
-   "id": "capillary",
-   "name": "CAPILLARY",
+   "id": "experiment-53",
+   "name": "EXPERIMENT 53",
    "subtitle": "The Fluid Absorption Engine",
    "kind": "Effect",
    "tags": [
@@ -1264,17 +1264,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/capillary-1.webp",
-     "thumb": "images/capillary-1-thumb.webp"
+     "src": "images/experiment-53-1.webp",
+     "thumb": "images/experiment-53-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "CAPILLARY is a delay in which echoes are absorbed into a porous material rather than reflected from a wall.\n\n### Principle\n* **Absorption**: The first echo is clear; subsequent energy sinks through up to 14 layers. High frequencies are absorbed in the upper layers, and only low frequencies reach the bottom.\n* **Saturation**: A soaked medium stops absorbing, holds energy longer and sags in pitch, then dries and closes again. There is no LFO; all motion arises from the material.\n* **Materials**: Eight media, from SPONGE and PAPER to CLAY and SKIN."
+   "body": "EXPERIMENT 53 is a delay in which echoes are absorbed into a porous material rather than reflected from a wall.\n\n### Principle\n* **Absorption**: The first echo is clear; subsequent energy sinks through up to 14 layers. High frequencies are absorbed in the upper layers, and only low frequencies reach the bottom.\n* **Saturation**: A soaked medium stops absorbing, holds energy longer and sags in pitch, then dries and closes again. There is no LFO; all motion arises from the material.\n* **Materials**: Eight media, from SPONGE and PAPER to CLAY and SKIN."
   },
   {
-   "id": "chladni",
-   "name": "CHLADNI",
+   "id": "experiment-54",
+   "name": "EXPERIMENT 54",
    "subtitle": "The Nodal Engine",
    "kind": "Effect",
    "tags": [
@@ -1289,17 +1289,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/chladni-1.webp",
-     "thumb": "images/chladni-1-thumb.webp"
+     "src": "images/experiment-54-1.webp",
+     "thumb": "images/experiment-54-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "CHLADNI is designed for an acoustic instrument fitted with a contact microphone, air microphones and a soundboard exciter.\n\n### Principle\n* **The residue**: The contact signal is compared with the air signal, and only the difference is played.\n* **The lattice**: That residue is sustained in a tuned delay lattice and a granular freeze.\n* **The resonators**: A resonator path excited by the contact microphone adds a physical, ringing body.\n\n### The strike hash\nEach strike is fingerprinted, and that value determines both the lattice topology and the frozen grains. **RECALL** sets whether a repeated gesture reproduces the same result."
+   "body": "EXPERIMENT 54 is designed for an acoustic instrument fitted with a contact microphone, air microphones and a soundboard exciter.\n\n### Principle\n* **The residue**: The contact signal is compared with the air signal, and only the difference is played.\n* **The lattice**: That residue is sustained in a tuned delay lattice and a granular freeze.\n* **The resonators**: A resonator path excited by the contact microphone adds a physical, ringing body.\n\n### The strike hash\nEach strike is fingerprinted, and that value determines both the lattice topology and the frozen grains. **RECALL** sets whether a repeated gesture reproduces the same result."
   },
   {
-   "id": "procrustes",
-   "name": "PROCRUSTES",
+   "id": "experiment-61",
+   "name": "EXPERIMENT 61",
    "subtitle": "The Bed of Procrustes",
    "kind": "Effect",
    "tags": [
@@ -1313,17 +1313,17 @@
    "hidden": true,
    "images": [
     {
-     "src": "images/procrustes-1.webp",
-     "thumb": "images/procrustes-1-thumb.webp"
+     "src": "images/experiment-61-1.webp",
+     "thumb": "images/experiment-61-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "PROCRUSTES stretches and reorders notes in time without ever changing pitch.\n\n### The constraint\nEvery output sample is an input sample played forward or backward at unity speed, so nothing is resampled.\n\n### Controls\n* **BED**: Target note duration.\n* **FIT**: How strictly notes are conformed to it.\n* **SHEAR**: Duration varies with pitch, so a chord separates in time.\n* **Paths**: Five traversal patterns through each note: FORWARD, EBB, CRAB, FOLD and TIDE."
+   "body": "EXPERIMENT 61 stretches and reorders notes in time without ever changing pitch.\n\n### The constraint\nEvery output sample is an input sample played forward or backward at unity speed, so nothing is resampled.\n\n### Controls\n* **BED**: Target note duration.\n* **FIT**: How strictly notes are conformed to it.\n* **SHEAR**: Duration varies with pitch, so a chord separates in time.\n* **Paths**: Five traversal patterns through each note: FORWARD, EBB, CRAB, FOLD and TIDE."
   },
   {
-   "id": "avalanche",
-   "name": "AVALANCHE",
+   "id": "experiment-55",
+   "name": "EXPERIMENT 55",
    "subtitle": "The Cryptographic Breakbeat Engine",
    "kind": "Instrument",
    "tags": [
@@ -1338,21 +1338,21 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/avalanche-2.webp",
-     "thumb": "images/avalanche-2-thumb.webp"
+     "src": "images/experiment-55-2.webp",
+     "thumb": "images/experiment-55-2-thumb.webp"
     },
     {
-     "src": "images/avalanche-1.webp",
-     "thumb": "images/avalanche-1-thumb.webp"
+     "src": "images/experiment-55-1.webp",
+     "thumb": "images/experiment-55-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "AVALANCHE is a sample slicer without pattern memory. Holding a key sends a read head through any file in blocks; each block is hashed to a 32-bit word, and its eight nybbles become eight LANES routed to slice, pitch, pan, level, reverse, ratchet, filter, bit reduction and drive. The same file at the same offset always yields the same groove.\n\n### Design\n* **CHAOS**: A continuum from the intact sample to fully hash-driven playback. At 0, step *n* plays slice *n*, so the break plays straight; higher values let the hash take over. A working groove is progressively deconstructed rather than assembled from noise.\n* **Built-in kit**: Sixteen synthesised drums arranged as a breakbeat in sequence, so a fresh instance is musical from the first key press.\n* **PULSE**: Weights the trigger threshold by metric position, establishing a downbeat. Negative values are anti-metric.\n* **BLOCK**: The structural control. Small blocks track local texture and repeat wherever the file repeats; large blocks shatter it.\n* **Seven hash functions**: Ordered by diffusion, the weaker ones being the most musical. STIR adds finaliser rounds to scramble a legible word.\n* **SPAN and EVOLVE**: Wrap the read head into a fixed loop, then let each repetition drift from its own start.\n* **Polyphony**: Each held key is an independent read head far apart in the file, so a chord becomes a polyrhythm.\n\n### THE LOOM\nThe last 48 steps are displayed as a pad grid, with the digest's 32 bits drawn beneath on the same columns, one row per lane, so each bit flip can be traced to the drum it moved. THE CORPUS ribbon shows the file's entropy landscape with the read head. Any file can be dropped anywhere: audio is sliced, anything else is hashed."
+   "body": "EXPERIMENT 55 is a sample slicer without pattern memory. Holding a key sends a read head through any file in blocks; each block is hashed to a 32-bit word, and its eight nybbles become eight LANES routed to slice, pitch, pan, level, reverse, ratchet, filter, bit reduction and drive. The same file at the same offset always yields the same groove.\n\n### Design\n* **CHAOS**: A continuum from the intact sample to fully hash-driven playback. At 0, step *n* plays slice *n*, so the break plays straight; higher values let the hash take over. A working groove is progressively deconstructed rather than assembled from noise.\n* **Built-in kit**: Sixteen synthesised drums arranged as a breakbeat in sequence, so a fresh instance is musical from the first key press.\n* **PULSE**: Weights the trigger threshold by metric position, establishing a downbeat. Negative values are anti-metric.\n* **BLOCK**: The structural control. Small blocks track local texture and repeat wherever the file repeats; large blocks shatter it.\n* **Seven hash functions**: Ordered by diffusion, the weaker ones being the most musical. STIR adds finaliser rounds to scramble a legible word.\n* **SPAN and EVOLVE**: Wrap the read head into a fixed loop, then let each repetition drift from its own start.\n* **Polyphony**: Each held key is an independent read head far apart in the file, so a chord becomes a polyrhythm.\n\n### THE LOOM\nThe last 48 steps are displayed as a pad grid, with the digest's 32 bits drawn beneath on the same columns, one row per lane, so each bit flip can be traced to the drum it moved. THE CORPUS ribbon shows the file's entropy landscape with the read head. Any file can be dropped anywhere: audio is sliced, anything else is hashed."
   },
   {
-   "id": "hilbert",
-   "name": "HILBERT",
+   "id": "experiment-56",
+   "name": "EXPERIMENT 56",
    "subtitle": "The Analytic Prism Oscillator",
    "kind": "Instrument",
    "tags": [
@@ -1366,17 +1366,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/hilbert-1.webp",
-     "thumb": "images/hilbert-1-thumb.webp"
+     "src": "images/experiment-56-1.webp",
+     "thumb": "images/experiment-56-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "HILBERT converts any audio file into a synthesiser oscillator, using the analytic signal to extract clean single-cycle frames.\n\n### Principle\n* **Frames**: The file is analysed into 32 single-cycle frames that can be scanned and morphed, with controls that reshape their harmonic content.\n* **PRISM**: A single-sideband frequency shift that moves the entire spectrum by a fixed number of hertz, rendering it inharmonic.\n\n### Further features\n* **PERC mode**: Slices the file across the keyboard.\n* **XY pad**: Direct performance control of scan and morph.\n* **User presets**."
+   "body": "EXPERIMENT 56 converts any audio file into a synthesiser oscillator, using the analytic signal to extract clean single-cycle frames.\n\n### Principle\n* **Frames**: The file is analysed into 32 single-cycle frames that can be scanned and morphed, with controls that reshape their harmonic content.\n* **PRISM**: A single-sideband frequency shift that moves the entire spectrum by a fixed number of hertz, rendering it inharmonic.\n\n### Further features\n* **PERC mode**: Slices the file across the keyboard.\n* **XY pad**: Direct performance control of scan and morph.\n* **User presets**."
   },
   {
-   "id": "tonnetz",
-   "name": "TONNETZ",
+   "id": "experiment-62",
+   "name": "EXPERIMENT 62",
    "subtitle": "The Harmonic Performance Engine",
    "kind": "Instrument",
    "tags": [
@@ -1391,11 +1391,11 @@
    "images": [],
    "video": "",
    "links": [],
-   "body": "TONNETZ generates a complete, naturally voiced chord from a single key. It is named after the Tonnetz, the lattice of tonal relations used in harmonic theory.\n\n### Principle\n* **The palette**: One octave of keys holds a set of mutually compatible chords; the next holds their tension variants.\n* **Voice leading, rolls and timing**: Handled automatically, so the result sounds performed rather than programmed.\n* **JOURNEY**: An engine that avoids repeating identical voicings.\n* **Scales and layouts**: Ten scales and circle-of-fifths arrangements.\n\n### Formats\nAn instrument with its own sound engine and MIDI output, and a MIDI effect for Logic."
+   "body": "EXPERIMENT 62 generates a complete, naturally voiced chord from a single key. Its layout draws on the Tonnetz, the lattice of tonal relations used in harmonic theory.\n\n### Principle\n* **The palette**: One octave of keys holds a set of mutually compatible chords; the next holds their tension variants.\n* **Voice leading, rolls and timing**: Handled automatically, so the result sounds performed rather than programmed.\n* **JOURNEY**: An engine that avoids repeating identical voicings.\n* **Scales and layouts**: Ten scales and circle-of-fifths arrangements.\n\n### Formats\nAn instrument with its own sound engine and MIDI output, and a MIDI effect for Logic."
   },
   {
-   "id": "cipher",
-   "name": "CIPHER",
+   "id": "experiment-57",
+   "name": "EXPERIMENT 57",
    "subtitle": "The Data-Scrubbing Synthesiser",
    "kind": "Instrument",
    "tags": [
@@ -1409,17 +1409,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/cipher-1.webp",
-     "thumb": "images/cipher-1-thumb.webp"
+     "src": "images/experiment-57-1.webp",
+     "thumb": "images/experiment-57-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "CIPHER has no oscillators. It synthesises sound by reading files as raw bytes.\n\n### Three slots\n* **CARRIER**: The primary file, read at pitch.\n* **KEY**: A second file combined with the carrier through a bitwise operation such as XOR.\n* **TOPOGRAPHY**: A file that defines the amplitude envelope of each note.\n\n### Shaping\n* **BIT MASK and SALT**: Select which bits of the key participate, spanning timbres from faint grain to harsh foldover.\n* **Sub oscillators**: Add low-frequency weight beneath the data."
+   "body": "EXPERIMENT 57 has no oscillators. It synthesises sound by reading files as raw bytes.\n\n### Three slots\n* **CARRIER**: The primary file, read at pitch.\n* **KEY**: A second file combined with the carrier through a bitwise operation such as XOR.\n* **TOPOGRAPHY**: A file that defines the amplitude envelope of each note.\n\n### Shaping\n* **BIT MASK and SALT**: Select which bits of the key participate, spanning timbres from faint grain to harsh foldover.\n* **Sub oscillators**: Add low-frequency weight beneath the data."
   },
   {
-   "id": "orrery",
-   "name": "ORRERY",
+   "id": "experiment-58",
+   "name": "EXPERIMENT 58",
    "subtitle": "The Prime-Factor Breakbeat Orrery",
    "kind": "Instrument",
    "tags": [
@@ -1434,17 +1434,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/orrery-1.webp",
-     "thumb": "images/orrery-1-thumb.webp"
+     "src": "images/experiment-58-1.webp",
+     "thumb": "images/experiment-58-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "ORRERY is a drum machine built from six rotating rings whose lengths are prime numbers derived from a file's bytes.\n\n### Principle\n* **Prime periods**: Rings of prime length rarely coincide, so the combined pattern takes a very long time to repeat.\n* **SYZYGY**: Whenever three rings align, that alignment becomes the downbeat.\n\n### Controls\n* **PRIMACY**: From near-regular to highly irregular periods.\n* **ECCENTRICITY**: A groove that accelerates and decelerates around each ring, like an elliptical orbit.\n* **Gear ratios**: Set independently per ring."
+   "body": "EXPERIMENT 58 is a drum machine built from six rotating rings whose lengths are prime numbers derived from a file's bytes.\n\n### Principle\n* **Prime periods**: Rings of prime length rarely coincide, so the combined pattern takes a very long time to repeat.\n* **SYZYGY**: Whenever three rings align, that alignment becomes the downbeat.\n\n### Controls\n* **PRIMACY**: From near-regular to highly irregular periods.\n* **ECCENTRICITY**: A groove that accelerates and decelerates around each ring, like an elliptical orbit.\n* **Gear ratios**: Set independently per ring."
   },
   {
-   "id": "eidolon",
-   "name": "EIDOLON",
+   "id": "experiment-59",
+   "name": "EXPERIMENT 59",
    "subtitle": "The Likeness Engine",
    "kind": "Instrument",
    "tags": [
@@ -1458,17 +1458,17 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/eidolon-1.webp",
-     "thumb": "images/eidolon-1-thumb.webp"
+     "src": "images/experiment-59-1.webp",
+     "thumb": "images/experiment-59-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "EIDOLON rebuilds a single sample as a playable instrument.\n\n### Principle\n* **Analysis**: The sample is decomposed into its harmonic and noise components, after which the original is discarded.\n* **Playback**: When other pitches are played, the harmonics transpose while the body resonance (the formant structure) stays fixed, unlike a conventional sampler, which shifts both.\n\nSources with strong vibrato, such as the voice, resynthesise with more noise than the original."
+   "body": "EXPERIMENT 59 rebuilds a single sample as a playable instrument.\n\n### Principle\n* **Analysis**: The sample is decomposed into its harmonic and noise components, after which the original is discarded.\n* **Playback**: When other pitches are played, the harmonics transpose while the body resonance (the formant structure) stays fixed, unlike a conventional sampler, which shifts both.\n\nSources with strong vibrato, such as the voice, resynthesise with more noise than the original."
   },
   {
-   "id": "rameau",
-   "name": "RAMEAU",
+   "id": "experiment-60",
+   "name": "EXPERIMENT 60",
    "subtitle": "The Fundamental Bass",
    "kind": "MIDI effect",
    "tags": [
@@ -1482,13 +1482,13 @@
    "hidden": false,
    "images": [
     {
-     "src": "images/rameau-1.webp",
-     "thumb": "images/rameau-1-thumb.webp"
+     "src": "images/experiment-60-1.webp",
+     "thumb": "images/experiment-60-1-thumb.webp"
     }
    ],
    "video": "",
    "links": [],
-   "body": "RAMEAU is a harmony tutor for keyboard players who play fluently but never studied theory. It is named after Jean-Philippe Rameau, whose theory of the fundamental bass underpins functional harmony.\n\n### Principle\n* **Identification**: Incoming MIDI is analysed in real time; each chord is named and the key is tracked.\n* **Patterns**: Progressions such as ii–V–I and cadences are highlighted as they occur.\n* **Transparent**: RAMEAU produces no sound of its own beyond an optional practice voice, and MIDI passes through unchanged.\n\n### Formats\nStandalone application, instrument plugin, and MIDI effect for Logic."
+   "body": "EXPERIMENT 60 is a harmony tutor for keyboard players who play fluently but never studied theory. It builds on Jean-Philippe Rameau's theory of the fundamental bass, which underpins functional harmony.\n\n### Principle\n* **Identification**: Incoming MIDI is analysed in real time; each chord is named and the key is tracked.\n* **Patterns**: Progressions such as ii–V–I and cadences are highlighted as they occur.\n* **Transparent**: EXPERIMENT 60 produces no sound of its own beyond an optional practice voice, and MIDI passes through unchanged.\n\n### Formats\nStandalone application, instrument plugin, and MIDI effect for Logic."
   }
  ]
 }

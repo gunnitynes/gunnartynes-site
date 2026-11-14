@@ -114,7 +114,7 @@ img { display: block; max-width: 100%; }
 .card .shot img.in { opacity: 1; }
 .card:hover .shot, .card:focus-visible .shot { border-color: rgba(0,196,168,.55); box-shadow: 0 10px 40px -12px rgba(0,196,168,.35); }
 .card:hover .shot img { transform: scale(1.035); }
-.card .meta { padding: 14px 2px 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: baseline; }
+.card .meta { padding: 14px 2px 0; display: grid; grid-template-columns: 1fr; gap: 2px 12px; align-items: baseline; }
 .card .idx { grid-row: span 3; font: 500 11px/1 var(--mono); color: var(--t3); padding-top: 4px; }
 .card .name { font-weight: 600; font-size: 19px; letter-spacing: 0.06em; line-height: 1.2; }
 .card .sub { font: 500 10.5px/1.5 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
