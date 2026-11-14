@@ -1,0 +1,1494 @@
+{
+ "site": {
+  "title": "Gunnar Tynes — Plugins",
+  "footer": "© Gunnar Tynes"
+ },
+ "plugins": [
+  {
+   "id": "antiphon",
+   "name": "ANTIPHON",
+   "subtitle": "The Null-Space Engine",
+   "kind": "Effect",
+   "tags": [
+    "Spectral"
+   ],
+   "tagline": "You only hear where the silence fails: out = direct − shadow.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/antiphon-1.webp",
+     "thumb": "images/antiphon-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "ANTIPHON is a stereo effect built on one equation: **out = direct − shadow**.\n\nIt makes two copies of your sound and subtracts one from the other. If the copies are identical they cancel to silence, so you only hear where the shadow copy has been changed. Every control damages the shadow in a different way, and that damage is the sound:\n\n* **Filter the shadow**: you hear the exact opposite band (low-pass it and only the highs come through).\n* **Delay it (SHEAR)**: you get comb filtering.\n* **Distort it (RESIDUE)**: you hear only the added harmonics, with the original fundamental removed.\n* **Shift its phase (SKEW, SCATTER, DRIFT)**: the level stays the same, so what leaks is a hollow sound that an EQ cannot make.\n* **Make its spectrum lag (MEMORY)**: note onsets come through and sustained sound is cancelled.\n\n### The display\nThe main display is a dark sheet across the spectrum with a null line through the middle. You paint on it per frequency band: dragging up lets the band leak through in phase, and dragging down past the line brings it back inverted.\n\n**VEIL** sets how much of the shadow is subtracted, and it can pulse in tempo or follow transients. **LIFT** brings the level back up, because what is left after cancelling is often very quiet."
+  },
+  {
+   "id": "aphelion",
+   "name": "APHELION",
+   "subtitle": "The Distance Engine",
+   "kind": "Effect",
+   "tags": [
+    "Delay"
+   ],
+   "tagline": "How hard you play is a distance, and distance is time: your loudest notes arrive last.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/aphelion-1.webp",
+     "thumb": "images/aphelion-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "APHELION is built on one idea: how hard you play is a distance, and distance is time, so your loudest notes arrive last.\n\nEach attack is detected, measured, and sent out as a “body” to a distance set by how hard it was struck. What you hear back follows from that distance, the way real sound travels through air:\n\n* **Later**: it arrives after the time sound takes to cross that distance (at 343 m/s).\n* **Quieter and darker**: level drops with distance, and air absorbs the highs.\n* **Narrower and more diffuse**: a far source shrinks to a point and picks up more of the valley’s reverb.\n* **Detuned only while moving**: a body drifting away goes flat, and one approaching goes sharp (Doppler).\n\nBecause the delay time comes from your dynamics, the piece re-orders itself. A crescendo comes back as a slowing-down, and a soft note played after a loud one can arrive before it. The panel counts these as OVERTAKES and draws them in THE ORDER, a display that joins each strike to its arrival.\n\n### The main controls\n* **THE FIELD**: HORIZON sets the farthest distance (3 m to 3 km) and GRADIENT sets how strongly loudness maps to distance.\n* **THE AIR**: absorption, ground reflection, wind, and DRIFT, the only control that moves the tuning.\n* **THE VALLEY**: the diffuse reverb, fed more by bodies that are farther away.\n* **SUMMON**: a held button that makes everything still in the air turn round and come home, arriving up to an octave higher."
+  },
+  {
+   "id": "apophasis",
+   "name": "APOPHASIS",
+   "subtitle": "The Via Negativa Engine",
+   "kind": "Effect",
+   "tags": [
+    "Spectral",
+    "Piano"
+   ],
+   "tagline": "The piano filtered by its own playing from a few seconds ago. Repetition cancels itself.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/apophasis-1.webp",
+     "thumb": "images/apophasis-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "APOPHASIS puts the piano through a filter, and the filter is the piano’s own playing from a few seconds ago.\n\nEverything you play is written to a spectral tape. A second head reads that tape somewhere in the past, and what it finds becomes an EQ curve applied to what you are playing now. One knob, **VIA**, decides what that curve does:\n\n* **VIA at zero**: the curve is flat, so you hear the input unchanged (only delayed).\n* **VIA positive**: the past becomes a boost, so a new note is forced to speak through the harmony of the old one.\n* **VIA negative**: the past becomes a notch, so anything the piano has already said is subtracted from what it says now.\n\nThe negative side is the signature. A chord played twice comes out about 16 dB quieter the second time, while a different chord in the same place passes untouched. Repetition cancels itself and new material gets through.\n\nNothing is resynthesised: it is always the real recorded audio through a moving EQ, so it still sounds like the instrument. It never plays the past back as sound.\n\n### The main controls\n* **RECALL**: how far back the reading head looks (0 to 8 seconds). At 0 the piano filters itself: negative VIA strips the tone and leaves the knocks, and positive VIA sharpens its partials.\n* **FOCUS and DEPTH**: how fine the filter is (in Hz) and how far the curve may bend.\n* **TRACE, SNAP, HOLD**: the head’s own speed, re-cueing it to note attacks, and stopping the tape. HOLD with TRACE turns a captured passage into a loop of filters, played at any speed in either direction.\n* **GRAIN**: the analysis window (TIGHT, NATURAL, DEEP), which sets the latency at about 43, 85 or 171 ms."
+  },
+  {
+   "id": "deborah",
+   "name": "DEBORAH",
+   "subtitle": "The Deborah Number",
+   "kind": "Effect",
+   "tags": [
+    "Delay",
+    "Reverb"
+   ],
+   "tagline": "A delay whose echoes widen on every repeat until they become a reverb.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/deborah-1.webp",
+     "thumb": "images/deborah-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "DEBORAH is a delay whose echoes get wider on every repeat until they merge into a reverb, with nothing switching over. There is no reverb mode.\n\nThe name comes from physics: the Deborah number says whether a material acts as a solid or a liquid, depending on how fast you look at it. Here it decides how spread out the pickups are around the loop. Close together, you hear a clean delay. Spread out, each echo has smeared before it comes round again, and you hear a reverb. Everything between is the “jelly” sound.\n\nIt is built on diffusion, with no allpass filters and no resonators, so there is none of the metallic ringing those bring. The echoes stay on the beat however wide they get, and the widening does not bend the pitch.\n\n### The main controls\n* **RELAXATION**: the headline knob, from 0.5 ms to 20 s. It sets where the sound stops being echoes and becomes a wash.\n* **CIRCUIT and LAPS**: the delay time (free or tempo-synced) and how long it keeps going round.\n* **SET**: the stage button. It closes the input and holds what is in the loop.\n* **THE MACHINE**: CHARGE adds saturation, and GRADE is one “how worn is it” knob (hiss, wow, flutter and head bump together).\n* **REACH**: moves the wash earlier or later without moving any delay line, so it costs no pitch change.\n* **THE LISTENER**: lets your playing control the effect. Four sources (LEVEL, ATTACK, BRIGHT, BUSY) can each be pointed at a destination, and none of the destinations can detune the sound."
+  },
+  {
+   "id": "halation",
+   "name": "HALATION",
+   "subtitle": "The Re-Exposure Engine",
+   "kind": "Effect",
+   "tags": [
+    "Reverb",
+    "Delay",
+    "Distortion"
+   ],
+   "tagline": "A shoegaze wall where the fuzz lives inside the reverb’s feedback loop.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/halation-1.webp",
+     "thumb": "images/halation-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "HALATION is a shoegaze distortion reverb/delay where the fuzz sits inside the reverb’s feedback loop instead of in front of it. It is a send effect, so DRY defaults to 0.\n\nThe name is a film term: light that passes through the film, bounces off the back and exposes the same frame again. Here the tail keeps going back through the same distortion as the new notes, so they react to each other and do not just add up. The wall answers what you play into it.\n\n### The main controls\n* **EXPOSURE and STOCK**: how hard the film is driven and which distortion curve it uses.\n* **ORTHO**: decides whether the bass or the top gets distorted. This is the biggest character control.\n* **HALO**: the feedback. Because the fuzz is in the loop, more feedback also means more dirt.\n* **SCATTER**: one knob from a delay (separate echoes) to a reverb (a wash), with no change in level.\n* **HOLD and RENEW (THE FRAME)**: endless sustain that replaces and does not pile up. The stored energy is held constant, so a new note pushes the old one out.\n* **DISSOLVE**: how smoothly the old sound gives way to the new one, like a film lap dissolve.\n* **MASK and RADIUS**: a resonance suppressor that finds peaks standing out of the spectrum and cuts them, with no added latency.\n* **FREEZE, REVERSE, SHIMMER, GLIDE, DUCK**: hold the tail, reverse it, add a pitched interval, drift the pitch each pass, and duck the wall under your playing."
+  },
+  {
+   "id": "larmor",
+   "name": "LARMOR",
+   "subtitle": "The Dephasing Engine",
+   "kind": "Effect",
+   "tags": [
+    "Sustain",
+    "Spectral",
+    "Piano"
+   ],
+   "tagline": "A sound bed from what you just played, made by letting its partials fall out of step.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/larmor-1.webp",
+     "thumb": "images/larmor-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "LARMOR is a sustain effect for piano: you play a few notes or a chord, and it creates a sound bed out of what you just played, without sounding like a loop, a reverb or a delay.\n\nThe idea comes from physics: a note does not end because its partials stop, but because they fall out of step with each other. The plugin works with that directly:\n\n* **Packets**: the sound is split into about 32 narrow frequency bands. Each band captures a short piece of your playing and keeps repeating it at its original speed, never resampled, so the pitch stays true.\n* **Decoherence**: every band’s repeat has a different length, so the bands drift out of step. A chord that would loop audibly becomes a steady texture.\n* **REFOCUS**: a button that pulls every band back into step, so the chord re-forms whole out of the bed.\n\nThe repeat in each band is cut at a whole number of that band’s own wave cycles, which is why the joins are not heard.\n\n### The main controls\n* **FLATTEN**: removes the note’s own decay, so the envelope you set is the only one on the bed.\n* **SPREAD**: how different the repeat lengths are. More spread sounds less like a loop.\n* **WANDER**: moves each band to a different moment of the captured sound, for more movement.\n* **ACCRUE**: whether new playing adds to the bed or replaces it.\n* **FREEZE**: holds the bed and stops capturing."
+  },
+  {
+   "id": "noctiluca",
+   "name": "NOCTILUCA",
+   "subtitle": "The Afterglow Engine",
+   "kind": "Effect",
+   "tags": [
+    "Sustain",
+    "Spectral"
+   ],
+   "tagline": "A phosphor, not an echo: energy is swallowed, held, and given back lower.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/noctiluca-1.webp",
+     "thumb": "images/noctiluca-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "NOCTILUCA makes your playing glow like a phosphor: the sound’s energy is absorbed, held for a while, and given back as a soft tone that is always lower in pitch than what caused it.\n\nIt contains no delay line, no reverb and no feedback. Nothing you play is ever played back. Only the energy is kept, so the glow has no attack and cannot make anything brighter.\n\n### How it works\n* **Absorb**: the upper part of the sound (above the BAND GAP) is taken in.\n* **Hold**: the energy waits in “traps” of different depths, some emptying quickly and some very slowly.\n* **Emit**: it comes back out as tones lower than the input, on a set of pitches tuned to the key you are playing in, which the plugin detects by itself.\n\n### The main controls\n* **TEMPERATURE**: the main one. Cold, the store only fills. Heat it, and everything from the last minute of playing comes out in one bloom.\n* **HOLD, DEPTH, PERSIST**: how long the energy waits and how long the tail lasts.\n* **STOKES and SPREAD**: how far down the glow is shifted, and how much of the pitch set lights up from one note.\n* **ROOT, FOLLOW, LINES**: the key the glow is tuned to and how closely it follows your playing.\n* **SHADOW**: darkens the dry sound where the energy was absorbed.\n* **GLOW**: the glow level, which goes to 400 % because the glow is naturally much quieter than the piano.\n* **THE GLOW ONLY**: a button to hear the glow by itself."
+  },
+  {
+   "id": "kolmogorov",
+   "name": "KOLMOGOROV",
+   "subtitle": "The Description Engine",
+   "kind": "Effect",
+   "tags": [
+    "Reverb",
+    "Data"
+   ],
+   "tagline": "A reverb whose room is built from the repeated structure of any file.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/kolmogorov-1.webp",
+     "thumb": "images/kolmogorov-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "KOLMOGOROV is a reverb whose room is built from the structure of any file you load into it. It never plays the file’s data as sound. It only looks at what repeats in the file.\n\n### How it works\n* **Finding the structure**: the plugin searches the file for its most common repeated patterns, then for patterns made of those patterns, and so on. The result is a hierarchy that describes how the file is put together.\n* **Building the room**: each pattern becomes a diffusing element in the reverb, nested inside each other the same way the patterns are. How long a pattern is sets a delay time, and how often it occurs sets how loud that reflection is.\n* **Compressibility matters**: a file with a lot of repetition (text, source code) gives a long, dense, singing room. A file with none (a ZIP or JPEG) gives a short, thin one, and the interface tells you so.\n\nSo different files give different rooms on the same settings. Text sounds wide and singing, and a compiled program sounds metallic.\n\n### The main controls\n* **ALPHABET**: how the file is read when looking for repeats (BYTE, NYBBLE, WORD, DELTA, BITS). This changes which repeats exist, and so changes the room.\n* **DESCRIBE**: how deep into the hierarchy the room is built.\n* **DECAY and DAMP**: the reverb time and how dark the tail is.\n* **REWRITE and MUTATE**: step through the file’s structures in the order they occur, so the room changes over time.\n* **BLOOM and SHIMMER**: a regenerating octave layer on top of the tail.\n* **RECURSE and GIRTH**: a bank of resonators and a sub layer.\n* **FREEZE**: holds the tail.\n* **QUALITY**: oversampling (OFF, 2x, 4x) for cleaner drive and shimmer."
+  },
+  {
+   "id": "schweidler",
+   "name": "SCHWEIDLER",
+   "subtitle": "The Dielectric Memory Engine",
+   "kind": "Effect",
+   "tags": [
+    "Distortion"
+   ],
+   "tagline": "Valve distortion where the coupling capacitor remembers what passed through it.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/schweidler-1.webp",
+     "thumb": "images/schweidler-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "SCHWEIDLER is a valve-stage distortion built around one usually ignored fact: a coupling capacitor remembers some of the signal that passed through it, and that memory shifts how the next valve stage behaves.\n\nMost valve models put a clean filter after each stage and throw this memory away. Here it is the instrument. Loud playing charges the capacitor, the charge pushes the next stage off its normal operating point, and the sound recovers afterwards, quickly at first and then slowly.\n\nThe capacitor model follows the real physics, so three things come from one part: the low-cut corner, a gentler-than-usual filter slope, and the memory.\n\n### The main controls\n* **MATERIAL**: ten real capacitor types with their published figures, from polypropylene (almost no memory) to electrolytic (about 500 times more).\n* **SOAK**: exaggerates the memory, from the real amount up to 2000 times.\n* **RELAX**: how long the memory lasts, from 2 ms to 120 s. Short gives an audible smear, medium gives pumping, and long gives a slow drift.\n* **DISPERSION**: how wide the range of memory times is, from one single time to a very broad spread.\n* **BLOCKING**: how much the next stage is driven into charging the capacitor. It acts like a peak limiter with a slow, natural release, and at the top it starts “motorboating” (a low pulsing).\n* **COUPLING and STAGES**: the low-cut corner, which also sets how long the bias survives, and the number of valve stages."
+  },
+  {
+   "id": "vonneumann",
+   "name": "VONNEUMANN",
+   "subtitle": "The Stored-Program Engine",
+   "kind": "Effect",
+   "tags": [
+    "Data"
+   ],
+   "tagline": "Stop reading the file and run it: every byte is an instruction that edits your audio.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/vonneumann-1.webp",
+     "thumb": "images/vonneumann-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "VONNEUMANN is a cut-up and glitch effect that takes any file and runs it as a program, where each instruction edits your audio.\n\nYour audio is kept in a circular memory. A counter walks through the file byte by byte, and each byte is decoded as an instruction that changes the audio just before you hear it. So the file acts as a list of edits; it is never heard as sound itself.\n\n### 18 instructions, including\n* **Rearranging time**: copy a block of the past forward (a beat repeat), reverse, change speed, jump, and loop, with nested loops for rolls.\n* **Changing the sound**: gain, filter, stereo swap, bit and rate crush, and XOR, which rewrites the audio’s bits with a byte from the file.\n* **Adding space**: echoes on the grid, and a granular blur.\n* **Rest**: do nothing for one tick.\n\nThe key design choice is that the mapping from bytes to instructions is built from each file’s own contents. The most common bytes become rests, and the rare bytes get the loud instructions. That way the dull, repetitive parts of a file become silence, and its structure becomes rhythm.\n\n### The main controls\n* **DENSITY and the instruction weights**: how much of the program is rest, and how often each instruction occurs. You can also paint the mapping by hand on a 16 by 16 grid.\n* **SYNC, CUT, GRID**: lock the edits to the DAW’s tempo at a chosen note value.\n* **LOOKAHEAD**: how far behind the input the edits happen. This is also the longest possible edit, and it is reported as latency.\n* **MUTATE and DRIFT**: change the bytes on the way in so the same file gives a different program, and move slowly through the file for variation.\n* **FREEZE**: holds the memory once it is full."
+  },
+  {
+   "id": "chebyshev",
+   "name": "CHEBYSHEV",
+   "subtitle": "The Recipe Engine",
+   "kind": "Effect",
+   "tags": [
+    "Distortion",
+    "Pitch"
+   ],
+   "tagline": "You write the harmonics; it builds the distortion curve that makes them.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/chebyshev-1.webp",
+     "thumb": "images/chebyshev-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "CHEBYSHEV is a harmonic distortion where you write the harmonics you want, and the plugin builds the distortion curve that produces them. Most distortions give you a circuit and let you find out what harmonics it makes; this one works the other way round.\n\nEight faders set the level and polarity of harmonics 2 to 9. Those faders are the distortion curve: a full-level sine wave comes out with exactly the harmonics you wrote. It is a Culture Vulture-style distortion with a broader range of character, pristine and analogue.\n\n### The main controls\n* **The recipe (H2 to H9)**: the level and polarity of each harmonic.\n* **DRIVE and CEILING**: how hard you push into the curve, and what happens past the recipe level (SOFT, HARD or FOLD, with HEADROOM).\n* **IRON**: a modelled input transformer, which saturates the bass the way real iron does.\n* **BIAS, SAG, RECOVERY**: a moving operating point, so the distortion reacts to how loud you play.\n* **SOFTEN and FOCUS**: tame the high end of the added harmonics, and tilt which part of the spectrum gets distorted.\n* **EVEN / ODD**: balance between even and odd harmonics.\n* **LEARN**: captures a piece of hardware’s output and sets the recipe, polarity and drive to match it.\n* **LISTEN**: hear the output, only the added harmonics, only the iron, only the sub, or the input.\n\n### THE SUB (v1.1)\nA sub harmoniser that makes a clean sine one octave below the input. It has three bands that you drag on the display, a ROOT mode and a DIVIDER mode, and SHAPE, TIGHT and MONO BELOW for controlling the low end."
+  },
+  {
+   "id": "nyquist",
+   "name": "NYQUIST",
+   "subtitle": "The Stability Engine",
+   "kind": "Effect",
+   "tags": [
+    "Delay",
+    "Live"
+   ],
+   "tagline": "A warm, gritty character delay that can be played loud through a PA without feeding back.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/nyquist-1.webp",
+     "thumb": "images/nyquist-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "NYQUIST is a character delay built for live piano on stage, as the companion to CHEBYSHEV. It is designed to be played loud through a PA without causing feedback, and to sound warm, gritty and analogue.\n\nTwo things set it apart:\n\n* **The repeats are a chain of 24 stages.** Each repeat is its own stage, so every generation can be treated separately: each can be driven, squashed and panned by itself. The level of the repeats is bounded by a limiter in every stage, so it cannot run away inside the plugin.\n* **It protects against feedback through the room.** The real danger live is the loop from the PA back into the piano mic. RING OUT plays a one-second sweep, measures that loop, and the plugin then cuts only the room’s problem frequencies from what it sends out.\n\n### The main controls\n* **FEEDBACK**: 0 to 120 %. Above 100 % the repeats build up into a controlled scream, held at a safe level.\n* **DIVISION**: the delay time as a tempo-synced note value, on a knob.\n* **MEDIUM, AGE, HISS**: the character of the delay line (wire, bucket-brigade, tape, oil can), how worn it is, and how much noise it adds.\n* **GRIT, SQUASH, BOIL**: drive on each repeat, a limiter on each repeat that makes the tail hang, and each repeat driving harder than the last.\n* **TAIL, TAIL TIME, RISE**: what the feedback does when you stop playing (dies away or blooms), and how fast.\n* **BUILD and FREEZE**: a held gesture that pushes the feedback up, and a button that loops the last echo.\n* **DUCK, COLOR, HAZE**: pulls the repeats down under your playing, tilts their tone, and blurs them.\n* **GUARD and PROTECT**: the safety margin against room feedback, and how much the protection is allowed to cut (0 means watch only)."
+  },
+  {
+   "id": "castigliano",
+   "name": "CASTIGLIANO",
+   "subtitle": "The Helical Engine",
+   "kind": "Effect",
+   "tags": [
+    "Reverb",
+    "Piano"
+   ],
+   "tagline": "The spring reverb as real physics: a wave travelling along a coiled spring.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/castigliano-1.webp",
+     "thumb": "images/castigliano-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "CASTIGLIANO is a spring reverb for piano, built as real physics: the sound travels as a wave along a coiled spring. It is meant to feel like a strange, organic piece of Italian equipment with a lot of character, with no pitch shifting and no digital modulation.\n\n### What makes it sound like a spring\n* **The chirp**: in a spring, low frequencies arrive first and the higher ones later, which gives the upward “drip” sound. It gets longer on every reflection.\n* **The crash**: when you drive it hard, the coils collide and rattle, like kicking a real spring tank.\n* **The valve driver**: a valve stage feeds the spring, and how hard you drive it decides how easily the coils collide.\n\n### The main controls\n* **SPRINGS, LENGTH, TENSION, DRIP**: how many springs, how long they are, where the chirp sits, and how strong it is.\n* **DECAY and DAMP**: the reverb time and how dark the tail is.\n* **DRIVE and CRASH**: the valve drive and how close the coils are to colliding.\n* **REGEN**: feeds the output back in to give trails of what you played before. It is kept below the point of self-oscillation, so it never turns into one droning tone.\n* **SUSTAIN (THE RESERVOIR)**: a dense second tail that keeps the harmonics of your playing where the springs would impose their own, from 0.6 to 60 seconds.\n* **HOLD**: a momentary pedal for a sustained hold while it is down.\n* **DISSOLVE**: fades out the current tail naturally while a new note builds up in a fresh tank, so you can play over the dissolve.\n* **THE WIRE (HARDEN, HEAT, FELT)**: the spring changes with how hard you play, warms up and darkens with loud playing, and can be damped by a felt pressed against it.\n* **MEDIUM**: switch from the spring (Helix) to THE BOARD, a stiff plate or soundboard where the highs arrive first. GRAIN sets the wood grain.\n* **STRIKE and KICK**: send only the attacks into the spring, and slap the tank."
+  },
+  {
+   "id": "bode",
+   "name": "BODE",
+   "subtitle": "The Gain Margin Engine",
+   "kind": "Effect",
+   "tags": [
+    "Dynamics",
+    "Live"
+   ],
+   "tagline": "Squash a floor drum very hard on stage without the PA feeding back.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/bode-1.webp",
+     "thumb": "images/bode-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "BODE is a live channel strip for a floor drum: a transistor preamp, a fast FET compressor and tape, made so you can squash the drum very hard on stage without the PA feeding back. It was built for an intimate performance with piano.\n\nHeavy compression normally causes feedback, because it turns the microphone up between hits. The plugin solves this in two ways:\n\n* **The governor**: it works out, many times a second, how much gain the whole chain is giving the microphone at each frequency, and holds that under a safe limit.\n* **The ghost**: in the first 12 ms after a strike, before the PA has answered, the plugin measures exactly how the drum is ringing. It then continues that ring with its own resonators, which do not listen to the room. So you get a long, loud, compressed tail that cannot feed back.\n\nA watchdog also listens for a howl starting and pulls the microphone down, while the ghost keeps playing.\n\n### The main parts\n* **Preamp, FET compressor, tape**: the gritty old-school character. SMASH adds the uncompressed preamp in parallel.\n* **PUNCH / TAIL**: a transient designer for the attack and the body.\n* **STRIKE**: shapes the ghost’s ring (SKIN, DAMP, AIR, and DROP for the pitch fall after a hard hit).\n* **RESIDUE**: adds harmonics locked to the drum’s pitch, with eight bars you paint. It is adapted from SCHOUTEN.\n* **CLICK**: a tunable click on each strike.\n* **RING OUT**: plays a sweep to measure the room, then sets up to three notches. GUARD is the safety margin.\n* **LEARN**: teaches the plugin the drum’s own resonances.\n* **Trigger sidechain**: optional, for a contact mic on the shell."
+  },
+  {
+   "id": "schouten",
+   "name": "SCHOUTEN",
+   "subtitle": "The Residue Engine",
+   "kind": "Effect",
+   "tags": [
+    "Pitch"
+   ],
+   "tagline": "A bass enhancer whose sub and harmonics are phase-locked to the note you play.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/schouten-1.webp",
+     "thumb": "images/schouten-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "SCHOUTEN is a bass enhancer that generates a sub and harmonics locked exactly in phase with the note you play. Because every generated part is in step with the source, it adds to the sound cleanly and does not beat against it.\n\nA pitch tracker finds the note, and the plugin builds a new voice from it:\n\n* **ROOT**: where the generated note sits relative to the played one: two octaves down, a twelfth down, an octave, a fifth, a fourth, a major or minor third, or unison.\n* **Harmonic bars**: eight bars you paint to set the level of each harmonic.\n* **RESIDUE**: moves energy from the lowest fundamental into harmonics 2 to 6. The ear still hears the low note (the “missing fundamental” effect), so bass you would only feel becomes bass you can hear on small speakers.\n\n### The other controls\n* **PLUCK**: gives each harmonic a brighter attack or a swell.\n* **STRETCH**: spreads the harmonics slightly, like a stiff string.\n* **HEAT**: saturation that sounds the same at any playing level.\n* **THUMP and TAIL**: an 808-style pitch drop at the start, and how long the voice rings.\n* **SNAP and GLIDE**: lock the pitch to the nearest semitone, and slide between notes.\n* **WIDTH**: odd harmonics to the left and even to the right, with the root in the centre. It sums to mono exactly.\n* **ORIGINAL, SPLIT, MONO**: the level of the dry bass, the crossover point, and mono below it.\n* **AHEAD**: 40 ms of look-ahead for more accurate tracking. Without it the plugin has no latency, but the voice enters about 38 ms after each attack."
+  },
+  {
+   "id": "kilburn",
+   "name": "KILBURN",
+   "subtitle": "The Charge-Storage Engine",
+   "kind": "Effect",
+   "tags": [
+    "Delay",
+    "Texture"
+   ],
+   "tagline": "Audio stored as charge on the face of a cathode-ray tube, slowly crystallising into pitch.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/kilburn-1.webp",
+     "thumb": "images/kilburn-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "KILBURN is a time and texture effect modelled on an early computer memory that stored data as electric charge on the face of a cathode-ray tube. Here it is your audio that is stored on the screen.\n\nThe memory is drawn as lines on a screen, like an old TV picture. The stored sound does not stay sharp: the charge slowly spreads. That spreading is the character of the plugin:\n\n* **BLUR**: charge spreads along each line, so older sound gets darker.\n* **BLEED**: charge spreads between neighbouring lines. Anything that does not repeat at the line rate cancels out, so old echoes gradually turn into a pitched tone at the line frequency. The older the sound, the more it has “crystallised” into that pitch.\n* **LEAK and CHARGE**: how fast the stored sound fades, and how a full memory softens what is written.\n\n### Three guns\nThe sound is read back by three “guns”, each with two independent controls:\n\n* **PITCH**: how fast the gun scans, which shifts the pitch.\n* **TIME**: how the gun moves through the stored history. At 1 it follows the input like a delay, at 0 it stays parked on one spot, and below 0 it plays in reverse.\n\n### The other controls\n* **LINE and ROWS**: the line frequency (free, snapped to a note, or tempo-synced) and the number of lines. Together they set how much time the memory holds, from 0.25 to 6 seconds.\n* **PERSIST and FREEZE**: recirculate the memory, or hold it indefinitely.\n* **HALO, FOCUS, SAG, DRIFT**: tube behaviours: notches at the line pitch, a softer read spot, a pitch dip on loud input, and wow and flutter.\n* **HARMONY (v1.1)**: gun pitches follow a scale and key. The plugin tracks the note you played and stores it with the audio, so each gun harmonises the note it is reading.\n* **DRIVE (v1.1)**: a subtle valve stage per gun, hotter on older sound, with WARMTH and TONE."
+  },
+  {
+   "id": "helmholtz",
+   "name": "HELMHOLTZ",
+   "subtitle": "88 Key Amplifiers",
+   "kind": "Effect",
+   "tags": [
+    "Distortion",
+    "Piano"
+   ],
+   "tagline": "Piano distortion that keeps chords clear: every key gets its own amplifier.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/helmholtz-1.webp",
+     "thumb": "images/helmholtz-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "HELMHOLTZ is a distortion for live piano that keeps chords clear. Normal distortion turns piano chords to mud, because every pair of notes interacts and creates extra tones that belong to neither. Here each key is distorted separately, so that does not happen.\n\n### How it works\n* **88 resonators**: the sound is split by a bank of filters, one tuned to each piano key.\n* **One amplifier per key**: each key’s part of the sound gets its own distortion, alone.\n* **Built harmonics**: the plugin does not clip the wave. It adds the harmonics that the chosen distortion curve would produce, directly. That makes it free of aliasing, and it means DRIVE changes the character without changing the level.\n\nIn tests on a C-major chord, about 2 % of what it adds falls off the notes’ own harmonics, against about 61 % for a single amplifier.\n\n### The main controls\n* **DRIVE and CURVE**: how hard, and which character (SATURATE, CLIP, FOLD, STARVE).\n* **SERIES**: which harmonics are allowed: all, odd, even, octaves, organ-style, fifths, or primes.\n* **EVEN, ODD, BRIGHT, REACH**: balance and extent of the added harmonics.\n* **TOUCH**: at 0 the decaying notes keep their grit, and at 1 they clean up as they fade, like a real amp.\n* **FOCUS, TUNE, SCATTER**: how tightly each key is isolated, the tuning of the bank, and stereo placement of each key’s distortion.\n* **INTERMOD**: crossfades to one shared amplifier, so you can compare against the ordinary muddy result.\n* **HAMMER**: adds bite to the attack, since the resonators take about 25 ms to respond."
+  },
+  {
+   "id": "oram",
+   "name": "ORAM",
+   "subtitle": "The Radiophonic Laboratory",
+   "kind": "Effect",
+   "tags": [
+    "Texture",
+    "Performance"
+   ],
+   "tagline": "A sound laboratory for colouring a sound before you record it. A homage to Daphne Oram.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/oram-1.webp",
+     "thumb": "images/oram-1-thumb.webp"
+    },
+    {
+     "src": "images/oram-2.webp",
+     "thumb": "images/oram-2-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "ORAM is a sound manipulation laboratory for colouring a sound before you record it, so that the new sound inspires what you play. It is a homage to Daphne Oram, and it is always 100 % wet.\n\n### How it is built\n* **Four chambers in parallel**: harmonic, time, depth and bend. Each has four slots that you can reorder, and the order changes the sound.\n* **88 machines**: each slot holds one machine with three knobs, chosen from 22 per chamber. They include textures and “evolving” machines that keep changing as you play.\n* **The pin board**: a 5 by 5 grid that routes the input and the chambers into each other, including each chamber back into itself.\n* **A mixer**: LEVEL, INTENSITY and FOCUS for each chamber.\n\n### Two faces\nDETAIL shows everything above. MACRO is for dialling in a broad sound quickly:\n\n* **THE COMPASS**: one dot you move or throw between eight characters (VAST, GLASS, ALIVE, BROKEN, CLOSE, WARM, SUNKEN, HAUNTED). DRIFT lets it wander by itself.\n* **BLEND**: a puck that balances the four chambers.\n* **PITCH**: one control that tunes down to consonant steps, or adds tape wobble.\n\n### Ways to find and change sounds\n* **TRANSMUTE**: builds a whole new laboratory at random, with undo history.\n* **NUDGE, EVOLVE, GLIDE**: small steps in one direction, slow change over time, and smooth moves between settings.\n* **JARS and captures**: store sounds and morph between them. Captures are named with the date and time, and can be saved as presets.\n* **THE EAR and MOTION**: let the input (level, brightness, hits, pitch), two LFOs or a 16-step pulse move any knob or pin.\n\n### Performance controls\n* **DISSOLVE**: fades out the current sound naturally while new playing starts fresh, with no audible start.\n* **FLOOD**: pushes the current laboratory to its extreme while held.\n* **THE WARP**: push and drag to bend the speed of a tape of the output.\n* **HOLD**: holds the sound.\n* **DRY, TONE, MIX**: the blend and overall tone.\n\n### ORAM REMOTE\nControl it from a phone or iPad by scanning a QR code in the plugin. It includes tilt control and custom controller layouts you design yourself, running on the shared REMOTE KIT."
+  },
+  {
+   "id": "remanence",
+   "name": "REMANENCE",
+   "subtitle": "What the Tape Keeps",
+   "kind": "Effect",
+   "tags": [
+    "Delay"
+   ],
+   "tagline": "A tape delay whose capstan is driven by your playing.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/remanence-1.webp",
+     "thumb": "images/remanence-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "REMANENCE is a tape delay whose behaviour is driven by your playing. It is built only from tape-machine parts (heads, a transport, filters and saturation), with no note detection and no splicing, so it cannot click on chords.\n\nThe tape runs past up to six playback heads. You place the heads yourself by dragging them on the display:\n\n* **Drag along the tape**: sets that head’s delay time.\n* **Drag up and down**: sets its level.\n* **Per head**: pan, reverse, and feedback that can be normal or inverted.\n\n### Six things your playing drives\nOnly the first one moves the pitch:\n\n* **PULL**: the tape speed. The echo gets longer and darker as the tape slows, the pitch bends while the speed changes, and the bend builds up on every pass round the loop. It is off by default.\n* **REACH**: shifts the balance toward the far heads, so the echo feels later without any head moving.\n* **BLOOM, HEAT, SHADE, DUCK**: the feedback, the saturation, the darkness, and the wet level.\n\n### The other main controls\n* **MASS and SLIP**: the weight and damping of the flywheel. A loose flywheel keeps rocking for seconds after a chord.\n* **GRADE**: the class of machine, from worn cassette to mastering deck. Higher is cleaner and quieter.\n* **DRIVE, BIAS, WEAR, HISS, DROPOUT, WOBBLE**: the tape character, with a truly clean setting at zero.\n* **CRAWL and STRETCH**: the heads wander along the tape, and the tape is elastic between them.\n* **REGEN, HOLD, WIPE**: feedback up to 110 %, lift the record head to keep the loop, and erase the tape.\n* **SYNC, SNAP, LOCK, AUTO WIPE**: tempo sync. SNAP makes dragged heads land on note values, LOCK slides the tape speed onto the grid, and AUTO WIPE erases the tape every few bars."
+  },
+  {
+   "id": "bergson",
+   "name": "BERGSON",
+   "subtitle": "The Durée Engine",
+   "kind": "Effect",
+   "tags": [
+    "Delay"
+   ],
+   "tagline": "A multi-head delay that reacts to how you play, without moving the pitch.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/bergson-1.webp",
+     "thumb": "images/bergson-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "BERGSON is a multi-head delay that reacts to how you play, without moving the pitch. The name comes from Henri Bergson’s idea that lived time is not the time a clock counts.\n\nThe plugin reads one number from your playing: how far you are above or below your own average. You choose what it listens to with **LISTEN**:\n\n* **PRESSURE**: how hard you play.\n* **MOTION**: how much the sound is changing.\n* **DENSITY**: how many notes per second.\n* **HEIGHT**: where you are on the keyboard.\n\n### Six destinations\nThat one number is sent to six destinations, each with its own depth knob:\n\n* **BLOOM**: the wet level, so the echo gets out of the way or swells up.\n* **DWELL**: the feedback, so the tail grows or lets go.\n* **HAZE**: the tone of the echo, from dark and distant to open and near.\n* **REACH**: which heads sound. Playing harder brings up the far heads, so the echo seems later, while no head moves. This shifts the timing at exactly zero pitch change.\n* **SPILL**: the stereo width.\n* **BEND**: the delay time itself. This is the only one that can detune, and it ships at zero.\n\n### The other main controls\n* **AUTO POISE**: on by default. The plugin finds your own average level by itself, so the reactions are centred on however loud you play.\n* **SLACK**: how slowly the reactions follow your playing.\n* **HEADS, DURÉE, SPREAD, REGEN**: one to six heads, the base delay time (with SYNC), how the heads are spaced, and the feedback.\n* **SPLIT**: separates the attacks (knocks) from the sustained tone. You can keep the attacks on the beat while the tone drifts.\n* **ARROW, SPAN, GLIDE, STRATA**: only active when BEND is used. ARROW lets time run backwards when you stop pushing, at the original pitch. STRATA gives the bass, middle and treble their own clocks.\n* **FREEZE**: holds the stretch of tape the heads are reading."
+  },
+  {
+   "id": "ictus",
+   "name": "ICTUS",
+   "subtitle": "The Strike-Point Engine",
+   "kind": "Effect",
+   "tags": [
+    "Spectral",
+    "Piano"
+   ],
+   "tagline": "Move where the hammers hit the strings, on a piano that is already recorded.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/ictus-1.webp",
+     "thumb": "images/ictus-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "ICTUS is a piano effect that changes where the hammers hit the strings, on a piano that has already been recorded.\n\nOn every grand the hammer strikes at a fixed point, about one eighth of the way along the string. That point decides how loud each overtone of the note is: an overtone that has a still point where the hammer lands does not sound. Piano makers fixed this in the 1800s and it has never been adjustable. This plugin makes it a knob.\n\nIt works by finding each note you play, separating out its individual overtones, and changing the level of each one to what a different strike point would have produced. Because it works by overtone number and not by frequency, it treats every note of a chord correctly, which an ordinary filter cannot do.\n\n### The main controls\n* **POINT**: the new strike point, from the middle of the string (1/2) to very near the end (1/64). Striking in the middle removes every even overtone and sounds hollow, like a stopped pipe.\n* **SOURCE**: where your own piano is struck. The plugin measures this by itself, and a USE button applies it.\n* **DEPTH**: how much of the change is applied. At 0 the output is exactly the input.\n* **EXCITE**: how the string is set going: HAMMER, PLUCK, BOW or GLASS (an impossible exciter that favours the high overtones).\n* **WIDTH and HARDNESS**: the width of the felt, and how it changes with how hard you play.\n* **COMPASS**: whether every note is struck at the same fraction, or the strike point changes across the keyboard.\n* **HAMMERS, SPREAD, FLAM**: up to eight hammers at different points. With FLAM at zero they sound as one blow with a new timbre. As FLAM grows they separate into a rhythm of repeated strikes, and it can sync to tempo.\n* **KNOCK**: how much of the hammer noise each extra strike carries.\n* **MOTION, SWEEP, RATE**: moves the strike point over time, by itself or following your touch.\n* **GRIP, REACH, VOICES**: how finely chords are taken apart and how many notes are tracked."
+  },
+  {
+   "id": "hopfield",
+   "name": "HOPFIELD",
+   "subtitle": "The Associative Memory Engine",
+   "kind": "Effect",
+   "tags": [
+    "Performance",
+    "Piano"
+   ],
+   "tagline": "Remembers the phrases you play and plays them back when you go near them again.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/hopfield-1.webp",
+     "thumb": "images/hopfield-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "HOPFIELD is a live performance effect that remembers the phrases you play and plays them back when you go near them again. It is the sister of SOSTENUTO: that one catches a moment and holds it, and this one remembers whole phrases.\n\n### How it works\n* **Storing**: your playing is cut into phrases at the rests. Each phrase is kept as the real recording, up to 12 of them, 7 seconds each.\n* **Recognising**: everything you play is compared with the stored phrases. When a fragment matches, the plugin knows which phrase it is and where inside it you are.\n* **Playing back**: the memory joins in at the right place, at your tempo. It plays the actual recording; nothing is resynthesised.\n\n### The main controls\n* **SHARPNESS**: high, it settles on one memory, so your earlier self plays along with you. Low, it blends several memories into a mixture.\n* **LEAD**: at 0 the memory plays in unison with you. Positive, it plays your next notes before you do (up to 900 ms). Negative, it follows behind as a canon (up to 700 ms).\n* **ANY KEY**: recognises a phrase repeated in another key and transposes the memory to match.\n* **FOLLOW**: how far the memory bends its tempo to stay with you.\n* **SUPPRESS**: turns down your live sound when a memory is recognised. At 100 % you play and only your past is heard.\n* **DRIFT**: when you stop, each phrase calls up the one that best follows it, so the piano keeps playing you until HORIZON.\n* **FORGET and reinforcement**: repeating a phrase strengthens its memory, and unused ones fade. Old memories also sound darker.\n* **Modes**: COMPLETE, ANSWER and HAUNT.\n* **RECALL, FREEZE, FORGET ALL**: buttons in the header."
+  },
+  {
+   "id": "cancrizans",
+   "name": "CANCRIZANS",
+   "subtitle": "The Canon Engine",
+   "kind": "Effect",
+   "tags": [
+    "Performance",
+    "Piano"
+   ],
+   "tagline": "Answers what you play in counterpoint, built from your own recorded notes.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/cancrizans-1.webp",
+     "thumb": "images/cancrizans-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "CANCRIZANS is a live performance effect that answers what you play in counterpoint. It is the third sister after SOSTENUTO and HOPFIELD: those hold a moment and recall phrases, and this one writes an answer to your phrase and plays it back.\n\n### How it works\n* **Listening**: your playing is cut into single notes, each kept as a real recording with its pitch.\n* **The subject**: a run of notes between two rests is one phrase.\n* **The answer**: the plugin plays the phrase back transformed, after a delay in beats, in up to four voices.\n\nThe transformations work on the notes themselves. In a retrograde answer the order and rhythm of the notes are reversed, but every note is still struck forwards. It is not reversed audio.\n\nThe answer is built from your own notes. To play a B flat, the plugin fetches a B flat you played tonight. Only a pitch it has not heard is borrowed from a neighbour or moved by an octave. Nothing is resynthesised.\n\n### The main controls\n* **Form**: straight, backwards, upside down, backwards and upside down, slower, faster, or let the plugin choose.\n* **Interval and entry**: how far the answer is transposed and how many beats later it comes in.\n* **PLAN**: how the voices are arranged, for example stacked, mirrored, or all four forms at once.\n* **CRITIC, CONCORD, NO PARALLELS**: a counterpoint judge picks the interval. CONCORD aims it toward consonance or toward dissonance.\n* **PURITY and TOLERANCE**: how clean a recorded note must be to be preferred, and how far it may borrow a neighbouring pitch.\n* **PEDAL and RELEASE**: how long the answered notes ring.\n* **TAPE**: wow, flutter, saturation and a tempo-synced tape echo on the answer.\n* **PERPETUUS**: feeds each answer back as the next phrase, so the canon continues without you until HORIZON.\n* **RESOLUTIO, ANSWER NOW, FREEZE, FORGET ALL**: buttons in the header. RESOLUTIO brings everything back to the straight form."
+  },
+  {
+   "id": "sostenuto",
+   "name": "SOSTENUTO",
+   "subtitle": "The Held Note Engine",
+   "kind": "Effect",
+   "tags": [
+    "Sustain",
+    "Performance",
+    "Piano"
+   ],
+   "tagline": "The piano’s middle pedal as an effect: catch the last moment and hold it while you play on.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/sostenuto-1.webp",
+     "thumb": "images/sostenuto-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "SOSTENUTO is a sustain effect for live piano, named after the piano’s middle pedal. You give it a trigger and it catches the last moment of what you played and holds it, while you keep playing dry over the top.\n\nThe trigger can be a hit on a contact mic (through the sidechain), the music’s own attacks, a button, or the DAW’s bar line. Each catch becomes a layer, and up to four layers are held at once.\n\n### Four engines\nThe held sound is always the real recording, never a resynthesis. Four engines play it back, and you mix them:\n\n* **BLOOM**: a cloud of long overlapping grains. DENSITY, SCATTER, COLOUR and JITTER shape the texture.\n* **TAPE**: a loop with wow, flutter, saturation and slow erosion. SHUFFLE re-orders the loop so it does not repeat.\n* **STRINGS**: resonating strings tuned to the notes it caught, set ringing by what you play next. SUB adds a bank an octave down.\n* **SPACE**: a reverb that can hold indefinitely.\n\n### The main controls\n* **WINDOW and VARY**: how much audio a catch takes (free or in note lengths), and how much that length changes from catch to catch.\n* **ATTACK, CURVE, DECAY**: how a new layer fades in and how long it lasts.\n* **ON A HIT**: what a new catch does: add a layer, replace, swell, or stutter.\n* **PULSE**: rhythmic movement on the hold, synced to the session by default. It can gate the level or sweep a filter.\n* **DUCK and RECOVER**: push the hold down under your playing.\n* **WARMTH, HAZE, DRIFT, TUNE**: soft saturation, a blur with no edges, how much the phases wander, and a master tune of ±100 cents.\n* **DISSOLVE and CLEAR**: fade everything out, slowly or fast. Both can be MIDI-assigned.\n\n### Remote\nIt also runs on REMOTE KIT, with a 12-page phone controller. Besides every parameter, it has pages a window cannot offer: FIELD (store whole sounds as stars and move between them), BREATHE (draw a movement and it loops), and MOTION (knock or clap to catch, tilt, and the phone’s microphone as a control source)."
+  },
+  {
+   "id": "weinreich",
+   "name": "WEINREICH",
+   "subtitle": "The Decay-Law Engine",
+   "kind": "Effect",
+   "tags": [
+    "Sustain",
+    "Spectral",
+    "Piano"
+   ],
+   "tagline": "Put the piano’s decay law under a knob: choose how long each overtone lasts.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/weinreich-1.webp",
+     "thumb": "images/weinreich-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "WEINREICH is a performance effect that changes how the notes die away. On a real piano the high overtones fade quickly and the low ones last longer, following a fixed rule. This plugin puts that rule under a knob.\n\nIt is the sibling of RAILSBACK and ICTUS. RAILSBACK changes the pitch of a piano’s overtones, ICTUS changes how loud each one starts, and this one changes how long each one lasts.\n\nThe plugin finds each overtone of what you play and, when the piano’s own sound falls away, continues that overtone at the decay time you asked for. It can also cut overtones short.\n\n### The main controls\n* **SUSTAIN**: how long a note lasts at the pivot frequency, from 0.05 to 60 seconds.\n* **LAW**: how the decay time changes with frequency. At the normal setting it behaves like a grand. At 0 every overtone dies at the same rate, like an organ that was struck. Below 0 the piano is inverted: the low part goes first and the brightness outlives it.\n* **PIVOT**: the frequency where SUSTAIN is exactly true. LAW turns the rule around this point.\n* **DAMP**: shortens the notes, like a damper.\n* **AFTERSOUND and BLOOM**: a second, much longer and quieter stage of decay, as real piano strings have, and how late it arrives. With a late arrival the note dips and then swells back.\n* **BLUR**: makes the held overtones slightly uneven, like real strings. Without it they are perfect sine waves and sound synthetic.\n* **DRIFT, WIDTH, TILT**: slow pitch movement in the tail, stereo spread of the tail only, and a brightness tilt.\n* **PEDAL**: holds everything.\n* **SENSE**: the quietest overtone the plugin will extend."
+  },
+  {
+   "id": "railsback",
+   "name": "RAILSBACK",
+   "subtitle": "The Stretch Engine",
+   "kind": "Effect",
+   "tags": [
+    "Spectral",
+    "Piano"
+   ],
+   "tagline": "Retune a piano’s overtones while the notes themselves stay in tune.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/railsback-1.webp",
+     "thumb": "images/railsback-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "RAILSBACK changes the tuning of a piano’s overtones while leaving the notes themselves in tune. It was built for live grand piano in concert.\n\nA piano string is stiff, so its overtones sit slightly higher than the exact multiples of the note. That small stretch is what makes a piano sound like a piano. This plugin measures it for every note you play, takes each overtone out, and puts it back at a new frequency. The fundamental of each note never moves, so the performance stays in tune however far the timbre goes.\n\n### The new pattern of overtones\n* **String**: the piano’s own stiffness under a knob, more or less of it, including negative.\n* **Harmonic**: exact multiples, for a glass, organ or voice quality.\n* **Bell, Bar, Membrane**: the overtone patterns of a bell, a metal bar (gamelan) and a gong.\n* **Golden, Odd, Octaves**: a pattern with no octave in it, odd overtones only, and octaves only.\n\n### The main controls\n* **MORPH**: how far the overtones move toward the new pattern. They slide there smoothly. At 0 the output is exactly the input, bit for bit.\n* **GRIP**: how firmly each overtone is taken hold of. In practice it also depends on how well the piano is tuned.\n* **DRY and WET**: DRY is everything the plugin did not extract, such as the hammer and the air. At DRY 0 only the rebuilt overtones remain.\n* **AUTO**: on by default. It holds the output at the input’s loudness, so the other knobs change only the timbre.\n* **TRACK (NOTES or MODES)**: NOTES is for piano. MODES is for percussion and reads a drum’s resonances as they are. It can turn an unpitched drum into a pitched one.\n* **FREEZE**: holds the current sound."
+  },
+  {
+   "id": "aliquot",
+   "name": "ALIQUOT",
+   "subtitle": "Soft Valve and Sympathetic Sustain",
+   "kind": "Effect",
+   "tags": [
+    "Distortion",
+    "Sustain",
+    "Piano"
+   ],
+   "tagline": "Fat, soft valve distortion for piano with a crisp, close sustain and no room sound.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/aliquot-1.webp",
+     "thumb": "images/aliquot-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "ALIQUOT is a soft valve distortion for piano with a sustain section that has no room sound. It goes anywhere from compressor-like to heavily distorted, but always fat and soft, with a “smudge” that sustains while staying crisp and close, in the spirit of a Thermionic Culture Vulture.\n\nThe name refers to aliquot stringing, the extra piano strings that are never struck and ring in sympathy.\n\n### VALVE: the distortion\n* **FAT and GRIT**: the valve’s output is split exactly into even harmonics (FAT) and odd harmonics (GRIT), each with its own level from 0 to 200 %.\n* **SAG**: makes the valve’s clean gain follow the playing level. This is the compressor, and it is the same mechanism as the distortion.\n* **VALVE A, VALVE B, MORPH**: twelve characters (triode, pentode, germanium, silicon, tape, fuzz, fold and others), with a smooth blend between any two.\n* **SOFTEN**: darkens only the added harmonics. The dry sound’s highs are not affected, which is how it stays crisp when heavily driven.\n\n### MELT: the sustain\n* **How it works**: the plugin tracks the overtones of the note tails and keeps them ringing. The lingering notes then slowly glide in pitch toward what you play next, or toward the key when you stop.\n* **Controls**: SUSTAIN, DAMP, GLIDE, and KEY, which can detect the key by itself.\n\n### STRINGS: sympathetic resonance\nA bank of 48 tuned strings that ring in sympathy, like the undamped strings of a piano. It sits quietly under the MELT.\n\n### WARP: optional tape drift\n* **WARP**: a slow, delicate pitch drift, set in cents.\n* **RECUE**: pulls the drift back toward true pitch at each new attack, so every note starts near in tune."
+  },
+  {
+   "id": "kotekan",
+   "name": "KOTEKAN",
+   "subtitle": "Percussion That Knows What You Played",
+   "kind": "Effect",
+   "tags": [
+    "Sampler",
+    "Performance"
+   ],
+   "tagline": "A percussion trigger that chooses its drum by what you played musically.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/kotekan-1.webp",
+     "thumb": "images/kotekan-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "KOTEKAN is a percussion trigger that listens to your playing and chooses which drum sound to fire according to what you played musically. It is named after the Balinese technique where two players’ parts interlock into one line.\n\n### How it works\n* **The kit is measured.** You load material (the default is a drum break) and it is cut into slices. Each slice is measured and placed as a point in a square: dark to bright across, short to ringing up. The corners are BOOM, EDGE, WASH and TONE, with BODY in the middle.\n* **Your playing aims at a point.** Each note you play moves an aim around the square, and the nearest slice sounds.\n\n### Six things that move the aim\nEach has its own knob per axis:\n\n* **REGISTER**: how high or low you play.\n* **WEIGHT**: how hard.\n* **FUNCTION**: the note’s place in the chord, from root through fifth, third and seventh to a note outside the harmony. Play the root and you get a kick; play a clashing note and you get a rimshot.\n* **LEAP**: how far you jumped from the last note.\n* **DENSITY**: how busy the playing is.\n* **CHANGE**: the harmony moving, which affects only the next hit, like a cymbal on a chord change.\n\n### The other main controls\n* **RANK**: spreads the kit evenly across the square, since slices from one break tend to bunch together.\n* **LEVEL MATCH**: brings quiet slices up toward the kit’s average loudness.\n* **AVOID and LOOSE**: stop the same slice repeating, and add some chance to the choice.\n* **HANDS**: one to four hits at once, kept apart in the square.\n* **TUNE, TONAL ONLY, TRANSIENT LOCK**: tuned slices follow the chord while drums stay drums, and the attack is kept unshifted.\n* **Decision wait**: hits are held about 18 ms so the plugin knows which note you played. This is reported as latency.\n\n### THE CONSTELLATION\nThe main display shows the slices as dots and the aim as a crosshair, with a coloured line for each feature that moved it. You can drag a slice to place it by hand."
+  },
+  {
+   "id": "parsimony",
+   "name": "PARSIMONY",
+   "subtitle": "The Harmonic Obedience Engine",
+   "kind": "Effect",
+   "tags": [
+    "Sampler",
+    "Pitch",
+    "Performance"
+   ],
+   "tagline": "Your transients fire sample slices, retuned to your chords like a choir turning a corner.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/parsimony-1.webp",
+     "thumb": "images/parsimony-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "PARSIMONY turns a live instrument into the trigger for a sampler, and keeps the sampler in tune with the chords you are playing.\n\n### How it works\n* **Listening**: it hears your playing and works out two things: when each note starts, and which chord is being implied.\n* **Triggering**: each note start fires a slice of a sample you have loaded.\n* **Retuning**: the slices are pitch-shifted to fit the current chord, so any sample follows your harmony.\n\nThe main idea is in how the retuning is done. The plugin has several “singers”, each holding its own pitch. When the chord changes, it finds the solution where the singers move the smallest total distance, with each one taking a different chord note. So a chord change sounds like a choir turning a corner together, and the chord does not collapse into one note.\n\n### The main controls\n* **OBEY**: how strictly the sample is forced into the chord.\n* **VOICING**: how many singers take part in the shared solution. At 0 each goes to its nearest note and they may bunch together.\n* **PULL**: draws the singers toward one register.\n* **Glide**: how quickly a singer moves to its new note, set in seconds per octave.\n* **Shifter**: TAPE (the slice gets shorter as it goes up, good for a drum break), GRAIN (length kept), or VOX (for voices, with a separate FORMANT control).\n* **ROOT**: the sample’s own pitch, estimated when you load it, with a DETECT ROOT button.\n* **LISTEN SOURCE**: which part of the stereo input it listens to (left, right, mid or side).\n* **SYMPATHY**: a rack of resonating strings tuned to the chord.\n* **SPACE**: reverb and other effects on the output."
+  },
+  {
+   "id": "scion",
+   "name": "SCION",
+   "subtitle": "The Grafting Engine",
+   "kind": "Effect",
+   "tags": [
+    "Spectral",
+    "Sampler"
+   ],
+   "tagline": "A sample’s texture grafted onto the tonal shape of your live playing.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/scion-1.webp",
+     "thumb": "images/scion-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "SCION gives a loaded sample the tonal shape of your live playing. The name is a gardening term: the live input is the rootstock, the sample is the scion, and the plugin grafts one onto the other.\n\n### How it works\n* **Your playing becomes a mould.** The plugin measures the broad shape of your input’s spectrum, which is its tone and vowel-like character.\n* **The sample is flattened.** Its own tonal shape is removed, leaving its fine detail and texture.\n* **The sample is poured into the mould.** What you hear is the sample’s texture with your instrument’s tone and dynamics.\n\n### The main controls\n* **GRAFT**: how much of the transplant is applied. At 0 the output is unchanged.\n* **STRIP**: how much of the sample’s own tone is removed first.\n* **GRAIN**: how fine the mould is, from the overall body of the sound to its individual overtones.\n* **BITE**: the contrast of the mould.\n* **BODY**: shifts the mould up or down, like changing the size of the instrument.\n* **HOLD and CAST**: HOLD lets the mould outlast the note. CAST freezes it, so a chord you played becomes a permanent filter.\n* **CALLUS and SPLAY**: smears the spectrum upward, and creates stereo width from the mould.\n* **WINDOW**: the analysis size, which also sets the latency.\n\n### The sample side\n* **CHOP**: cuts the sample into slices, by equal parts, by the strongest attacks, or by detecting every attack (DETECT), with a RESLICE button.\n* **SYNC and LENGTH**: make the whole sample last a set number of beats at the host tempo.\n* **SHAPE tab**: ATTACK, LOOP, RATCHET (repeated re-attacks) and CRUSH for each slice.\n* **HARVEST**: the order the slices play in, including ping-pong and a random walk.\n\nIt also has a sidechain input, so it can graft one live signal onto another with no file loaded."
+  },
+  {
+   "id": "larsen",
+   "name": "LARSEN",
+   "subtitle": "The Regeneration Governor",
+   "kind": "Effect",
+   "tags": [
+    "Live",
+    "Piano"
+   ],
+   "tagline": "Let a grand piano ring through its own feedback without ever running away.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/larsen-1.webp",
+     "thumb": "images/larsen-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "LARSEN is a feedback controller built for one setup: a contact mic on a grand piano feeding an exciter on that same piano’s soundboard. The piano rings and blooms through its own feedback, and the plugin lets it do that without ever running away.\n\nThe problem is that ordinary feedback suppressors cannot work here. On this rig the feedback frequencies are the piano’s own string notes, so they look exactly like the music. The one thing that tells them apart is how they decay: a struck note dies away, and a feedback loop at full gain does not.\n\nSo the plugin controls decay time, in 28 frequency bands:\n\n* **SUSTAIN**: you ask for a decay time, for example 4 seconds. In each band the plugin raises the loop gain until that band rings for that long, and holds it there.\n* **HOLD**: asks for no decay at all. The gain is brought up to the edge of feedback from below and never crosses it.\n\nThe sustain control and the feedback protection are the same mechanism, so there is no setting where the protection is off.\n\nIf a band still gets out of hand, there is a ladder of stronger responses: the band’s gain is pulled down, then a notch is placed on it, then the whole output is ducked.\n\n### The other parts\n* **Calibration**: plays a sweep through the exciter and measures how the piano responds in each band. The result is kept with the session, and presets do not overwrite it.\n* **ROOM MIC**: an optional sidechain for an air microphone. It is only listened to, never mixed in. It catches feedback through the room, which a contact mic cannot hear.\n* **Exciter protection**: a low cut, a thermal guard and a limiter to protect the exciter itself.\n* **Output ceiling**: set to −1 dBFS."
+  },
+  {
+   "id": "banshee",
+   "name": "BANSHEE",
+   "subtitle": "Vocal Strip and Feedback Engine",
+   "kind": "Effect",
+   "tags": [
+    "Live",
+    "Dynamics"
+   ],
+   "tagline": "A live vocal strip whose feedback section can remove a howl or play it as a tone.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/banshee-1.webp",
+     "thumb": "images/banshee-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "BANSHEE is a live vocal channel strip with a feedback engine at the end. Its feedback section can either remove a howl or play it as a musical tone.\n\n### Four stages\n* **Input**: an EQ and a de-esser.\n* **SCREAM**: saturation.\n* **IRON**: a compressor.\n* **BANSHEE**: the feedback engine, which has two modes.\n\n### KILL mode suppresses feedback\n* **Detection**: it tracks steady tones in the signal and scores each one on how stable it is, how fast it grows, and whether it belongs to a harmonic series. A sung note is part of a series of harmonics, and a howl is usually one lone tone, which is how it tells them apart.\n* **Notches**: each confirmed howl gets a notch filter. The notch is held for a while after the tone disappears, because removing it at once lets the howl come straight back.\n* **Panic duck**: if things still run away, the output is pulled down.\n\n### WAIL mode plays the feedback as an instrument\n* **One tone is cultivated.** The plugin picks a feedback tone, snaps it to the nearest semitone, and holds it at a controlled level so it stays alive without running away.\n* **It blooms and climbs.** The tone builds up by itself and moves up through its harmonics, the way guitar feedback jumps to the octave.\n* **Everything else is still killed.** Any other frequency that starts to feed back gets the KILL treatment."
+  },
+  {
+   "id": "palimpsest",
+   "name": "PALIMPSEST",
+   "subtitle": "The Generation Loss Engine",
+   "kind": "Effect",
+   "tags": [
+    "Texture"
+   ],
+   "tagline": "A dub of a dub: your sound re-recorded up to eight times, on tape and in digital.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/palimpsest-1.webp",
+     "thumb": "images/palimpsest-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "PALIMPSEST is a media-decay effect: it makes your sound age the way a recording does when it is copied again and again, on tape and in digital form.\n\nThe central idea is that the audio is re-recorded onto the medium up to eight times, like a dub of a dub. Each copy adds its own wobble, noise and loss, and also re-records the damage from the copies before it. This sounds different from one heavily damaged pass.\n\n### The main controls\n* **GENERATIONS**: how many times the sound is copied, from 1 to 8.\n* **MEDIUM**: from analogue to digital. The middle is a third medium, a corrupted digital stream on worn tape, not a simple mix of the two.\n* **DAMAGE**: one knob that moves through a planned sequence of faults, starting with gentle treble loss and ending with stutter. The individual fault knobs set a minimum, and DAMAGE pushes past it.\n* **SMOOTH**: softens every harsh edge in the digital faults.\n* **EVOLVE**: makes the damage grow over time, once, in a cycle, or following the host transport.\n\nThe analogue side has wow, flutter, saturation, a narrowing bandwidth, hiss, dropouts and VHS tracking faults. The digital side has aliasing, bit crushing, circuit bending and datamosh, where the sound smears across stale frames.\n\n### Four texture sections\n* **FOG**: blurs the spectrum, in a consonant (TONAL), dissonant (INHARMONIC) or moving (EVOLVING) way.\n* **GHOSTS**: echoes, grains, and print-through, where a faint copy of a sound arrives just before the sound itself. FREEZE holds it.\n* **BLOOM**: a long ambient reverb, with SHIMMER adding an upper octave layer.\n* **THE LOOM**: an 8-second loop pad with up to four voices at musical intervals, which can be held with no click."
+  },
+  {
+   "id": "risset",
+   "name": "RISSET",
+   "subtitle": "The Endless Glide Engine",
+   "kind": "Effect",
+   "tags": [
+    "Pitch"
+   ],
+   "tagline": "A pitch shifter that rises or falls forever without arriving, like a Shepard tone.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/risset-1.webp",
+     "thumb": "images/risset-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "RISSET is a pitch shifter that can rise or fall continuously without ever arriving anywhere, like a Shepard tone. It is the sequel to ORNSTEIN.\n\nIt plays seventeen copies of your sound at once, each an octave apart, all gliding together. They pass through a fixed window of loudness: as one copy climbs out of the top and fades away, another is born at the bottom at the same rate. So the pitch seems to rise forever while the overall sound stays the same.\n\n### The main controls\n* **RATE**: how fast the copies glide, up or down.\n* **SPREAD**: how wide the loudness window is. This is the illusion itself. At minimum, sixteen copies switch off and it becomes one ordinary, high-quality pitch shifter.\n* **MOVE**: a normal fixed pitch shift, applied to everything.\n* **ANCHOR**: what the loudness window is fixed to, either a fixed frequency range or the sound’s own pitch.\n* **FORMANT**: keeps the body of the sound in place while the pitch moves, so a voice or instrument keeps its character.\n* **TRANSIENTS and FOCUS**: how attacks are treated, and how tightly the phases are held together.\n* **REGEN**: feeds the output back in, set as a decay time.\n* **Quality**: three analysis sizes. The latency equals the size (2048, 4096 or 8192 samples).\n\n### THE TRIGGER (v1.1)\nA gesture controls the glide. ENGAGE has four modes:\n\n* **Free**: the glide runs by itself.\n* **Throttle**: you push to move, and it stays where you release it.\n* **Bend**: you push to move, and it walks back home over the RETURN time.\n* **Gate**: the plugin is dry until you push, and each push starts the glide from the same place."
+  },
+  {
+   "id": "ornstein",
+   "name": "ORNSTEIN",
+   "subtitle": "Micro-Pitch Drift",
+   "kind": "Effect",
+   "tags": [
+    "Pitch"
+   ],
+   "tagline": "Mastering-grade wow, flutter and organic drift, plus a pitch bend you can hold.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/ornstein-1.webp",
+     "thumb": "images/ornstein-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "ORNSTEIN is a mastering-grade tool for very subtle pitch movement: wow, flutter and slow organic drift, plus a pitch bend you can hold. Quality was the brief, and latency was allowed.\n\nIt works by moving the read position on a delay line, the way tape speed changes move pitch. Nothing is cut up or granulated in normal use.\n\n### The main parts\n* **DRIFT**: a slow, organic wander in pitch. It uses a random process that always tends back toward the centre, so the depth you set is a true limit.\n* **FLUTTER**: a faster, regular wobble with some unevenness. The depth in cents is exact at any rate.\n* **Pitch bend**: a wheel that stays where you leave it; it does not spring back. Double-click returns it to centre.\n* **MIX**: at 100 % the dry signal is completely gone.\n\nThe knobs are scaled for fine work: 80 % of their travel covers the range from 0 to half a semitone.\n\n### The held bend\nHolding a constant pitch offset needs the read position to jump back now and then. ORNSTEIN uses one clean read head nearly all the time, and when a jump is needed it finds a point where the waveform matches, so the join is not heard. A normal bend gesture (bend, hold about a second, release) never reaches a jump at the top quality setting."
+  },
+  {
+   "id": "piranesi",
+   "name": "PIRANESI",
+   "subtitle": "The Architectural Resonator",
+   "kind": "Effect",
+   "tags": [
+    "Reverb",
+    "Data"
+   ],
+   "tagline": "Sixteen chambers whose geometry is decoded from the bytes of a file.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/piranesi-1.webp",
+     "thumb": "images/piranesi-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "PIRANESI is a reverb whose room is built from the bytes of a file. It is named after Piranesi’s drawings of vast, impossible stone interiors.\n\n### How it works\n* **The room has sixteen chambers.** Sound passes between them, as in most algorithmic reverbs.\n* **The file sets the geometry.** A small window of 256 bytes is laid out as a 16 by 16 grid. The diagonal gives the size of each chamber, and the rest say how strongly each chamber feeds every other one.\n* **It is always stable.** A random grid of numbers would normally make a reverb explode or collapse. The plugin reshapes it mathematically so it never can, while keeping the file’s own pattern.\n\nOut of the box it reads its own program file, so the default is a room made of itself. There are ten built-in files, and you can drop in any file.\n\n### The main controls\n* **SEEK, STRIDE, READ**: where in the file the window sits, how it steps through the bytes, and how the bytes are read (six modes).\n* **PLUMB**: at 0 the room is the nearest even, lossless version of the file’s pattern. Turned up, it becomes the file’s true crooked geometry, and with FREEZE it slowly settles onto one dominant tone.\n* **VOIDS**: removes the weakest connections, so sixteen chambers become a few corridors.\n* **SNAP and LATTICE**: pull the chamber sizes onto a musical set of ratios, so the room becomes a chord and not only a texture.\n* **DRIFT and GLIDE**: move the window through the file while you play. The room’s walls move, and you hear it as pitch bending.\n* **SIZE, DECAY, DAMP, DIFFUSE, PREDELAY**: the usual reverb controls.\n* **FREEZE**: holds the tail."
+  },
+  {
+   "id": "entropia",
+   "name": "ENTROPIA",
+   "subtitle": "The Data-Density Engine",
+   "kind": "Effect",
+   "tags": [
+    "Data"
+   ],
+   "tagline": "A playhead reads any file, and measurements of the data drive the effects.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/entropia-1.webp",
+     "thumb": "images/entropia-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "ENTROPIA is an effect where a playhead reads through any file, and measurements of the data become modulation signals that drive the effects inside the plugin.\n\n### Six measurements\nThe file is read in small chunks. For each chunk the plugin takes six measurements, and each becomes a modulation lane:\n\n* **ENTROPY**: how random the bytes are.\n* **ORDER**: how much the sequence of the bytes is predictable.\n* **NOVELTY**: how different this chunk is from what came before. It spikes where the file changes from one kind of data to another.\n* **PERIOD**: whether the data repeats regularly. A table or spreadsheet gives a steady pulse.\n* **ROUGH and LEVEL**: how much the bytes jump about, and how far they sit from the middle value.\n\nSix patch cords route these lanes to 16 destinations inside the plugin, each with its own depth.\n\n### The effects they drive\n* **THE SIEVE**: a filter bank shaped by the chunk’s byte counts, so the shape of the data becomes a spectrum. English text gives vowel-like tones, and a mostly empty file gives one bass resonance.\n* **VOICE**: four tuned resonators whose pitch comes from the data’s repeat length, snapped to a scale, so a run of chunks plays an arpeggio.\n* **RAW**: plays the actual bytes as sound, fed in before the sieve.\n* **The rest**: a resonant filter, crush, wavefold, a gate clocked by the data, and a delay.\n\n### The reader\n* **Chunk size and rate**: free or synced to the DAW’s tempo.\n* **Motion**: forward, reverse, ping-pong, random, or seeking out the densest or emptiest parts of the file.\n* **DISTILL**: cuts out the dull, repetitive parts of a file and keeps the lively ones. It is applied automatically to files that are mostly empty.\n* **MUTATE**: changes the bytes as they are read, which changes the measurements as well as the sound.\n* **INFECT**: writes your incoming audio back into the file in memory, so the data you are reading slowly becomes your own signal. Nothing is written to disk, and REVERT restores the source."
+  },
+  {
+   "id": "asphyx",
+   "name": "ASPHYX",
+   "subtitle": "The Slew-Rate Asphyxiator",
+   "kind": "Effect",
+   "tags": [
+    "Dynamics"
+   ],
+   "tagline": "A compressor on the derivative: it limits how fast the signal moves, not how loud it is.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/asphyx-1.webp",
+     "thumb": "images/asphyx-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "ASPHYX is a dynamics effect that works on how fast the signal moves, not on how loud it is. A normal compressor turns down anything above a level. This one limits anything changing too quickly, whatever its level.\n\nIn practice that means it catches fast, sharp movement such as harsh highs and hard edges, and leaves slow movement such as bass alone. When nothing is moving too fast, the output is exactly the input.\n\nThe speed limit is set as a frequency, which makes it readable: it is the frequency at which a full-level sine wave starts to be caught, for example 2.2 kHz.\n\n### The main controls\n* **CHOKE**: the compressor itself, with the speed limit, ratio and knee. SKEW gives rising and falling movement different limits, which adds a transformer-like thickness. RANGE limits how much it may take away.\n* **INERTIA**: MASS rounds off the corners that plain speed-limiting leaves, so the result is smooth and not buzzy. With high MASS and low damping it overshoots and rings, as a resonance that depends on level.\n* **SLIP**: lets the signal sag off-centre and recover, like an overworked transformer.\n* **SMOOTH and GRAIN**: SMOOTH moves from an instant clamp that adds harmonics to a smoothed action that behaves more like a filter. GRAIN makes the permitted steps coarse, like a bitcrusher on movement.\n* **FOCUS**: aims the effect at the highs (a de-harsher) or the lows (a pumping thickener).\n* **ADAPT**: makes the limit follow the level of the programme.\n* **LISTEN = Removed**: hear only what the plugin took away.\n\nIt also has mid/side mode, channel linking, and 1x, 2x or 4x oversampling."
+  },
+  {
+   "id": "codex",
+   "name": "CODEX",
+   "subtitle": "The Data Convolution Engine",
+   "kind": "Effect",
+   "tags": [
+    "Reverb",
+    "Data"
+   ],
+   "tagline": "Convolution through the raw bytes of any file: a program, a script, an image.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/codex-1.webp",
+     "thumb": "images/codex-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "CODEX passes your audio through the raw bytes of any file. Convolution is the technique used for sampled reverbs, where a recording of a room shapes the sound. Here the “recording” is a file’s data: a program, a script, an image, anything.\n\nOut of the box it loads its own program file, so it processes your audio through itself.\n\nRead plainly, most modern files sound like the same burst of noise, because compressed and compiled data is close to random. So the way the file is read is the instrument. There are nine read modes, each bringing out a different real structure in the data. One makes source code sound pitched, one turns text into discrete echoes, and one reads an image’s lines as a comb tuned to the picture’s width.\n\n### The main controls\n* **SEEK, SPAN, STRIDE**: where in the file the read head sits, how much it reads, and how it steps.\n* **SMEAR**: from the brutal raw sound of the bytes to a diffuse reverb tail of the same colour.\n* **SIEVE**: keeps only the largest values, which gives separate echoes.\n* **ETCH and CARVE**: exaggerate the file’s own character. ETCH leaves only its biggest landmarks, and CARVE deepens its resonant peaks.\n* **LOCK and NOTE**: tune the result to a pitch, so the file becomes a tuned resonator.\n* **SCAN**: moves the read head through the file while you play.\n* **SHATTER**: up to eight read heads at different places in the file, heard as a sequence of echoes with different colours.\n\n### Beyond convolution\n* **IMPRINT and STREAM**: the byte stream gates the wet sound. Slowly, the file’s structure chops the tail. At audio rates it acts like ring modulation.\n* **MANGLE**: the file’s bytes rewrite the bits of the audio itself (XOR, AND, OR, ADD, rotate). This overwrites the sound and does not just colour it."
+  },
+  {
+   "id": "mixtur",
+   "name": "MIXTUR",
+   "subtitle": "The Undertone Engine",
+   "kind": "Effect",
+   "tags": [
+    "Pitch"
+   ],
+   "tagline": "Undertones below the note you play, after Oskar Sala’s Mixtur-Trautonium.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/mixtur-1.webp",
+     "thumb": "images/mixtur-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "MIXTUR adds undertones below the note you play. The undertone series is the mirror image of the overtone series: where overtones are the note’s frequency times 2, 3, 4 and so on, undertones are the frequency divided by 2, 3, 4 and so on.\n\nIt is modelled on the Mixtur-Trautonium, the 1952 instrument of Oskar Sala, which ran its oscillator through four frequency dividers, each with its own level fader.\n\nA pitch tracker finds the note, and four voices each produce that note divided by a whole number from 1 to 24. Dividing by 2 gives the octave below, by 3 a fifth below that, and higher numbers give stranger, darker intervals.\n\n### The main controls\n* **Four voices**: each has a divisor (1 to 24) and a level. Each lane names the resulting note and interval.\n* **TEMPER**: blends between the pure mathematical tuning of the undertones and normal equal temperament. The 7th undertone is naturally 31 cents flat, and this can be kept or corrected.\n* **Waveform**: each divider morphs from sine through triangle and saw to pulse.\n* **Sympathy blend**: an alternative way of making the undertone, by gating your actual sound so it carries the source’s own character. TENSION makes it ring.\n* **DRIFT and GROWL**: slow pitch wander, and a rough, guttural edge.\n* **THROAT**: a vocoder that puts the tonal shape of your playing onto the undertones, so they articulate with you.\n* **HOLD**: freezes the pitch and level as a drone, which still responds to what you play over it through THROAT.\n* **FOLD**: lifts undertones that are too low to hear up by octaves.\n* **DIRECT and UNDERTONE**: the dry level and the undertone level. With DIRECT at 0 you hear the undertones alone."
+  },
+  {
+   "id": "cagework",
+   "name": "CAGEWORK",
+   "subtitle": "The Mechanical Obstruction Engine",
+   "kind": "Effect",
+   "tags": [
+    "Texture",
+    "Piano"
+   ],
+   "tagline": "John Cage’s prepared piano: drag screws, felt, coins and erasers onto the strings.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/cagework-1.webp",
+     "thumb": "images/cagework-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "CAGEWORK is based on John Cage’s prepared piano: you place objects such as screws, felt, coins and erasers on the strings, and they change the sound physically.\n\nYour audio is split into five frequency bands, shown as five courses of strings in a piano frame. You drag an object from a tray onto a course. There are ten materials: OPEN, FELT, RUBBER, WAX, SCREW, BOLT, COIN, PAPER, TAPE and SPRING.\n\n### What an object does\nEach object acts on its band in four ways, in amounts set by its material:\n\n* **MASS**: damps the string. The attack gets through and the sustain is choked, with the highs dying first. It also adds a small knock.\n* **RATTLE**: a loose object bouncing on the string. Loud playing throws it and you get clanks; quiet playing leaves it still. It never repeats exactly.\n* **BUZZ**: the string touching the object on every cycle, which gives the jangly, sitar-like sound. The short piece of string beyond the object rings at its own pitch.\n* **FRICTION**: a scraping, rasping sound as the string slides against the object.\n\n### The main controls\n* **PLACEMENT**: where the object sits along the string. Far left is low, dull and heavily damped. Far right is high, bright and ringing. Each object shows the note it rings at.\n* **TUNE and SNAP**: transpose the jangle by up to two octaves either way, and lock it to semitones.\n* **TONAL**: one knob from percussive and dry to ringing and tonal.\n* **NOISE and CLANG**: make the sound less pitched. NOISE turns the ring into a band of noise, and CLANG pushes the metal tones toward a gong.\n* **BLEED**: how much of the original string sound is let through. At 0 you hear the objects only.\n* **LID**: the sound of a closed piano lid."
+  },
+  {
+   "id": "poulsen",
+   "name": "POULSEN",
+   "subtitle": "The Steel Thread",
+   "kind": "Effect",
+   "tags": [
+    "Delay"
+   ],
+   "tagline": "A looper modelled on the 1898 wire recorder, where twisting wire makes layers breathe.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/poulsen-1.webp",
+     "thumb": "images/poulsen-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "POULSEN is a looper and delay modelled on a wire recorder, the 1898 machine by Valdemar Poulsen that recorded sound onto steel wire.\n\nThe idea comes from a real property of wire: it is round, so it twists as it passes the playback head. When the wire has turned since the sound was recorded, the head reads it at the wrong angle. The plugin models this exactly:\n\n* **No twist**: the sound plays back in full.\n* **A quarter turn**: the sound becomes a hollow, phase-cancelled ghost, at the same level.\n* **A half turn**: the sound comes back exactly inverted.\n\nSo each layer in the loop keeps the angle it was recorded at, and as the twist slowly changes, layers fade into ghosts and come back. That breathing between layers is the character of the plugin.\n\n### The main controls\n* **LENGTH and RETENTION**: the loop length (free or synced) and how much of the old sound stays on each pass. At full retention it is an endless looper.\n* **TWIST, ROLL, WAVE**: how far the wire twists, how fast the twist changes, and how many twists stand along the wire.\n* **ANCHOR and AZIMUTH**: a permanently misaligned head, and the treble loss that goes with it.\n* **WOW, GRAIN, HISS, MAGNETISE**: speed wobble, unevenness in the recording, noise, and saturation.\n* **HOLD**: stops recording and keeps the loop.\n\n### The stress section\n* **TENSION**: stress builds up with tension, high retention and loud input, until the wire snaps.\n* **A snap**: causes a splice where the playback jumps, sometimes a fragment played backwards, and a scrape of steel.\n* **KNOTS**: up to 16 permanent knots at fixed places on the wire, so the head hits a dropout and a rattle at the same spot on every pass. They heal over the MEMORY time.\n* **SNAP and MEND**: buttons to break and repair the wire by hand. You can also click the wire in the display to plant a knot."
+  },
+  {
+   "id": "monodromy",
+   "name": "MONODROMY",
+   "subtitle": "The Spectral Circle Engine",
+   "kind": "Effect",
+   "tags": [
+    "Spatial",
+    "Spectral"
+   ],
+   "tagline": "A stereo signal spread around a ring of six speakers, frequency by frequency.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/monodromy-1.webp",
+     "thumb": "images/monodromy-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "MONODROMY takes a stereo signal and spreads it around a ring of six speakers, frequency by frequency.\n\n### How it works\n* **Every frequency gets its own angle on the circle**: set by its stereo position, its pitch (octaves line up), a slow orbit and a random walk.\n* **Transients**: thrown to a new angle on each hit.\n* **Slow glide**: the whole field moves slowly, so the ring drifts rather than spins.\n\n### Extras\n* **CYCLOTRON**: sound circulates from speaker to speaker.\n* **LIGHTHOUSE**: a rotating beam sweeps the ring.\n* **PHASON**: a small frequency shift per speaker."
+  },
+  {
+   "id": "lagrange",
+   "name": "LAGRANGE",
+   "subtitle": "The Celestial Granular Engine",
+   "kind": "Effect",
+   "tags": [
+    "Spatial",
+    "Texture"
+   ],
+   "tagline": "Grains as bodies in a gravity simulation, orbiting a ring of six speakers.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/lagrange-1.webp",
+     "thumb": "images/lagrange-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "LAGRANGE is the opposite approach to MONODROMY for the same six-speaker ring: the sound is cut into grains, and each grain is a body in a gravity simulation.\n\n### The sky\n* **A sun**: at the centre, which can also repel.\n* **Two planets**: you drag them to bend the orbits.\n* **Swirl, drag, bounce and flocking**: how the bodies move and interact.\n* **Launch modes**: ORBIT, FOUNTAIN, COMET, STREAM and SWARM.\n* **SUPERNOVA**: transients fire a burst of grains.\n\n### Per grain\n* **Doppler**: real pitch change from the grain’s speed.\n* **Distance**: level loss and haze as a grain moves away.\n* **FLOAT**: long chained grains for smooth, sustained motion.\n\nUser presets and MORPH let you move between whole skies."
+  },
+  {
+   "id": "petzval",
+   "name": "PETZVAL",
+   "subtitle": "Acoustic Depth of Field",
+   "kind": "Effect",
+   "tags": [
+    "Spectral",
+    "Texture"
+   ],
+   "tagline": "The spectrum treated like a camera lens: one frequency in focus, the rest goes soft.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/petzval-1.webp",
+     "thumb": "images/petzval-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "PETZVAL treats the spectrum like a camera lens.\n\n### How it works\n* **FOCUS**: picks a frequency that stays sharp.\n* **APERTURE**: sets how quickly everything away from it goes soft.\n* **SUBJECT**: decides whether tonal sound or transients go out of focus.\n\n### Out-of-focus sound\nBlurred in frequency, smeared in time and swirled in stereo, with lens faults to colour it:\n\n* **ASTIGMATISM, CHROMATIC, GRAIN, VIGNETTE**: the optical flaws of a real lens, applied to sound."
+  },
+  {
+   "id": "tartini",
+   "name": "TARTINI",
+   "subtitle": "The Resonant Difference Engine",
+   "kind": "Effect",
+   "tags": [
+    "Pitch",
+    "Sustain"
+   ],
+   "tagline": "The difference tones of any sound excite a bank of tuned, ringing strings.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/tartini-1.webp",
+     "thumb": "images/tartini-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "TARTINI adds a tuned, ringing harmony bed to any sound.\n\n### How it works\n* **The ghost**: the signal is squared, which creates the difference tones between all its partials.\n* **The strings**: that ghost excites up to 12 tuned, string-like resonators set by KEY and CHORD.\n* **No pitch tracking**: nothing is detected, so nothing wobbles. The harmony comes from the physics of the signal.\n\n### Playing it\n* **MIDI in**: play the chords the resonators are tuned to.\n* **ADSR**: shapes how the bed swells and fades."
+  },
+  {
+   "id": "klein",
+   "name": "KLEIN",
+   "subtitle": "The Non-Euclidean Feedback Engine",
+   "kind": "Effect",
+   "tags": [
+    "Delay",
+    "Spectral"
+   ],
+   "tagline": "A delay whose feedback loop passes through a Möbius strip or a Klein bottle.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/klein-1.webp",
+     "thumb": "images/klein-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "KLEIN is a delay whose feedback loop passes through a Möbius strip or a Klein bottle.\n\n### The geometry\n* **TWIST**: rotates the phase on each repeat. At full, every second echo cancels the one before.\n* **INVERT**: mirrors the spectrum around a PIVOT frequency on each repeat, so highs fold down and lows fold up.\n\nThe delay itself runs in the time domain, so the echoes stay rich on all frequencies, with tempo sync and long feedback."
+  },
+  {
+   "id": "mycelium",
+   "name": "MYCELIUM",
+   "subtitle": "The Mycelial Network Engine",
+   "kind": "Effect",
+   "tags": [
+    "Sustain",
+    "Texture"
+   ],
+   "tagline": "Your input is food for a colony of up to 48 tuned resonators that grow, bloom and die.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/mycelium-1.webp",
+     "thumb": "images/mycelium-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "MYCELIUM treats the input as food for a colony of up to 48 tuned resonators.\n\n### How it works\n* **Sprouting**: resonators sprout on the strongest frequencies in the input, spreading so the whole spectrum gets colonised.\n* **Growing**: they grow while they are fed, and bloom into drones when well fed.\n* **Starving**: unfed, they sag, wobble and die.\n\n### The display\nA petri dish showing the colony. You can click it to feed the colony by hand."
+  },
+  {
+   "id": "oobleck",
+   "name": "OOBLECK",
+   "subtitle": "The Non-Newtonian Spatializer",
+   "kind": "Effect",
+   "tags": [
+    "Spatial",
+    "Dynamics"
+   ],
+   "tagline": "A stereo field that behaves like cornstarch in water: hits go solid, tails melt wide.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/oobleck-1.webp",
+     "thumb": "images/oobleck-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "OOBLECK makes the stereo field behave like cornstarch in water.\n\n### How it works\n* **Impact**: a hit makes the sound go solid: dry, mono and centred.\n* **Release**: the tail melts back out wide.\n* **RHEOLOGY**: reverses the behaviour, so hits splash wide instead.\n\nThe effect goes beyond width: the solid and liquid states also change the tone and dynamics, so the difference between them is dramatic."
+  },
+  {
+   "id": "engram",
+   "name": "ENGRAM",
+   "subtitle": "The Synaptic Memory Looper",
+   "kind": "Effect",
+   "tags": [
+    "Delay",
+    "Texture"
+   ],
+   "tagline": "A long delay that tries to remember what you played, and fails like a brain does.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/engram-1.webp",
+     "thumb": "images/engram-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "ENGRAM is a long delay that tries to remember what you played and fails like a brain does. Each repeat builds character instead of simply fading.\n\n### How it forgets\n* **PRUNING**: frequency bands you stop playing are forgotten.\n* **CONFABULATION**: false notes grow into the gaps.\n* **DRIFT**: pitch slides a little more each lap.\n* **TRAUMA**: a loud hit is scarred in and never forgotten."
+  },
+  {
+   "id": "entangle",
+   "name": "ENTANGLE",
+   "subtitle": "The Quantum Entanglement Bus",
+   "kind": "Effect",
+   "tags": [
+    "Spectral",
+    "Dynamics"
+   ],
+   "tagline": "Two tracks linked so that each one shapes the other.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/entangle-1.webp",
+     "thumb": "images/entangle-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "ENTANGLE links two tracks so each shapes the other.\n\n### Setting up the bond\nPut one instance on each track, give both the same BOND letter and opposite SPIN. They only see each other inside the same project, and a bond bar shows when they have found each other.\n\n### The interactions\n* **EXCLUSION**: each track ducks the frequencies where the other is loud.\n* **UNCERTAINTY**: each takes on the other’s tone.\n* **COLLAPSE**: the partner’s transients pull this track’s phase toward it."
+  },
+  {
+   "id": "platen",
+   "name": "PLATEN",
+   "subtitle": "The Plate Reverb Driver",
+   "kind": "Effect",
+   "tags": [
+    "Reverb",
+    "Dynamics"
+   ],
+   "tagline": "A channel strip for the send that drives a physical plate reverb.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/platen-1.webp",
+     "thumb": "images/platen-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "PLATEN is a channel strip for the send that feeds a physical plate reverb: an exciter on a steel plate, with contact mics picking it up.\n\n### Protection\n* **Filters**: a steep low cut and a resonance notch.\n* **Dynamics**: a compressor, a transient softener and a limiter.\n* **Meters**: excursion and heat, so the exciter stays safe.\n\n### Voicing\n* **EQ and tilt**: shape what goes into the plate.\n* **Mic compensation**: corrects the response of two contact mics, with a blend between them."
+  },
+  {
+   "id": "capillary",
+   "name": "CAPILLARY",
+   "subtitle": "The Fluid Absorption Engine",
+   "kind": "Effect",
+   "tags": [
+    "Delay",
+    "Texture"
+   ],
+   "tagline": "Echoes that soak into a porous material instead of bouncing off a wall.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/capillary-1.webp",
+     "thumb": "images/capillary-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "CAPILLARY is a delay where the echoes soak into a porous material instead of bouncing off a wall.\n\n### How it works\n* **Sinking**: the first echo is clear; after that the sound sinks through up to 14 layers. Highs die in the first layers and only lows reach the bottom.\n* **Wetness**: a soaked material stops absorbing, holds longer and sags in pitch, then dries and closes again. There is no LFO: the movement comes from the material.\n* **Materials**: eight of them, from SPONGE and PAPER to CLAY and SKIN."
+  },
+  {
+   "id": "chladni",
+   "name": "CHLADNI",
+   "subtitle": "The Nodal Engine",
+   "kind": "Effect",
+   "tags": [
+    "Piano",
+    "Live",
+    "Sustain"
+   ],
+   "tagline": "Plays only the difference between what a contact mic and the air mics hear.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/chladni-1.webp",
+     "thumb": "images/chladni-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "CHLADNI is built for a grand piano rig with a contact mic, air mics and a soundboard exciter.\n\n### How it works\n* **The residue**: it compares what the contact mic hears with what the air mics hear, and plays only the difference.\n* **The lattice**: that residue is held in a tuned delay lattice and a grain freeze.\n* **The resonators**: a resonator path struck by the contact mic adds a physical, ringing body.\n\n### The strike hash\nEach strike is fingerprinted, and that number decides the lattice wiring and the frozen grains. **RECALL** sets whether the same gesture gives the same result."
+  },
+  {
+   "id": "procrustes",
+   "name": "PROCRUSTES",
+   "subtitle": "The Bed of Procrustes",
+   "kind": "Effect",
+   "tags": [
+    "Piano",
+    "Delay"
+   ],
+   "tagline": "Stretches and reorders piano notes in time without ever changing their pitch.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": true,
+   "images": [
+    {
+     "src": "images/procrustes-1.webp",
+     "thumb": "images/procrustes-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "PROCRUSTES stretches and reorders piano notes in time without ever changing pitch.\n\n### The rule\nEvery output sample is an input sample played forward or backward at normal speed, so nothing is resampled.\n\n### The main controls\n* **BED**: the target note length.\n* **FIT**: how strictly notes are forced to it.\n* **SHEAR**: length depends on pitch, so a chord comes apart in time.\n* **Paths**: five ways through the note: FORWARD, EBB, CRAB, FOLD and TIDE."
+  },
+  {
+   "id": "avalanche",
+   "name": "AVALANCHE",
+   "subtitle": "The Cryptographic Breakbeat Engine",
+   "kind": "Instrument",
+   "tags": [
+    "Sampler",
+    "Data",
+    "Instrument"
+   ],
+   "tagline": "An MPC slicer with no sequencer: a rolling hash over any file plays the beat.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/avalanche-2.webp",
+     "thumb": "images/avalanche-2-thumb.webp"
+    },
+    {
+     "src": "images/avalanche-1.webp",
+     "thumb": "images/avalanche-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "AVALANCHE is an MPC-style slicer with no pattern memory. Hold one key and a read head walks any file in blocks; every block is digested to a 32-bit word, and its eight nybbles become eight LANES patched to destinations such as slice, pitch, pan, level, reverse, ratchet, filter, crush and drive. Same file, same offset, same groove: keep the file, keep the beat.\n\n### What makes it an instrument\n* **CHAOS**: a continuum from “the sample, intact” to “fully hash-driven”. At 0, step i plays slice i, so it is an ordinary slicer playing the break straight; turning it up lets the hash take over. You demolish a working beat rather than assembling one from noise.\n* **The built-in kit**: sixteen synthesised drums authored as a breakbeat in order, so a fresh instance with one key held is instantly musical.\n* **PULSE**: bends the trigger threshold by the metric weight of the step, so there is a downbeat. Negative is anti-metric.\n* **BLOCK**: the structure control. Small blocks make the digest track local texture and repeat wherever the file repeats; large blocks shatter it.\n* **Seven hashes ordered by diffusion**: the weak ones are the musical ones. STIR adds finalizer rounds to shatter a legible word.\n* **SPAN and EVOLVE**: wrap the read head into a hard loop, then let each repetition walk off its own start.\n* **Held keys**: each is a separate read head far apart in the file, so a chord is a polyrhythm.\n\n### THE LOOM\nThe last 48 steps as a pad grid, with the digest’s 32 bits drawn underneath on the same columns, one row per lane. You watch a bit flip and see which drum moved. THE CORPUS ribbon shows the file’s entropy landscape with the read head on it. Drop any file anywhere: audio gets chopped, anything else gets digested."
+  },
+  {
+   "id": "hilbert",
+   "name": "HILBERT",
+   "subtitle": "The Analytic Prism Oscillator",
+   "kind": "Instrument",
+   "tags": [
+    "Instrument",
+    "Spectral"
+   ],
+   "tagline": "Any audio file turned into a synth oscillator you can scan, morph and refract.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/hilbert-1.webp",
+     "thumb": "images/hilbert-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "HILBERT turns any audio file into a synth oscillator.\n\n### How it works\n* **Frames**: the file is analysed into 32 single-cycle frames you can scan and morph through, with knobs that reshape the harmonics.\n* **PRISM**: shifts the whole timbre up or down by a fixed number of Hz, which makes it inharmonic.\n\n### Also\n* **PERC mode**: slices the file onto keys.\n* **XY pad**: performs the scan and morph by hand.\n* **User presets**."
+  },
+  {
+   "id": "tonnetz",
+   "name": "TONNETZ",
+   "subtitle": "The Harmonic Performance Engine",
+   "kind": "Instrument",
+   "tags": [
+    "Instrument",
+    "Performance"
+   ],
+   "tagline": "A full, human-feeling chord from a single key.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": true,
+   "images": [],
+   "video": "",
+   "links": [],
+   "body": "TONNETZ plays a full, human-feeling chord from one key.\n\n### How it works\n* **The palette**: one octave of keys holds a palette of chords that fit together; the next octave holds tension versions.\n* **Voice leading, rolls and timing**: handled for you, so the chords sound played.\n* **JOURNEY**: an engine that avoids repeating the same voicing.\n* **Scales and layouts**: ten scales and circle-of-fifths layouts.\n\n### Formats\nAn instrument with its own sound engine that also sends MIDI out, and a MIDI effect for Logic."
+  },
+  {
+   "id": "cipher",
+   "name": "CIPHER",
+   "subtitle": "The Data-Scrubbing Synthesiser",
+   "kind": "Instrument",
+   "tags": [
+    "Instrument",
+    "Data"
+   ],
+   "tagline": "No oscillators: any file read as raw bytes becomes the sound.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/cipher-1.webp",
+     "thumb": "images/cipher-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "CIPHER has no oscillators. It reads any file as raw bytes.\n\n### Three slots\n* **CARRIER**: the file read at pitch.\n* **KEY**: a second file combined with it by a bitwise operation such as XOR.\n* **TOPOGRAPHY**: the volume shape of the note.\n\n### Shaping\n* **BIT MASK and SALT**: choose which bits of the key take part, which gives a wide range of timbres from faint grain to harsh fold.\n* **Sub oscillators**: add weight under the data."
+  },
+  {
+   "id": "orrery",
+   "name": "ORRERY",
+   "subtitle": "The Prime-Factor Breakbeat Orrery",
+   "kind": "Instrument",
+   "tags": [
+    "Instrument",
+    "Sampler",
+    "Data"
+   ],
+   "tagline": "A drum machine of six rings whose lengths are prime numbers taken from a file.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/orrery-1.webp",
+     "thumb": "images/orrery-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "ORRERY is a drum machine of six rings whose lengths are prime numbers taken from a file’s bytes.\n\n### How it works\n* **Primes**: prime lengths almost never line up, so the pattern takes a very long time to repeat.\n* **SYZYGY**: when three rings meet, that is the downbeat.\n\n### The main controls\n* **PRIMACY**: from nearly regular to very irregular.\n* **ECCENTRICITY**: a groove that speeds up and slows down around each ring.\n* **Gear ratios**: set per ring."
+  },
+  {
+   "id": "eidolon",
+   "name": "EIDOLON",
+   "subtitle": "The Likeness Engine",
+   "kind": "Instrument",
+   "tags": [
+    "Instrument",
+    "Spectral"
+   ],
+   "tagline": "One sample rebuilt as a playable instrument, with its body resonance kept in place.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/eidolon-1.webp",
+     "thumb": "images/eidolon-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "EIDOLON rebuilds one sample as a playable instrument.\n\n### How it works\n* **Analysis**: the sample is analysed into its harmonics and its noise, and then thrown away.\n* **Playing**: when you play another pitch, the harmonics move but the body resonance stays where it was, unlike a sampler.\n\nVoice-like sounds with strong vibrato come out noisier than the original."
+  },
+  {
+   "id": "rameau",
+   "name": "RAMEAU",
+   "subtitle": "The Fundamental Bass",
+   "kind": "MIDI effect",
+   "tags": [
+    "Piano",
+    "Performance"
+   ],
+   "tagline": "A chord teacher for pianists who play well but never learned theory.",
+   "status": "In development",
+   "version": "",
+   "formats": "AU · VST3",
+   "hidden": false,
+   "images": [
+    {
+     "src": "images/rameau-1.webp",
+     "thumb": "images/rameau-1-thumb.webp"
+    }
+   ],
+   "video": "",
+   "links": [],
+   "body": "RAMEAU is a chord teacher for pianists who play well but never learned theory.\n\n### How it works\n* **Naming**: it reads your MIDI, names the chord and tracks the key.\n* **Patterns**: it points out patterns such as ii-V-I and cadences.\n* **Silent**: it makes no sound of its own apart from an optional practice voice, and MIDI passes through.\n\n### Formats\nStandalone, an instrument plugin, and a MIDI effect for Logic."
+  }
+ ]
+}
