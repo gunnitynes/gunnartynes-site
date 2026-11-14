@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plugins</title>
+<meta name="description" content="Audio effects and instruments built in C++ and JUCE.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#07070f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2307070f'/%3E%3Cpath d='M9 22.5A9 9 0 1 1 23 22.5' fill='none' stroke='%23ffffff22' stroke-width='2.5' stroke-linecap='round'/%3E%3Cpath d='M9 22.5A9 9 0 0 1 19.5 8.2' fill='none' stroke='%2300c4a8' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='19.5' cy='8.2' r='2.4' fill='%2300c4a8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+<header class="band">
+  <span class="dot" aria-hidden="true"></span>
+  <a class="mark" href="#/" id="mark">Plugins</a>
+  <span class="spacer"></span>
+  <span class="label count" id="count"></span>
+  <div class="find" id="find">
+    <input id="q" type="search" placeholder="Search…" aria-label="Search plugins" autocomplete="off">
+    <button id="findBtn" aria-label="Search" title="Search">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="app" aria-live="polite"></main>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-label="Screenshot, full size"><img alt=""></div>
+
+<footer>
+  <span class="label" id="foot"></span>
+  <span class="label">C++ · JUCE · AU · VST3</span>
+</footer>
+
+<script src="js/md.js"></script>
+<script>
+(() => {
+  const app = document.getElementById('app');
+  const lb = document.getElementById('lightbox');
+  let DATA = null, list = [], query = '', gridScroll = 0;
+  const find = document.getElementById('find'), q = document.getElementById('q');
+  const openFind = () => { find.classList.add('open'); q.focus(); };
+  const closeFind = () => { q.value = ''; query = ''; find.classList.remove('open'); if (document.getElementById('grid')) fillGrid(); };
+  document.getElementById('findBtn').onclick = () => find.classList.contains('open') && !q.value ? closeFind() : openFind();
+  q.addEventListener('input', () => {
+    query = q.value.trim();
+    if (!document.getElementById('grid')) { gridScroll = 0; location.hash = '#/'; } else { window.scrollTo(0, 0); fillGrid(); }
+  });
+  q.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closeFind(); q.blur(); } });
+  q.addEventListener('blur', () => { if (!q.value) find.classList.remove('open'); });
+  const esc = window.escapeHtml;
+
+  fetch('data/plugins.json', { cache: 'no-cache' })
+    .then(r => r.json())
+    .then(d => { DATA = d; list = d.plugins.filter(p => !p.hidden); boot(); })
+    .catch(() => { app.innerHTML = '<p class="empty">Could not load the plugin list.</p>'; });
+
+  function boot() {
+    const s = DATA.site || {};
+    document.getElementById('mark').textContent = s.title || 'Plugins';
+    document.getElementById('foot').textContent = s.footer || '';
+    document.getElementById('count').textContent = list.length + ' plugins';
+    window.addEventListener('hashchange', route);
+    route();
+  }
+
+  function route() {
+    const m = location.hash.match(/^#\/([\w-]+)/);
+    const p = m && list.find(x => x.id === m[1]);
+    if (p) showDetail(p); else showGrid();
+  }
+
+  // ---------------- grid ----------------
+  function matches(p) {
+    if (!query) return true;
+    const hay = (p.name + ' ' + p.subtitle + ' ' + p.tagline + ' ' + p.tags.join(' ') + ' ' + p.body).toLowerCase();
+    return query.toLowerCase().split(/\s+/).every(w => hay.includes(w));
+  }
+  function showGrid() {
+    const s = DATA.site || {};
+    document.title = s.title || 'Plugins';
+    app.innerHTML = `<section class="grid" id="grid"></section>`;
+    fillGrid();
+    requestAnimationFrame(() => window.scrollTo(0, gridScroll));
+  }
+  function fillGrid() {
+    const grid = document.getElementById('grid');
+    const shown = list.filter(matches);
+    grid.innerHTML = shown.length ? shown.map(p => {
+      const i = list.indexOf(p) + 1, img = p.images[0];
+      return `<a class="card fade" href="#/${p.id}" style="animation-delay:${Math.min(shown.indexOf(p), 12) * 30}ms">
+        <div class="shot">
+          ${img ? `<img src="${esc(img.thumb || img.src)}" alt="${esc(p.name)} interface" loading="lazy" decoding="async" onload="this.classList.add('in')">` : ''}
+          ${p.kind && p.kind !== 'Effect' ? `<span class="badge">${esc(p.kind)}</span>` : ''}
+        </div>
+        <div class="meta">
+          <span class="idx">${String(i).padStart(2, '0')}</span>
+          <span class="name">${esc(p.name)}</span>
+          <span class="sub">${esc(p.subtitle)}</span>
+          <span class="tag">${esc(p.tagline)}</span>
+        </div>
+      </a>`;
+    }).join('') : '<p class="empty">Nothing matches that search.</p>';
+    grid.querySelectorAll('img').forEach(im => { if (im.complete) im.classList.add('in'); });
+  }
+
+  // ---------------- detail ----------------
+  function videoEmbed(url) {
+    if (!url) return '';
+    let m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/);
+    if (m) return `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${m[1]}" allow="encrypted-media; picture-in-picture" allowfullscreen title="Video"></iframe></div>`;
+    m = url.match(/vimeo\.com\/(\d+)/);
+    if (m) return `<div class="video"><iframe src="https://player.vimeo.com/video/${m[1]}" allow="fullscreen; picture-in-picture" allowfullscreen title="Video"></iframe></div>`;
+    return `<div class="video"><video src="${esc(url)}" controls playsinline preload="metadata"></video></div>`;
+  }
+  function showDetail(p) {
+    if (!app.querySelector('.detail')) gridScroll = window.scrollY;
+    const i = list.indexOf(p);
+    const prev = list[(i - 1 + list.length) % list.length], next = list[(i + 1) % list.length];
+    document.title = p.name + ' — ' + p.subtitle;
+    const facts = [['Type', p.kind], ['Status', p.status], ['Version', p.version], ['Formats', p.formats]].filter(f => f[1]);
+    const img = p.images[0];
+    app.innerHTML = `
+      <article class="detail fade">
+        <div class="crumbs">
+          <button class="back" id="back">← All plugins</button>
+          <span class="spacer"></span>
+          <span class="label">${String(i + 1).padStart(2, '0')} / ${String(list.length).padStart(2, '0')}</span>
+        </div>
+        ${img ? `<div class="stage" id="stage"><img id="hero" src="${esc(img.src)}" alt="${esc(p.name)} interface"><span class="zoom">Click to enlarge</span></div>` : ''}
+        ${p.images.length > 1 ? `<div class="thumbs">${p.images.map((im, k) => `<button data-k="${k}" aria-current="${k === 0}" aria-label="Screenshot ${k + 1}"><img src="${esc(im.thumb || im.src)}" alt=""></button>`).join('')}</div>` : ''}
+        ${videoEmbed(p.video)}
+        <div class="cols">
+          <aside class="aside">
+            <div class="label">${esc(p.kind || '')}</div>
+            <h1>${esc(p.name)}</h1>
+            <div class="sub">${esc(p.subtitle)}</div>
+            <p class="lede">${esc(p.tagline)}</p>
+            <dl class="facts">${facts.map(f => `<div><dt>${esc(f[0])}</dt><dd>${esc(f[1])}</dd></div>`).join('')}</dl>
+            ${(p.links || []).length ? `<div class="links">${p.links.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}<span>↗</span></a>`).join('')}</div>` : ''}
+          </aside>
+          <div class="prose">${window.renderMarkdown(p.body)}</div>
+        </div>
+        <nav class="pager">
+          <a href="#/${prev.id}"><span class="label">← Previous</span><span class="n">${esc(prev.name)}</span></a>
+          <a class="next" href="#/${next.id}"><span class="label">Next →</span><span class="n">${esc(next.name)}</span></a>
+        </nav>
+      </article>`;
+    window.scrollTo(0, 0);
+    document.getElementById('back').onclick = () => { location.hash = '#/'; };
+    const hero = document.getElementById('hero');
+    app.querySelectorAll('.thumbs button').forEach(b => b.addEventListener('click', () => {
+      hero.src = p.images[+b.dataset.k].src;
+      app.querySelectorAll('.thumbs button').forEach(x => x.setAttribute('aria-current', x === b));
+    }));
+    const stage = document.getElementById('stage');
+    if (stage) stage.onclick = () => { lb.querySelector('img').src = hero.src; lb.classList.add('open'); };
+  }
+
+  lb.onclick = () => lb.classList.remove('open');
+  document.addEventListener('keydown', e => {
+    if (e.target.matches('input, textarea')) return;
+    if (e.key === '/' ) { e.preventDefault(); openFind(); return; }
+    if (e.key === 'Escape') {
+      if (lb.classList.contains('open')) lb.classList.remove('open');
+      else if (app.querySelector('.detail')) location.hash = '#/';
+      return;
+    }
+    if (!app.querySelector('.detail') || lb.classList.contains('open')) return;
+    const a = e.key === 'ArrowLeft' ? app.querySelector('.pager a') : e.key === 'ArrowRight' ? app.querySelector('.pager a.next') : null;
+    if (a) location.hash = a.getAttribute('href');
+  });
+})();
+</script>
+</body>
+</html>
