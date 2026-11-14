@@ -46,7 +46,9 @@ img { display: block; max-width: 100%; }
 .band .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); flex: none; }
 .band .spacer { flex: 1; }
 .band .count { white-space: nowrap; }
-@media (max-width: 560px) { .band .count { display: none; } }
+@media (max-width: 560px) { .band .count, .band .home { display: none; } }
+.label.home { color: var(--t2); white-space: nowrap; }
+.label.home:hover { color: var(--accent); text-decoration: none; }
 .find { display: flex; align-items: center; height: 30px; border-radius: 15px; border: 1px solid transparent; transition: border-color .2s, background .2s; }
 .find input {
   width: 0; padding: 0; opacity: 0; border: 0; outline: none; background: transparent;
