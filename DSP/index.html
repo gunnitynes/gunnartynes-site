@@ -16,10 +16,9 @@
 <body>
 <header class="band">
   <span class="dot" aria-hidden="true"></span>
-  <a class="mark" href="#/" id="mark">Plugins</a>
+  <span class="mark"><a href="https://www.gunnartynes.com/" id="markHome">Gunnar Tynes</a> — <a href="#/" id="mark">Plugins</a></span>
   <span class="spacer"></span>
   <span class="label count" id="count"></span>
-  <a class="label home" href="https://www.gunnartynes.com/">gunnartynes.com ↗</a>
   <div class="find" id="find">
     <input id="q" type="search" placeholder="Search…" aria-label="Search plugins" autocomplete="off">
     <button id="findBtn" aria-label="Search" title="Search">
@@ -34,7 +33,6 @@
 
 <footer>
   <span class="label" id="foot"></span>
-  <a class="label home" href="https://www.gunnartynes.com/">gunnartynes.com ↗</a>
   <span class="label">C++ · JUCE · AU · VST3</span>
 </footer>
 
@@ -63,7 +61,9 @@
 
   function boot() {
     const s = DATA.site || {};
-    document.getElementById('mark').textContent = s.title || 'Plugins';
+    const parts = (s.title || 'Gunnar Tynes — Plugins').split(/\s+[—–-]\s+/);
+    if (parts.length > 1) { document.getElementById('markHome').textContent = parts[0]; document.getElementById('mark').textContent = parts.slice(1).join(' — '); }
+    else { document.getElementById('markHome').parentNode.replaceChildren(Object.assign(document.createElement('a'), { href: '#/', textContent: parts[0] })); }
     document.getElementById('foot').textContent = s.footer || '';
     document.getElementById('count').textContent = list.length + ' plugins';
     window.addEventListener('hashchange', route);
