@@ -317,7 +317,7 @@
   {
    "id": "experiment-14",
    "name": "EXPERIMENT 14",
-   "subtitle": "The Gain Margin Engine",
+   "subtitle": "Feedback preventive compression",
    "kind": "Effect",
    "tags": [
     "Dynamics",
