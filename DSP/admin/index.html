@@ -96,6 +96,8 @@
   <a class="mark" href="../">Plugins</a>
   <span class="label">Admin</span>
   <span class="spacer"></span>
+  <a class="btn small" href="../../admin/">Releases</a>
+  <a class="btn small" href="../../admin/concerts.html">Concerts</a>
   <a class="btn small" href="../" target="_blank">View site ↗</a>
   <button class="btn small" id="logout" hidden>Sign out</button>
 </header>
@@ -111,13 +113,9 @@
                del: k => { try { localStorage.removeItem(k); } catch {} } };
 
   // The site lives in the DSP/ folder of the main site's repo (served at gunnartynes.com/DSP/).
-  const cfg = {
-    owner: LS.get('pa.owner') || 'gunnitynes',
-    repo: LS.get('pa.repo') || 'gunnartynes-site',
-    dir: LS.get('pa.dir') ?? 'DSP/',
-    branch: LS.get('pa.branch') || 'main',
-    token: LS.get('pa.token') || sessionStorage.getItem('pa.token') || '',
-  };
+  // Same repo and the same access key as the main site admin (stored as 'gt.key' on gunnartynes.com).
+  const cfg = { owner: 'gunnitynes', repo: 'gunnartynes-site', dir: 'DSP/', branch: 'main', token: LS.get('gt.key') || '' };
+  ['pa.owner', 'pa.repo', 'pa.dir', 'pa.branch', 'pa.token'].forEach(LS.del);
 
   let data = null;        // working copy {site, plugins}
   let original = '';      // JSON as loaded, for change detection
@@ -143,6 +141,12 @@
   const b64 = buf => { let s = ''; const a = new Uint8Array(buf); for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s); };
   const utf8b64 = str => b64(new TextEncoder().encode(str));
 
+  function friendly(e) {
+    const m = String(e && e.message || e);
+    if (/^401|Bad credentials/i.test(m)) return 'GitHub didn\'t accept that key. Check that you copied all of it.';
+    if (/^40[34]|Not Found|Resource not accessible/i.test(m)) return 'The key works, but it can\'t reach the gunnartynes-site repository. Give it access to that repository with Contents: Read and write.';
+    return m;
+  }
   async function load() {
     const meta = await gh('/contents/' + cfg.dir + 'data/plugins.json?ref=' + cfg.branch);
     fileSha = meta.sha;
@@ -223,37 +227,18 @@
     document.getElementById('logout').hidden = true;
     root.innerHTML = `<div class="login fade">
       <div class="label">Plugins · Admin</div>
-      <h1>Sign in with a GitHub token</h1>
-      <p>Edits are saved straight to the <span class="mono">${esc(cfg.owner + '/' + cfg.repo + '/' + cfg.dir)}</span> on GitHub. The public site updates about a minute after you publish.</p>
-      <ol>
-        <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → new fine-grained token</a>.</li>
-        <li>Repository access: <b>Only select repositories</b> → <span class="mono">${esc(cfg.repo)}</span> (your main site).</li>
-        <li>Permissions → Repository → <b>Contents: Read and write</b>. Generate, copy, paste below.</li>
-      </ol>
-      <div class="field"><label class="label" for="tok">Token</label><input id="tok" type="password" autocomplete="off" placeholder="github_pat_…"></div>
-      <div class="row">
-        <div class="field"><label class="label" for="ow">Owner</label><input id="ow" type="text" value="${esc(cfg.owner)}"></div>
-        <div class="field"><label class="label" for="rp">Repository</label><input id="rp" type="text" value="${esc(cfg.repo)}"></div>
-        <div class="field"><label class="label" for="br">Branch</label><input id="br" type="text" value="${esc(cfg.branch)}"></div>
-        <div class="field"><label class="label" for="dr">Folder</label><input id="dr" type="text" value="${esc(cfg.dir)}"></div>
-      </div>
-      <label class="check"><input id="rem" type="checkbox" checked> Remember on this device</label>
-      <p style="margin-top:22px"><button class="btn primary" id="go">Sign in</button></p>
+      <h1>Sign in</h1>
+      <p>Use the same access key as the main site admin. If you are already signed in there on this device, this page signs you in by itself.</p>
+      <p><a href="../../admin/">Open the main admin</a> to sign in there instead, or paste the key here.</p>
+      <div class="field"><label class="label" for="tok">Access key</label><input id="tok" type="password" autocomplete="off" spellcheck="false"></div>
+      <p style="margin-top:14px"><button class="btn primary" id="go">Sign in</button></p>
       <p class="mono" style="color:#ff7a8a;font-size:13px">${err ? esc(err) : ''}</p>
     </div>`;
     const go = async () => {
       cfg.token = document.getElementById('tok').value.trim();
-      cfg.owner = document.getElementById('ow').value.trim();
-      cfg.repo = document.getElementById('rp').value.trim();
-      cfg.branch = document.getElementById('br').value.trim() || 'main';
-      cfg.dir = document.getElementById('dr').value.trim().replace(/^\/+|\/+$/g, ''); if (cfg.dir) cfg.dir += '/';
-      if (!cfg.token) return renderLogin('Paste a token first.');
-      try {
-        await load();
-        LS.set('pa.owner', cfg.owner); LS.set('pa.repo', cfg.repo); LS.set('pa.branch', cfg.branch); LS.set('pa.dir', cfg.dir);
-        if (document.getElementById('rem').checked) LS.set('pa.token', cfg.token); else sessionStorage.setItem('pa.token', cfg.token);
-        start();
-      } catch (e) { renderLogin(e.message); }
+      if (!cfg.token) return renderLogin('Paste the access key first.');
+      try { await load(); LS.set('gt.key', cfg.token); start(); }
+      catch (e) { cfg.token = ''; renderLogin(friendly(e)); }
     };
     document.getElementById('go').onclick = go;
     document.getElementById('tok').onkeydown = e => { if (e.key === 'Enter') go(); };
@@ -418,11 +403,11 @@
 
   document.getElementById('logout').onclick = () => {
     if (changed() && !confirm('You have unpublished edits. Sign out anyway? (They stay saved as a draft on this device.)')) return;
-    LS.del('pa.token'); sessionStorage.removeItem('pa.token'); cfg.token = ''; renderLogin();
+    LS.del('gt.key'); cfg.token = ''; renderLogin();
   };
   window.addEventListener('beforeunload', e => { if (data && changed()) { e.preventDefault(); e.returnValue = ''; } });
 
-  if (cfg.token) load().then(start).catch(e => renderLogin(e.message)); else renderLogin();
+  if (cfg.token) load().then(start).catch(e => { cfg.token = ''; renderLogin(friendly(e)); }); else renderLogin();
 })();
 </script>
 </body>
