@@ -269,7 +269,7 @@
   {
    "id": "experiment-12",
    "name": "EXPERIMENT 12",
-   "subtitle": "The Stability Engine",
+   "subtitle": "Feedback detecting delay",
    "kind": "Effect",
    "tags": [
     "Delay",
