@@ -181,7 +181,7 @@
     "Reverb",
     "Data"
    ],
-   "tagline": "A reverb whose room is derived from the repeated structure of any file.",
+   "tagline": "A reverb whose sound is derived from any file loaded into it.",
    "status": "In development",
    "version": "",
    "formats": "AU · VST3",
