@@ -222,7 +222,7 @@
   {
    "id": "experiment-10",
    "name": "EXPERIMENT 10",
-   "subtitle": "The Stored-Program Engine",
+   "subtitle": "Binary manipulation",
    "kind": "Effect",
    "tags": [
     "Data"
