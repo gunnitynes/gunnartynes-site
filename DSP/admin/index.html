@@ -127,7 +127,7 @@
   // ---------------- GitHub API ----------------
   async function gh(path, opts = {}) {
     const r = await fetch('https://api.github.com/repos/' + cfg.owner + '/' + cfg.repo + path, {
-      ...opts,
+      method: opts.method || 'GET', body: opts.body, cache: 'no-store',
       headers: { Authorization: 'Bearer ' + cfg.token, Accept: opts.accept || 'application/vnd.github+json',
                  'X-GitHub-Api-Version': '2022-11-28', ...(opts.body ? { 'Content-Type': 'application/json' } : {}) },
     });
@@ -150,8 +150,13 @@
   async function load() {
     const meta = await gh('/contents/' + cfg.dir + 'data/plugins.json?ref=' + cfg.branch);
     fileSha = meta.sha;
-    const txt = await gh('/contents/' + cfg.dir + 'data/plugins.json?ref=' + cfg.branch, { accept: 'application/vnd.github.raw+json', raw: true });
-    data = JSON.parse(txt);
+    // Read the file through its blob (one format, works at any size) and decode it as UTF-8.
+    const blob = await gh('/git/blobs/' + meta.sha);
+    const bytes = Uint8Array.from(atob(blob.content.replace(/\s/g, '')), c => c.charCodeAt(0));
+    data = JSON.parse(new TextDecoder().decode(bytes));
+    if (!data || !Array.isArray(data.plugins)) throw new Error('The plugin list on GitHub is not in the expected format.');
+    data.site = data.site || {};
+    data.plugins.forEach(p => { p.images = p.images || []; p.tags = p.tags || []; p.links = p.links || []; });
     original = JSON.stringify(data);
   }
 
@@ -249,13 +254,14 @@
     // Offer to restore unpublished edits from last time.
     try {
       const d = JSON.parse(LS.get('pa.draft') || 'null');
+      if (d && !(d.data && Array.isArray(d.data.plugins))) throw 0;
       if (d && d.base === fileSha && JSON.stringify(d.data) !== original &&
           confirm('You have unpublished edits from last time on this device. Restore them?\n(New images from that session are not kept.)')) {
         const known = new Set(JSON.parse(original).plugins.flatMap(p => p.images.map(i => i.src)));
         d.data.plugins.forEach(p => p.images = p.images.filter(i => known.has(i.src)));
         data = d.data;
       } else LS.del('pa.draft');
-    } catch {}
+    } catch { LS.del('pa.draft'); }
     root.innerHTML = `<div class="shell">
         <nav class="side"><div class="top"><button class="btn small" id="add">+ New plugin</button><button class="btn small" id="siteBtn">Site text</button></div><ol id="list"></ol></nav>
         <section class="main" id="main"></section>
