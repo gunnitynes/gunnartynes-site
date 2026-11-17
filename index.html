@@ -179,6 +179,8 @@ body.peeking #mini{opacity:0;pointer-events:none}
   body.disc #bar #peek,body.selopen #bar #peek{visibility:hidden}
 }
 @media (max-width:700px){#peek{left:10px!important;right:10px;top:auto!important;bottom:12px;max-width:none}body.vert.peeking #now{visibility:hidden}}
+#hxNote{position:fixed;left:0;right:0;bottom:max(46px,calc(env(safe-area-inset-bottom) + 30px));text-align:center;font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);pointer-events:none;opacity:0;transition:opacity .4s;z-index:4}
+#hxNote.on{opacity:1}
 #tip{position:fixed;pointer-events:none;background:var(--plate2);padding:6px 9px;font-size:13px;z-index:6;max-width:320px;border-radius:2px;display:none}
 #tip b{font-weight:500}#tip em{font:italic 15px var(--serif)}#tip span{display:block;font:11px var(--mono);color:var(--dim)}
 
@@ -396,6 +398,7 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
   </div>
 </header>
 <nav id="years" aria-label="Years"></nav>
+<div id="hxNote" aria-live="polite"></div>
 <div id="tip"></div>
 <button id="discPlay" type="button" aria-label="Play" hidden><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
 <button id="recView" type="button" hidden>Whole record</button>
@@ -500,7 +503,7 @@ const VGUT=150,VGAP=64;
 const wantLayout=(location.search.match(/[?&]layout=(vertical|horizontal)/)||[])[1];
 /* A phone always opens the way it is held: upright, the years run down. */
 const PHONE=matchMedia('(hover: none)').matches&&Math.min(screen.width,screen.height)<=700;
-let orient=wantLayout?(wantLayout==='vertical'?'v':'h'):PHONE?(innerWidth>innerHeight?'h':'v'):store.get('gt.orient',innerWidth<900?'v':'h');
+let orient=wantLayout?(wantLayout==='vertical'?'v':'h'):PHONE?(innerWidth>innerHeight?'h':'v'):store.get('gt.orient2',innerWidth<900?'v':'h');
 /* Phones keep four covers a row. On a computer the first screen shows 1997-2004, as big as the window allows:
    the column count whose covers come out biggest while those years still fit the height. */
 const V_FIRST_END=2004;
@@ -681,6 +684,7 @@ function draw(){
   if(view.mix>0){drawDisc(view.mix);return}
   const now=performance.now();
   if(morph.t0!==null){drawMorph(now);return}
+  if(hx){drawHelix();return}
   drawAxis(sel?sel.year:null);
   [...items].sort((a,b)=>(a===sel)-(b===sel)||(a._g||1)-(b._g||1)).forEach(e=>{
     let a=matches(e)?1:.09,gr=(e._g||1)*(e===sel?1.03:1);
@@ -692,6 +696,78 @@ function draw(){
     drawTile(e,a,gr,e===sel||e===peek.e||(mode==='browse'&&e.id===audio.id));
   });
   drawHoverPlay();
+}
+/* The helix: on the way into the horizontal timeline every cover first hangs on a turning spiral in career order,
+   then the spiral unwinds, album by album, each one flying down to its own place on the timeline.
+   A click pauses it (and continues it); scrolling, dragging or a key hurries it to the end. */
+let hx=null;
+function startHelix(){
+  if(REDUCED||orient!=='h'||mode!=='browse'||view.name!=='line')return false;
+  /* while the spool works, the timeline waits low on the screen; when it is done the camera settles it into place */
+  const fin=fitMain(),zl=Math.min(fin.z,(W*.94)/world.w,(H*.34)/world.h);
+  cam.x=cam.tx=world.w/2;cam.z=cam.tz=zl;cam.y=cam.ty=-(H*.42)/zl;cam.tau=.5;
+  const order=[...items].sort((a,b)=>a.year-b.year||b.wy-a.wy||a.wx-b.wx);
+  order.forEach((e,i)=>{e._hi=i;e._hf=null});
+  const m=Math.min(W,H);
+  hx={order,clock:0,last:performance.now(),paused:false,rate:1,rot:-.6,
+      S:Math.min(W*.3,H*.36)*.31,R:Math.min(W*.3,H*.36),RISE:Math.min(W*.3,H*.36)*.105,F:m*1.6,tilt:-.36,cx:W/2,fin,
+      appear:1300,gap:Math.max(34,Math.min(62,6400/order.length)),fly:820};
+  hx.end=hx.appear+hx.gap*(order.length-1)+hx.fly+150;
+  intro.t0=null;$('#hxNote').classList.remove('on');dirty=true;return true;
+}
+function hxPos(i,lead){
+  /* card i on the spiral; the spiral slides up so the next card to leave stays near the top of the view */
+  /* the spool rides along the years: its axis sits over the column the next cover lands in */
+  const a=i*2*Math.PI/12+hx.rot,R=hx.R,x=Math.cos(a)*R,z=Math.sin(a)*R,y=-(i-lead)*hx.RISE;
+  const ct=Math.cos(hx.tilt),st=Math.sin(hx.tilt),y2=y*ct-z*st,z2=y*st+z*ct,den=hx.F+z2+R*1.1;
+  if(den<hx.F*.25)return null;      /* behind the eye: never project it (that is what drew stray lines) */
+  const k=hx.F/den;return{x:(hx.cx==null?W/2:hx.cx)+x*k,y:hx.cy+y2*k,k,z:z2};
+}
+function tickHelix(now){
+  if(!hx)return false;
+  const dt=Math.min(100,now-hx.last);hx.last=now;
+  if(!hx.paused){hx.clock+=dt*hx.rate;hx.rot+=dt*hx.rate*.00042;
+  }
+  hx.cx=W/2;hx.cy=H*.5-hx.R*.38;
+  if(hx.clock>=hx.end){const f=hx.fin;cam.tx=f.x;cam.ty=f.y;cam.tz=f.z;cam.tau=.55;hx.order.forEach(e=>{e._hf=null});hx=null;$('#hxNote').classList.remove('on');dirty=true;return true}
+  return true;
+}
+function hurryHelix(){if(hx&&hx.rate<5){hx.rate=7;hx.paused=false;$('#hxNote').classList.remove('on')}}
+function pauseHelix(){if(!hx)return;hx.paused=!hx.paused;const n=$('#hxNote');n.textContent=hx.paused?'Paused · click to continue':'';n.classList.toggle('on',hx.paused)}
+const ease3h=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+function drawHelix(){
+  const c=hx.clock,N=hx.order.length,lead=clamp((c-hx.appear)/hx.gap,0,N);
+  const prog=clamp(c/hx.end,0,1);
+  g.save();g.globalAlpha=sstep(.25,.95,prog);drawAxis(null);g.restore();
+  const waiting=[],flying=[],landed=[];
+  for(const e of hx.order){
+    const leave=hx.appear+e._hi*hx.gap;
+    if(c<leave){const p=hxPos(e._hi,lead);if(p)waiting.push({e,p})}
+    else if(c<leave+hx.fly){
+      if(!e._hf){const p=hxPos(e._hi,lead)||{x:W/2,y:-60,k:1,z:0};e._hf={x:p.x,y:p.y,s:hx.S*p.k}}
+      flying.push({e,t:(c-leave)/hx.fly});
+    }else landed.push(e);
+  }
+  /* a faint thread through the covers still waiting, only between neighbours both in front of the eye */
+  const fade=1-sstep(.75,1,prog);
+  if(waiting.length>1&&fade>0){g.save();g.globalAlpha=.28*fade;g.strokeStyle='#e6b450';g.lineWidth=1;g.beginPath();let pen=false;
+    const first=Math.ceil(lead);
+    for(let f=first*4;f<=N*4;f++){const p=hxPos(f/4,lead);if(!p||p.y<-200||p.y>H+200){pen=false;continue}if(pen)g.lineTo(p.x,p.y);else{g.moveTo(p.x,p.y);pen=true}}
+    g.stroke();g.restore()}
+  const ia=sstep(0,hx.appear*.9,c);
+  waiting.sort((a,b)=>b.p.z-a.p.z).forEach(({e,p})=>{
+    const fog=clamp(1.15-(p.z+hx.R)/(hx.R*2.1),.25,1);
+    const born=clamp((ia*N*1.4-e._hi)/8,0,1);if(!born)return;
+    drawTileAt(e,p.x,p.y,hx.S*p.k*(.7+.3*born),0,fog*born*.62*(.35+.65*fade),false);
+  });
+  landed.forEach(e=>drawTile(e,1,1,false));
+  flying.sort((a,b)=>a.t-b.t).forEach(({e,t})=>{
+    const k=ease3h(t),f=e._hf,tx=sx(e.cx),ty=sy(e.cy),ts=T*cam.z;
+    /* a lifted arc: up and over, then down into place */
+    const mx=lerp(f.x,tx,.35),my=lerp(f.y,ty,.5)-Math.min(60,Math.abs(ty-f.y)*.25);
+    const x=(1-k)*(1-k)*f.x+2*(1-k)*k*mx+k*k*tx,y=(1-k)*(1-k)*f.y+2*(1-k)*k*my+k*k*ty;
+    drawTileAt(e,x,y,lerp(f.s,ts,k)*(1+.12*Math.sin(Math.PI*k)),Math.sin(Math.PI*k)*.16*(e._hi%2?1:-1),lerp(.62,1,Math.min(1,k*2)),false);
+  });
 }
 /* The lens: covers near the cursor swell and push their neighbours aside, strongest when they are small. */
 const lens={x:0,y:0,on:false};
@@ -804,7 +880,7 @@ function frame(now){
     cam.tx+=flick.x*dt;cam.ty+=flick.y*dt;clampCam();cam.tau=.05;
     const d=Math.exp(-dt/.42);flick.x*=d;flick.y*=d;glide=true;
   }
-  const cineOn=tickCine(now);
+  const cineOn=tickCine(now)||tickHelix(now);
   const moving=step(dt);
   if(mode==='talk')talkTick(now);
   const lensBusy=mode==='browse'&&view.name==='line'&&view.mix===0&&updateLens(dt);
@@ -1059,7 +1135,7 @@ cv.addEventListener('pointermove',ev=>{
   if(view.name==='disc'){discMove(ev);return}
   if(pts.has(ev.pointerId))pts.set(ev.pointerId,[ev.clientX,ev.clientY]);
   if(pts.size===2){const[a,b]=[...pts.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pinch)zoomAt((a[0]+b[0])/2,(a[1]+b[1])/2,d/pinch);pinch=d;moved=99;return}
-  if(drag&&pts.size===1){const dx=ev.clientX-drag.x,dy=ev.clientY-drag.y;moved+=Math.abs(dx)+Math.abs(dy);drag={x:ev.clientX,y:ev.clientY};
+  if(drag&&pts.size===1){const dx=ev.clientX-drag.x,dy=ev.clientY-drag.y;moved+=Math.abs(dx)+Math.abs(dy);if(hx&&moved>12)hurryHelix();drag={x:ev.clientX,y:ev.clientY};
     const tn=performance.now(),ms=Math.max(4,tn-dragT);dragT=tn;
     flick.x=lerp(flick.x,-dx/cam.tz/(ms/1000),.35);flick.y=lerp(flick.y,-dy/cam.tz/(ms/1000),.35);
     if(moved>6){lens.on=false;$('#tip').style.display='none'}
@@ -1104,6 +1180,7 @@ $('#pkPlay').addEventListener('click',()=>{const h=peekItem();if(h){playerToggle
 $('#pkMore').addEventListener('click',()=>{const h=peekItem();if(!h)return;camBefore=camBefore||{x:cam.tx,y:cam.ty,z:cam.tz};select(h)});
 setInterval(syncPeek,200);addEventListener('resize',placePeek);
 cv.addEventListener('click',ev=>{
+  if(hx){if(moved<6)pauseHelix();tapped=null;return}
   if(view.name==='disc'&&mode==='browse'){discClick(ev);return}
   if(!tapped||view.name!=='line'||mode!=='browse')return;
   const h=tapped.e;tapped=null;clearTimeout(tipTimer);
@@ -1121,6 +1198,8 @@ cv.addEventListener('pointerup',ev=>{pts.delete(ev.pointerId);pinch=0;cv.classLi
 cv.addEventListener('pointerleave',ev=>{if(hover){hover=null;dirty=true}lens.on=false;dirty=true;$('#tip').style.display='none'});
 function zoomAt(mx,my,f){if(orient==='v')return;const zmin=fitMain().z*.8,zmax=H/T*1.1;const nz=clamp(cam.tz*f,zmin,zmax);const wxx=(mx-W/2)/cam.tz+cam.tx,wyy=(my-H/2)/cam.tz+cam.ty;cam.tz=nz;cam.tx=wxx-(mx-W/2)/nz;cam.ty=wyy-(my-H/2)/nz;cam.tau=.08;dirty=true}
 ['pointerdown','wheel'].forEach(t=>cv.addEventListener(t,abortCine,{capture:true,passive:true}));
+cv.addEventListener('wheel',hurryHelix,{capture:true,passive:true});
+addEventListener('keydown',ev=>{if(hx&&ev.key!=='Tab')hurryHelix()},true);
 addEventListener('keydown',abortCine,true);addEventListener('resize',abortCine);
 cv.addEventListener('wheel',ev=>{
   ev.preventDefault();if(mode==='talk')return;
@@ -1778,7 +1857,7 @@ function discStep(dir){
 }
 function setView(name){
   if(view.name===name)return;
-  select(null);stopAudio(.2);clearTimeout(soundTimer);hover=null;lens.on=false;flick.x=flick.y=0;intro.t0=null;$('#tip').style.display='none';
+  select(null);stopAudio(.2);clearTimeout(soundTimer);hover=null;lens.on=false;flick.x=flick.y=0;intro.t0=null;hx=null;$('#hxNote').classList.remove('on');$('#tip').style.display='none';
   items.forEach(e=>{e._g=1;e._dx=0;e._dy=0;e._iy=0});
   if(orient==='v'&&name==='disc'){fitAll();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;if(focus)disc.s=focus._da}
   else fitAll(true);
@@ -1809,16 +1888,16 @@ function setOrient(o){
   if(o===orient)return;
   /* Each cover remembers where it is on screen and flies to its place in the new layout. */
   const old=items.map(e=>({e,x:sx(e.cx)+(e._dx||0),y:sy(e.cy)+(e._dy||0),s:T*cam.z*(e._g||1)}));
-  select(null);stopAudio(.2);clearTimeout(soundTimer);hover=null;lens.on=false;flick.x=flick.y=0;intro.t0=null;focus=null;$('#tip').style.display='none';
+  select(null);stopAudio(.2);clearTimeout(soundTimer);hover=null;lens.on=false;flick.x=flick.y=0;intro.t0=null;hx=null;$('#hxNote').classList.remove('on');focus=null;$('#tip').style.display='none';
   orient=o;layout();fitAll(true);
   if(REDUCED){items.forEach(e=>{e._dx=e._dy=0;e._g=1})}
   else{old.forEach(p=>{p.e._m={x:clamp(p.x,-p.s,W+p.s),y:clamp(p.y,-p.s-H*.15,H+p.s+H*.15),s:p.s};p.e._dx=p.e._dy=0;p.e._g=1;p.e._iy=0});morph.t0=performance.now();morph.dir=o==='v'?1:-1;
     /* the order follows the years, so the career turns over from its beginning */
     const n=items.length;items.forEach(e=>e._md=e.seq/Math.max(1,n-1))}
-  store.set('gt.orient',o);syncLayout();dirty=true;
+  store.set('gt.orient2',o);syncLayout();dirty=true;
 }
 $('#vOrient').onclick=()=>setOrient(orient==='v'?'h':'v');
-$('#axis').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{setOrient(b.dataset.o);syncMenu()});
+$('#axis').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{if(b.dataset.o==='h'&&orient==='h'&&view.name==='line'){select(null);startHelix();return}setOrient(b.dataset.o);syncMenu()});
 /* turning a phone turns the timeline: held upright the years run down, turned on its side they run across */
 {const land=matchMedia('(orientation: landscape)');const turn=ev=>{if(!TOUCH||Math.min(screen.width,screen.height)>700||mode!=='browse')return;setOrient(ev.matches?'h':'v');syncMenu()};
  if(land.addEventListener)land.addEventListener('change',turn);else if(land.addListener)land.addListener(turn)}
@@ -1836,7 +1915,7 @@ const startDisc=wantedView?wantedView==='record':store.get('gt.view2','line')===
 function startIntro(){
   if(REDUCED)return;
   intro.t0=performance.now()+1e7;
-  const go=()=>{if(intro.t0>performance.now()){intro.t0=performance.now()+120;startCine()}};
+  const go=()=>{if(intro.t0>performance.now()){intro.t0=performance.now()+120;if(!startHelix())startCine()}};
   const pending=ALL.filter(e=>e.cover&&items.includes(e));
   const tick=()=>{if(pending.filter(e=>e.img).length>=pending.length*.9)go();else if(mode==='browse'&&intro.t0>performance.now())setTimeout(tick,60)};
   tick();setTimeout(go,1100);
