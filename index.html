@@ -701,8 +701,10 @@ function draw(){
    then the spiral unwinds, album by album, each one flying down to its own place on the timeline.
    A click pauses it (and continues it); scrolling, dragging or a key hurries it to the end. */
 let hx=null;
+/* Not public yet: only runs with ?helix in the address, until Gunnar says it is ready. */
+const HELIX=/[?&]helix\b/.test(location.search);
 function startHelix(){
-  if(REDUCED||orient!=='h'||mode!=='browse'||view.name!=='line')return false;
+  if(!HELIX||REDUCED||orient!=='h'||mode!=='browse'||view.name!=='line')return false;
   /* while the spool works, the timeline waits low on the screen; when it is done the camera settles it into place */
   const fin=fitMain(),zl=Math.min(fin.z,(W*.94)/world.w,(H*.34)/world.h);
   cam.x=cam.tx=world.w/2;cam.z=cam.tz=zl;cam.y=cam.ty=-(H*.42)/zl;cam.tau=.5;
