@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gunnar Tynes</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+:root{--ground:#0b0d12;--paper:#ece8dc;--dim:#a3a6ad;--faint:#6f747f;--amber:#e6b450;--rule:#ffffff1a;
+  --serif:"Newsreader",Georgia,serif;--sans:"Instrument Sans","Helvetica Neue",Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ground);color:var(--paper);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas.drag{cursor:grabbing}
+.lab{position:fixed;top:max(16px,env(safe-area-inset-top));left:16px;font:11px var(--mono);letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
+h1{position:fixed;left:0;right:0;top:max(44px,calc(env(safe-area-inset-top) + 34px));margin:0;text-align:center;font:400 clamp(34px,6vw,64px)/1 var(--serif);letter-spacing:.005em;pointer-events:none;opacity:0;transition:opacity 1.2s}
+h1.on{opacity:1}h1 small{display:block;font:12px var(--mono);letter-spacing:.2em;color:var(--dim);margin-top:12px}
+.cap{position:fixed;left:0;right:0;bottom:max(20px,env(safe-area-inset-bottom));text-align:center;padding:0 16px;pointer-events:none}
+.now{min-height:46px}.now em{display:block;font:italic 400 22px/1.2 var(--serif)}.now span{font:12px var(--mono);color:var(--dim)}
+nav{display:flex;justify-content:center;gap:28px;margin-top:10px;pointer-events:auto}
+nav a,nav button{color:var(--paper);text-decoration:none;font:italic 400 22px var(--serif);background:none;border:0;border-bottom:1px solid transparent;padding:0;cursor:pointer}
+nav a:hover,nav button:hover{border-color:var(--paper)}
+nav a.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:9px;vertical-align:3px}
+.hint{font:11px var(--mono);letter-spacing:.12em;color:var(--faint);text-transform:uppercase;margin-top:12px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div class="lab">Prototype · the helix</div>
+<h1 id="ttl">gunnar tynes<small id="yrs"></small></h1>
+<div class="cap"><div class="now" id="now"></div>
+  <nav><button id="go">Timeline</button><a href="/?view=record">Record</a><a class="live" href="/live/">Live</a></nav>
+  <div class="hint" id="hint"></div></div>
+<script src="/catalogue.js"></script>
+<script>
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches,TOUCH=matchMedia('(hover: none)').matches;
+const ALL=window.CATALOGUE.filter(e=>e.tier==='core').sort((a,b)=>a.year-b.year||(a.date||a.year+'-12-31').localeCompare(b.date||b.year+'-12-31'));
+const Y0=ALL[0].year,Y1=ALL[ALL.length-1].year;document.getElementById('yrs').textContent=`${Y0} – ${Y1} · ${ALL.length} works`;
+let W,H,DPR,S,PER=12,RISE,RAD,F;
+/* each cover: a small pre-scaled canvas, so 120 draws a frame stay cheap */
+const cards=ALL.map((e,i)=>({e,i,img:null}));
+cards.forEach(c=>{if(!c.e.cover)return;const im=new Image();im.onload=()=>{const k=document.createElement('canvas');k.width=k.height=256;const x=k.getContext('2d');
+  const r=Math.min(im.naturalWidth,im.naturalHeight);x.fillStyle='#1a1e28';x.fillRect(0,0,256,256);
+  const w=im.naturalWidth*256/Math.max(im.naturalWidth,im.naturalHeight),h=im.naturalHeight*256/Math.max(im.naturalWidth,im.naturalHeight);x.drawImage(im,(256-w)/2,(256-h)/2,w,h);c.img=k};im.src='/'+c.e.cover});
+function size(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;
+  const m=Math.min(W,H*1.2);S=m*.105;RAD=m*.34;RISE=S*.36;F=m*1.6}
+size();addEventListener('resize',size);
+
+/* camera: spin around the axis, tilt, and travel along it */
+const cam={rot:0,vr:REDUCED?0:.12,tilt:-.42,tt:-.42,y:0,ty:0,zoom:.25};
+let intro=performance.now(),hover=null,flat=null,drag=null;
+const helixPos=c=>{const a=c.i*2*Math.PI/PER;return{x:Math.cos(a)*RAD,z:Math.sin(a)*RAD,y:(c.i-(ALL.length-1)/2)*RISE}};
+cam.y=cam.ty=helixPos(cards[0]).y+RISE*PER*1.1;   /* start at the beginning of the career */
+
+function project(p){
+  const ca=Math.cos(cam.rot),sa=Math.sin(cam.rot);
+  let x=p.x*ca-p.z*sa,z=p.x*sa+p.z*ca,y=p.y-cam.y;
+  const ct=Math.cos(cam.tilt),st=Math.sin(cam.tilt);const y2=y*ct-z*st,z2=y*st+z*ct;
+  const k=F/(F+z2+RAD*1.1);return{x:W/2+x*k,y:H*.5+y2*k,k,z:z2};
+}
+/* the flat target: the timeline as the main site draws it, years across, covers stacked */
+function flatLayout(){
+  const by={};ALL.forEach(e=>(by[e.year]=by[e.year]||[]).push(e));
+  const cols=[];let x=0;for(let y=Y0;y<=Y1;y++){const l=by[y]||[];const n=Math.max(1,Math.ceil(l.length/10));cols.push({y,x,l,n});x+=(l.length?n:0.4)+.12}
+  const tot=x,s=Math.min((W*.96)/tot,(H*.62)/10),ox=(W-tot*s)/2,base=H*.84,pos=new Map();
+  cols.forEach(c=>c.l.forEach((e,i)=>pos.set(e,{x:ox+(c.x+Math.floor(i/10)+.5)*s,y:base-((i%10)+.5)*s,s:s*.93})));
+  return pos;
+}
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+function frame(now){
+  const dt=Math.min(.05,(now-(frame.l||now))/1000);frame.l=now;
+  if(!drag&&!flat){cam.rot+=cam.vr*dt;cam.vr+=((REDUCED?0:.12)-cam.vr)*Math.min(1,dt*.8)}
+  cam.tilt+=(cam.tt-cam.tilt)*Math.min(1,dt*4);cam.y+=(cam.ty-cam.y)*Math.min(1,dt*3.5);
+  g.setTransform(DPR,0,0,DPR,0,0);
+  const bg=g.createRadialGradient(W/2,H*.5,0,W/2,H*.5,Math.max(W,H)*.75);bg.addColorStop(0,'#171b26');bg.addColorStop(1,'#0b0d12');g.fillStyle=bg;g.fillRect(0,0,W,H);
+  const it=REDUCED?1:Math.min(1,(now-intro)/2600);
+  const pts=cards.map(c=>{const p=project(helixPos(c));return{c,p}});
+  let fp=0;if(flat){fp=Math.min(1,(now-flat.t0)/1500);}
+  /* the spine: a faint thread through every cover in order */
+  if(fp<1){g.save();g.globalAlpha=(1-fp)*.35*it;g.strokeStyle='#e6b450';g.lineWidth=1;g.beginPath();
+    for(let i=0;i<120*ALL.length/PER*0+ALL.length*6;i++){const c={i:i/6};const p=project(helixPos(c));if(i)g.lineTo(p.x,p.y);else g.moveTo(p.x,p.y)}g.stroke();g.restore()}
+  const order=pts.slice().sort((a,b)=>b.p.z-a.p.z);
+  hover=null;
+  for(const {c,p} of order){
+    const appear=REDUCED?1:Math.max(0,Math.min(1,(it*ALL.length*1.25-c.i)/6));if(!appear)continue;
+    let x=p.x,y=p.y,s=S*p.k*(.6+.4*appear),alpha=Math.max(.12,Math.min(1,1.25-(p.z+RAD)/(RAD*2.2)))*appear,rot=0;
+    if(flat){const q=flat.pos.get(c.e),k=ease(Math.max(0,Math.min(1,fp*1.35-c.i/ALL.length*.35)));
+      x+= (q.x-x)*k;y+=(q.y-y)*k;s+=(q.s-s)*k;alpha+=(1-alpha)*k;rot=Math.sin(k*Math.PI)*.25*(c.i%2?1:-1)}
+    if(y<-s||y>H+s)continue;
+    g.save();g.globalAlpha=alpha;g.translate(x,y);if(rot)g.rotate(rot);
+    if(c.img)g.drawImage(c.img,-s/2,-s/2,s,s);else{g.fillStyle='#1d2230';g.fillRect(-s/2,-s/2,s,s);g.strokeStyle='#ece8dc33';g.strokeRect(-s/2+3,-s/2+3,s-6,s-6)}
+    /* depth fog */
+    if(!flat){g.globalAlpha=Math.max(0,Math.min(.7,(p.z+RAD*.2)/(RAD*1.6)));g.fillStyle='#0b0d12';g.fillRect(-s/2,-s/2,s,s)}
+    g.restore();
+    if(!flat&&ptr&&Math.abs(ptr.x-x)<s/2&&Math.abs(ptr.y-y)<s/2&&p.z<RAD*.3)hover={c,x,y,s};
+  }
+  /* year marks float beside the first cover of each year */
+  if(!flat){g.font='12px "IBM Plex Mono",monospace';g.textBaseline='middle';
+    let last=null;for(const {c,p} of pts){if(c.e.year===last)continue;last=c.e.year;if(p.z>RAD*.2)continue;
+      g.globalAlpha=Math.max(0,Math.min(1,.9-(p.z+RAD)/(RAD*2.4)))*it;g.fillStyle='#e6b450';const right=p.x>W/2;g.textAlign=right?'left':'right';
+      g.fillText(String(c.e.year),p.x+(right?1:-1)*(S*p.k*.62),p.y)}g.globalAlpha=1}
+  if(!flat||fp<1){const fa=1-fp;g.globalAlpha=fa;let lg=g.createLinearGradient(0,H-170,0,H);lg.addColorStop(0,'#0b0d1200');lg.addColorStop(.55,'#0b0d12ee');lg.addColorStop(1,'#0b0d12');g.fillStyle=lg;g.fillRect(0,H-170,W,170);
+    lg=g.createLinearGradient(0,0,0,150);lg.addColorStop(0,'#0b0d12');lg.addColorStop(.6,'#0b0d12cc');lg.addColorStop(1,'#0b0d1200');g.fillStyle=lg;g.fillRect(0,0,W,150);g.globalAlpha=1}
+  if(hover){g.strokeStyle='#ece8dc';g.lineWidth=1.5;g.strokeRect(hover.x-hover.s/2-2,hover.y-hover.s/2-2,hover.s+4,hover.s+4)}
+  const n=document.getElementById('now'),sh=hover||pinned;
+  const key=sh?sh.c.e.id:'';if(n.dataset.k!==key){n.dataset.k=key;n.innerHTML=sh?`<em>${esc(sh.c.e.title)}</em><span>${esc(sh.c.e.artist)} · ${sh.c.e.year}</span>`:''}
+  cv.style.cursor=hover?'pointer':drag?'grabbing':'grab';
+  if(it>.4)document.getElementById('ttl').classList.add('on');
+  if(flat&&fp>=1&&!flat.gone){flat.gone=true;setTimeout(()=>location.href='/?view=timeline',350)}
+  requestAnimationFrame(frame);
+}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let ptr=null,pinned=null,moved=0;
+cv.addEventListener('pointerdown',ev=>{cv.setPointerCapture(ev.pointerId);drag={x:ev.clientX,y:ev.clientY,t:performance.now()};moved=0;cam.vr=0});
+cv.addEventListener('pointermove',ev=>{ptr={x:ev.clientX,y:ev.clientY};if(!drag){if(!TOUCH)cam.tt=-.42+(ev.clientY/H-.5)*.4;return}
+  const dx=ev.clientX-drag.x,dy=ev.clientY-drag.y,tn=performance.now(),ms=Math.max(8,tn-drag.t);moved+=Math.abs(dx)+Math.abs(dy);
+  cam.rot+=dx*.006;cam.vr=dx*.006/(ms/1000)*.6;cam.ty-=dy*1.4;clampY();drag={x:ev.clientX,y:ev.clientY,t:tn}});
+cv.addEventListener('pointerup',()=>{drag=null;if(moved<6&&hover)pinned=hover;else if(moved<6)pinned=null;if(TOUCH)ptr=null});
+cv.addEventListener('pointerleave',()=>{if(!TOUCH)ptr=null});
+function clampY(){const a=helixPos(cards[0]).y,b=helixPos(cards[cards.length-1]).y;cam.ty=Math.max(a,Math.min(b,cam.ty))}
+cv.addEventListener('wheel',ev=>{ev.preventDefault();cam.ty+=ev.deltaY*.9;clampY()},{passive:false});
+document.getElementById('go').onclick=()=>{if(flat)return;flat={t0:performance.now(),pos:flatLayout()};document.getElementById('ttl').classList.remove('on');document.getElementById('hint').textContent='Into the timeline…'};
+document.getElementById('hint').textContent=TOUCH?'Swipe sideways to turn · up and down to travel the years':'Drag to turn · scroll to travel through the years';
+requestAnimationFrame(frame);
+</script>
+</body></html>
