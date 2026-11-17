@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gunnar Tynes</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+:root{--ground:#0b0d12;--paper:#ece8dc;--dim:#a3a6ad;--faint:#6f747f;--amber:#e6b450;--rule:#ffffff1a;
+  --serif:"Newsreader",Georgia,serif;--sans:"Instrument Sans","Helvetica Neue",Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;background:radial-gradient(120% 80% at 50% 0%,#171b26,#0b0d12 60%) fixed,var(--ground);color:var(--paper);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+.lab{position:fixed;top:max(14px,env(safe-area-inset-top));left:16px;font:11px var(--mono);letter-spacing:.14em;color:var(--faint);text-transform:uppercase;z-index:5}
+header{text-align:center;padding:max(64px,calc(env(safe-area-inset-top) + 50px)) 16px 10px}
+h1{margin:0;font:400 clamp(32px,5vw,54px)/1 var(--serif)}
+header p{margin:12px auto 0;max-width:520px;color:var(--dim);font-size:14px}
+#tiltBtn{margin-top:14px;font:12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--paper);background:none;border:1px solid var(--rule);border-radius:20px;padding:8px 14px;cursor:pointer;display:none}
+/* the hero */
+.stage{display:grid;place-items:center;padding:34px 16px 6px}
+.card{--rx:0deg;--ry:0deg;--gx:50%;--gy:50%;perspective:900px;width:var(--w);aspect-ratio:1;position:relative;cursor:pointer}
+.card .in{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(var(--rx)) rotateY(var(--ry));transition:transform .12s linear}
+.card img{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}
+.card .b{transform:translateZ(0) scale(1.0);box-shadow:0 30px 60px #000c,0 0 0 1px #ffffff14}
+.card .s{transform:translateZ(calc(var(--d) * .45)) translate(calc(var(--ry) * -.5),calc(var(--rx) * .5));filter:brightness(0) blur(7px);opacity:.55}
+.card .f{transform:translateZ(var(--d)) scale(calc(1 - var(--d) / 900px))}
+.card .gl{position:absolute;inset:0;transform:translateZ(calc(var(--d) + 1px));background:radial-gradient(70% 70% at var(--gx) var(--gy),#ffffff2e,#ffffff00 60%);mix-blend-mode:screen;pointer-events:none}
+.hero{--w:min(520px,78vw);--d:70px}
+.meta{text-align:center;margin:26px 0 0;min-height:64px}.meta .y{font:13px var(--mono);letter-spacing:.2em;color:var(--amber)}.meta em{display:block;font:italic 400 24px/1.2 var(--serif)}.meta b{font:400 13px var(--sans);color:var(--dim)}
+/* the wall */
+.wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:34px 26px;max-width:1180px;margin:30px auto 80px;padding:0 24px}
+.wall .card{--w:100%;--d:34px}
+.wall .card .b{box-shadow:0 14px 30px #000b,0 0 0 1px #ffffff12}
+.wall figcaption{margin-top:10px;font:11.5px var(--mono);color:var(--faint);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+nav{display:flex;justify-content:center;gap:28px;margin:6px 0 0}
+nav a{color:var(--paper);text-decoration:none;font:italic 400 22px var(--serif);border-bottom:1px solid transparent}nav a:hover{border-color:var(--paper)}
+nav a.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:9px;vertical-align:3px}
+.how{position:fixed;top:max(10px,env(safe-area-inset-top));right:16px;font:11px var(--mono);letter-spacing:.1em;color:var(--faint);background:#0b0d12cc;border:1px solid var(--rule);border-radius:20px;padding:6px 12px;cursor:pointer;text-transform:uppercase;z-index:5}
+.howbox{position:fixed;top:50px;right:16px;width:min(340px,calc(100vw - 32px));background:#161a23f0;border:1px solid var(--rule);border-radius:12px;padding:16px 18px;font-size:13.5px;line-height:1.55;color:#d6d2c6;display:none;z-index:5;backdrop-filter:blur(8px)}
+.howbox.on{display:block}.howbox b{color:var(--paper);font-weight:500}
+@media (prefers-reduced-motion:reduce){.card .in{transition:none}}
+</style></head><body>
+<div class="lab">Prototype · covers with depth</div>
+<button class="how" id="how">How is this made?</button>
+<div class="howbox" id="howbox">Each flat cover was taken apart on a Mac by Apple's own image-recognition, which finds the subject the way your phone lifts a person out of a photo.
+  The subject floats on its own layer in front of the cover, with a real shadow behind it, and the place where it stood is filled in from its surroundings.
+  <br><br><b>Move the mouse</b> over a cover, or <b>tilt your phone</b>, and the layers part in true 3D.</div>
+<header><h1>gunnar tynes</h1><p>Every cover, lifted off the page.</p><button id="tiltBtn">Tilt with your phone</button></header>
+<div class="stage"><div class="card hero" id="hero"><div class="in"><img class="b" alt=""><img class="s" alt=""><img class="f" alt=""><i class="gl"></i></div></div></div>
+<div class="meta" id="meta"></div>
+<nav><a href="/?view=timeline">Timeline</a><a href="/?view=record">Record</a><a class="live" href="/live/">Live</a></nav>
+<div class="wall" id="wall"></div>
+<script src="data.js"></script>
+<script>
+const D=window.DEPTH,REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+document.getElementById('how').onclick=()=>document.getElementById('howbox').classList.toggle('on');
+const src=(d,k)=>`layers/${d.id}-${k}.webp`;
+function fill(card,d){card.querySelector('.b').src=src(d,'b');card.querySelector('.f').src=src(d,'f');card.querySelector('.s').src=src(d,'f')}
+/* the hero starts on a cover where the effect is strong */
+const hero=document.getElementById('hero');let heroD=D.find(d=>d.id==="mum-marmalade-fires")||D.find(d=>d.c>.2&&d.c<.5)||D[0];
+function showHero(d){heroD=d;fill(hero,d);document.getElementById('meta').innerHTML=`<div class="y">${d.y}</div><em>${esc(d.t)}</em><b>${esc(d.a)}</b>`}
+showHero(heroD);
+document.getElementById('wall').innerHTML=D.map((d,i)=>`<figure style="margin:0"><div class="card" data-i="${i}"><div class="in"><img class="b" loading="lazy" src="${src(d,'b')}" alt=""><img class="s" loading="lazy" src="${src(d,'f')}" alt=""><img class="f" loading="lazy" src="${src(d,'f')}" alt=""><i class="gl"></i></div></div><figcaption>${d.y} · ${esc(d.t)}</figcaption></figure>`).join('');
+document.getElementById('wall').addEventListener('click',ev=>{const c=ev.target.closest('.card');if(!c)return;showHero(D[+c.dataset.i]);scrollTo({top:0,behavior:REDUCED?'auto':'smooth'})});
+/* tilt: the card under the pointer follows it closely; the hero also follows the whole window */
+function tilt(card,nx,ny,amt){card.style.setProperty('--ry',(nx*amt)+'deg');card.style.setProperty('--rx',(-ny*amt)+'deg');card.style.setProperty('--gx',(50+nx*45)+'%');card.style.setProperty('--gy',(50+ny*45)+'%')}
+let idle=0;
+addEventListener('pointermove',ev=>{if(ev.pointerType!=='mouse')return;idle=performance.now();
+  const r=hero.getBoundingClientRect();tilt(hero,Math.max(-1.4,Math.min(1.4,(ev.clientX-(r.left+r.width/2))/(r.width/1.4))),Math.max(-1.4,Math.min(1.4,(ev.clientY-(r.top+r.height/2))/(r.height/1.4))),16)});
+document.getElementById('wall').addEventListener('pointermove',ev=>{const c=ev.target.closest('.card');if(!c)return;const r=c.getBoundingClientRect();tilt(c,(ev.clientX-r.left)/r.width*2-1,(ev.clientY-r.top)/r.height*2-1,22)});
+document.getElementById('wall').addEventListener('pointerout',ev=>{const c=ev.target.closest('.card');if(c&&!c.contains(ev.relatedTarget))tilt(c,0,0,0)});
+/* when nobody moves, the hero sways gently so the depth is never a secret */
+(function sway(t){if(!REDUCED&&performance.now()-idle>2500&&!gyro){tilt(hero,Math.sin(t/1900)*.8,Math.cos(t/2600)*.5,14)}requestAnimationFrame(sway)})(0);
+/* phones: tilt the phone itself */
+let gyro=false;
+function onOri(e){if(e.gamma==null)return;gyro=true;const nx=Math.max(-1,Math.min(1,e.gamma/25)),ny=Math.max(-1,Math.min(1,(e.beta-45)/25));
+  tilt(hero,nx,ny,18);document.querySelectorAll('.wall .card').forEach(c=>tilt(c,nx,ny,16))}
+if(window.DeviceOrientationEvent&&matchMedia('(hover: none)').matches){
+  if(typeof DeviceOrientationEvent.requestPermission==='function'){const b=document.getElementById('tiltBtn');b.style.display='inline-block';b.onclick=()=>DeviceOrientationEvent.requestPermission().then(s=>{if(s==='granted'){addEventListener('deviceorientation',onOri);b.remove()}}).catch(()=>{})}
+  else addEventListener('deviceorientation',onOri);
+}
+</script>
+</body></html>
