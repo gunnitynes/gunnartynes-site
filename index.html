@@ -518,18 +518,20 @@ async function getFile(id){try{const d=await db();return await new Promise((res,
 const T=220,GAP=12,COLW=T+GAP,STACK=10,EMPTY=90;
 const Y0=Math.min(...ALL.map(e=>e.year)),Y1=Math.max(2026,...ALL.map(e=>e.year));
 let items=[],world={w:1,h:1},yearX={},showApp=false,yearBlocks=[],vCols=4;
-const VGUT=150,VGAP=64;
+const VGUT=150,VGAP=84;
 const wantLayout=(location.search.match(/[?&]layout=(vertical|horizontal)/)||[])[1];
 /* A phone always opens the way it is held: upright, the years run down. */
 const PHONE=matchMedia('(hover: none)').matches&&Math.min(screen.width,screen.height)<=700;
 let orient=wantLayout?(wantLayout==='vertical'?'v':'h'):PHONE?(innerWidth>innerHeight?'h':'v'):store.get('gt.orient2',innerWidth<900?'v':'h');
 /* Phones keep four covers a row. On a computer the first screen shows 1997-2004, as big as the window allows:
    the column count whose covers come out biggest while those years still fit the height. */
+/* the vertical timeline gives its covers more air than the horizontal one, so a cover that swells never covers its neighbour */
+const VGP=38,VCW=T+VGP;
 const V_FIRST_END=2004;
 function vFirstH(c){const by={};ALL.filter(e=>(showApp||e.tier==='core')&&e.year<=V_FIRST_END).forEach(e=>by[e.year]=(by[e.year]||0)+1);
-  let h=0;Object.values(by).forEach(n=>{h+=Math.ceil(n/c)*COLW+VGAP});return h-VGAP-GAP}
-function vFitZ(c,w,h){const top=($('#bar')?$('#bar').offsetHeight:46)+10;return Math.min((w-24)/(VGUT+c*COLW-GAP),(h-top-100)/vFirstH(c))}
-const vOldZ=w=>Math.min((w-24)/(VGUT+8*COLW-GAP),170/T);   /* never smaller than the old first view */
+  let h=0;Object.values(by).forEach(n=>{h+=Math.ceil(n/c)*VCW+VGAP});return h-VGAP-VGP}
+function vFitZ(c,w,h){const top=($('#bar')?$('#bar').offsetHeight:46)+10;return Math.min((w-24)/(VGUT+c*VCW-VGP),(h-top-100)/vFirstH(c))}
+const vOldZ=w=>Math.min((w-24)/(VGUT+8*VCW-VGP),170/T);   /* never smaller than the old first view */
 function colsFor(w){
   if(w<=700)return 4;
   let best=8,bz=0;for(let c=3;c<=8;c++){const z=vFitZ(c,w,innerHeight);if(z>bz*1.02){bz=z;best=c}}
@@ -544,14 +546,14 @@ function layout(){
     /* Years run down the page: a gutter for the year, then its covers in rows. Empty years are skipped. */
     vCols=colsFor(innerWidth);let yy=0;
     for(let y=Y0;y<=Y1;y++){
-      const list=by[y]||[];yearX[y]={x:0,w:VGUT+vCols*COLW,n:list.length};
+      const list=by[y]||[];yearX[y]={x:0,w:VGUT+vCols*VCW,n:list.length};
       if(!list.length)continue;
       const rows=Math.ceil(list.length/vCols);
-      yearBlocks.push({year:y,top:yy,bottom:yy+rows*COLW-GAP});
-      list.forEach((e,i)=>{e.wx=VGUT+(i%vCols)*COLW;e.wy=yy+Math.floor(i/vCols)*COLW});
-      yy+=rows*COLW+VGAP;
+      yearBlocks.push({year:y,top:yy,bottom:yy+rows*VCW-VGP});
+      list.forEach((e,i)=>{e.wx=VGUT+(i%vCols)*VCW;e.wy=yy+Math.floor(i/vCols)*VCW});
+      yy+=rows*VCW+VGAP;
     }
-    world={w:VGUT+vCols*COLW-GAP,h:yy};
+    world={w:VGUT+vCols*VCW-VGP,h:yy};
     items.forEach((e,i)=>{e.cx=e.wx+T/2;e.cy=e.wy+T/2;e.seq=i});
     $('#count').textContent=`${Y0}–${Y1} · ${items.length} entries`;
     discLayout();
@@ -1098,7 +1100,7 @@ function updateLens(dt){
     for(const e of items){
       const dx=sx(e.cx)-fx,dy=sy(e.cy)-fy,d=Math.hypot(dx,dy);
       if(d<bd&&matches(e)){bd=d;best=e}
-      const tg=REDUCED||sel?1:1+.26*Math.exp(-(d*d)/(R*R));
+      const tg=REDUCED||sel?1:1+.12*Math.exp(-(d*d)/(R*R));
       const g0=e._g||1,x0=e._dx||0,y0=e._dy||0;
       e._g=g0+(tg-g0)*k;e._dx=x0+(0-x0)*k;e._dy=y0+(0-y0)*k;
       if(Math.abs(e._g-g0)>.0008||Math.abs(e._dx-x0)>.04||Math.abs(e._dy-y0)>.04)busy=true;
@@ -1427,7 +1429,7 @@ async function takeFile(f){if(!sel||!f)return;await putFile(sel.id,f);if(audio.u
 /* ---------- input ---------- */
 function hit(mx,my){
   if(orient==='x'&&view.name==='line'&&mode==='browse')return hvHit(mx,my);
-  let best=null,bg=0;const grid=lensMode()==='lift';
+  let best=null,bg=0;const grid=lensMode()==='lift'||orient==='v';
   if(grid&&lift.hold){const e=lift.hold,s=T*cam.z*(e._g||1),x=sx(e.cx)+(e._dx||0),y=sy(e.cy)+(e._dy||0);if(Math.abs(mx-x)<=s/2&&Math.abs(my-y)<=s/2)return e;lift.hold=null}
   for(const e of items){const gr=grid?1:e._g||1,s=T*cam.z*gr,x=sx(e.cx)+(grid?0:e._dx||0)-s/2,y=sy(e.cy)+(grid?0:e._dy||0)-s/2;if(mx>=x&&mx<=x+s&&my>=y&&my<=y+s&&gr>=bg){best=e;bg=gr}}
   return best;
