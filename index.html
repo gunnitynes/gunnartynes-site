@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Gunnar Tynes</title>
-<meta name="description" content="A chronological catalogue of recordings, screen, stage and radio work, 1997 to the present, with credits and sources.">
+<meta name="description" content="Gunnar Tynes: musician, producer and composer, a founding member of múm. Recordings, film and TV music, and concerts since 1997.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Gunnar Tynes">
 <meta property="og:title" content="Gunnar Tynes">
-<meta property="og:description" content="Recordings, film and stage music, and concerts, from 1997 to now: a timeline, a record you can spin, and every concert on a map.">
+<meta property="og:description" content="Musician, producer and composer, a founding member of múm. Recordings, film and TV music, and concerts since 1997: a timeline, a record you can spin, and every concert on a map.">
 <meta property="og:url" content="https://gunnartynes.com/">
 <meta property="og:image" content="https://gunnartynes.com/og/home.jpg">
 <meta property="og:image:width" content="1200">
@@ -16,6 +16,7 @@
 <meta property="og:image:alt" content="Gunnar Tynes">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://gunnartynes.com/">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://gunnartynes.com/#site","url":"https://gunnartynes.com/","name":"Gunnar Tynes","about":{"@id":"https://gunnartynes.com/#gunnar"},"inLanguage":"en"},{"@type":"Person","@id":"https://gunnartynes.com/#gunnar","name":"Gunnar Tynes","alternateName":["Gunnar Örn Tynes","Gunni Tynes"],"url":"https://gunnartynes.com/","image":"https://gunnartynes.com/og/home.jpg","nationality":"Icelandic","jobTitle":"Musician, producer and composer","knowsAbout":["Music production","Mixing","Recording","Film music"],"memberOf":[{"@type":"MusicGroup","name":"múm","sameAs":["https://en.wikipedia.org/wiki/M%C3%BAm","https://www.discogs.com/artist/8298"]}],"sameAs":["https://en.wikipedia.org/wiki/Gunnar_%C3%96rn_Tynes","https://www.wikidata.org/wiki/Q18164935","https://www.discogs.com/artist/624414","https://musicbrainz.org/artist/2fd6fe9e-926f-470e-a05e-dc50a372b876","https://www.allmusic.com/artist/mn0001406851","https://www.imdb.com/name/nm2622300/"]}]}</script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -41,6 +42,7 @@ button{background:none;border:0;cursor:pointer;padding:0}
 :focus-visible{outline:2px solid var(--paper);outline-offset:2px}
 
 #bar{position:fixed;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:14px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141bf2 60%,#11141b00);z-index:5}
+.vh{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 #bar h1{margin:0;font:400 20px/1 var(--serif);letter-spacing:.005em;white-space:nowrap}
 #bar h1 small{font:12px var(--mono);color:var(--faint);margin-left:10px}
 #count .cr{display:none}
@@ -386,6 +388,12 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
 </style>
 </head>
 <body>
+<!-- The whole catalogue as plain text, for search engines and screen readers; the timeline above draws the same releases. -->
+<section class="vh" id="readable" aria-label="Every release, as a list">
+  <h2>Gunnar Tynes</h2>
+  <p>Gunnar Örn Tynes is an Icelandic musician, producer and composer, and a founding member of múm. This is a chronological catalogue of his recordings, his film, television and stage music, and his production, recording and mixing work for other artists, from 1997 to now.</p>
+  <div id="readableList"></div>
+</section>
 <canvas id="world" aria-label="All releases arranged by year"></canvas>
 
 <header id="bar">
@@ -497,6 +505,11 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
 if(window.BOOKING&&BOOKING.endpoint){document.getElementById('bookLink').hidden=false;document.getElementById('wBook').hidden=false}
 const PUBLIC=!/[?&]edit\b/.test(location.search);
 const ALL=window.CATALOGUE.filter(e=>!e.hide);
+/* fill the plain-text list (see #readable): year by year, title, artist, type and what Gunnar did */
+(function(){const RT={P:'production',R:'recording',M:'mixing',B:'band member, performer, writer',F:'film and screen'};const H=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const core=ALL.filter(e=>e.tier==='core'),by={};core.forEach(e=>(by[e.year]=by[e.year]||[]).push(e));
+  document.getElementById('readableList').innerHTML=`<p>${core.length} releases, ${Object.keys(by)[0]}–${Object.keys(by).slice(-1)[0]}.</p>`+Object.keys(by).map(y=>`<h3>${y}</h3><ul>${by[y].map(e=>`<li><cite>${H(e.title)}</cite> · ${H(e.artist)}${e.type?` (${H(e.type)})`:''}${(e.roles||[]).length?` · ${H(e.roles.map(r=>RT[r]).filter(Boolean).join(', '))}`:''}${e.roleText?`. ${H(e.roleText)}`:''}${e.film&&e.film.role?`. ${H(e.film.role[0].toUpperCase()+e.film.role.slice(1))}`:''}</li>`).join('')}</ul>`).join('');
+})();
 const ROLE={P:['Produced','--p'],R:['Recorded','--r'],M:['Mixed','--m'],B:['Band, performed, wrote','--b'],F:['Film & screen','--f']};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const C={};for(const k in ROLE)C[k]=css(ROLE[k][1]);
