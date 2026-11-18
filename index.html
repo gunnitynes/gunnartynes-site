@@ -43,6 +43,7 @@ button{background:none;border:0;cursor:pointer;padding:0}
 #bar{position:fixed;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:14px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141bf2 60%,#11141b00);z-index:5}
 #bar h1{margin:0;font:400 20px/1 var(--serif);letter-spacing:.005em;white-space:nowrap}
 #bar h1 small{font:12px var(--mono);color:var(--faint);margin-left:10px}
+#count .cr{display:none}
 #vOrient,#bookLink{display:none!important}
 #axis{display:inline-flex;align-items:center;gap:1px;margin-left:-6px;padding:2px;border:1px solid var(--rule);border-radius:13px;height:26px}
 #axis[hidden]{display:none}
@@ -305,7 +306,8 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 
 @media (max-width:700px){
-  #bar h1 small{display:none}#right{order:1;margin-left:auto;gap:8px}#views{order:2;flex-basis:100%;gap:18px}#qChip{max-width:110px}
+  /* phones: just the number of releases, small, after the name */
+  #bar h1 small{font-size:11px;margin-left:8px;letter-spacing:.02em}#count .cy,#count .cw{display:none}#count .cr{display:inline}#right{order:1;margin-left:auto;gap:8px}#views{order:2;flex-basis:100%;gap:18px}#qChip{max-width:110px}
   #menu{left:8px;right:8px;width:auto;max-height:calc(100dvh - 110px)}
   #panel{top:auto;left:0;right:0;width:auto;height:min(78%,calc(100% - 96px));border-left:0;border-top:1px solid var(--rule);border-radius:16px 16px 0 0;padding-top:28px;transform:translateY(102%)}
   #panel::before{content:"";position:absolute;left:50%;top:9px;width:38px;height:4px;margin-left:-19px;border-radius:2px;background:#ffffff30}
@@ -555,7 +557,7 @@ function layout(){
     }
     world={w:VGUT+vCols*VCW-VGP,h:yy};
     items.forEach((e,i)=>{e.cx=e.wx+T/2;e.cy=e.wy+T/2;e.seq=i});
-    $('#count').textContent=`${Y0}–${Y1} · ${items.length} entries`;
+    $('#count').innerHTML=`<span class="cy">${Y0}–${Y1} · </span>${items.length}<span class="cw"> entries</span><span class="cr"> releases</span>`;
     discLayout();
     return;
   }
@@ -568,7 +570,7 @@ function layout(){
   world={w:x-22,h};
   items.forEach(e=>{e.cx=e.wx+T/2;e.cy=e.wy+T/2});
   items.forEach((e,i)=>e.seq=i);
-  $('#count').textContent=`${Y0}–${Y1} · ${items.length} entries`;
+  $('#count').innerHTML=`<span class="cy">${Y0}–${Y1} · </span>${items.length}<span class="cw"> entries</span><span class="cr"> releases</span>`;
   discLayout();
   if(orient==='x')hvOrder();
 }
