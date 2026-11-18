@@ -183,6 +183,7 @@ body.peeking #mini{opacity:0;pointer-events:none}
 @media (max-width:700px){#peek{left:10px!important;right:10px;top:auto!important;bottom:12px;max-width:none}body.vert.peeking #now{visibility:hidden}}
 #hxNote{position:fixed;left:0;right:0;bottom:max(46px,calc(env(safe-area-inset-bottom) + 30px));text-align:center;font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);pointer-events:none;opacity:0;transition:opacity .4s;z-index:4}
 #hxNote.on{opacity:1}
+#lensSw{position:fixed;left:14px;bottom:14px;z-index:40;font:11px "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:#ece8dc;background:#11141bdd;border:1px solid #ffffff22;border-radius:20px;padding:7px 13px;cursor:pointer}
 #tip{position:fixed;pointer-events:none;background:var(--plate2);padding:6px 9px;font-size:13px;z-index:6;max-width:320px;border-radius:2px;display:none}
 #tip b{font-weight:500}#tip em{font:italic 15px var(--serif)}#tip span{display:block;font:11px var(--mono);color:var(--dim)}
 
@@ -413,7 +414,7 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
 </header>
 <nav id="years" aria-label="Years"></nav>
 <div id="hxNote" aria-live="polite"></div>
-<div id="tip"></div>
+<div id="tip"></div><button id="lensSw" hidden></button>
 <button id="discPlay" type="button" aria-label="Play" hidden><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg></button>
 <button id="recView" type="button" hidden>Whole record</button>
 <div id="peek" role="group" aria-label="Player"><i class="pbar"></i><img id="pkCov" alt=""><button id="pkPlay" type="button"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg><span>Play</span></button><div class="pt"><em></em><b></b></div><button id="pkMore" type="button">Details<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button></div>
@@ -675,12 +676,12 @@ function drawAxis(curY){
   g.font=`${fs}px "IBM Plex Mono",monospace`;
   for(let y=Y0;y<=Y1;y++){
     const c=yearX[y];if(!c)continue;
-    const x=sx(c.x);
-    if(x>W+80||x+c.w*cam.z<-80)continue;
+    const dk=lensMode()==='dock'&&dock.a,x=dk?dockMap(sx(c.x))[0]:sx(c.x),cw=dk?dockMap(sx(c.x+c.w))[0]-x:c.w*cam.z;
+    if(x>W+80||x+cw<-80)continue;
     if(mode==='talk'&&!finished&&curY!=null&&y>curY)continue;
     const label=(spacing<34||c.n===0)?"'"+String(y).slice(2):String(y);
-    if(g.measureText(label).width>c.w*cam.z+18*cam.z&&y!==curY)continue;
-    g.fillStyle=y===curY?COL.paper:COL.faint;
+    if(g.measureText(label).width>cw+18*cam.z&&y!==curY)continue;
+    g.fillStyle=y===curY||(dk&&hover&&hover.year===y)?COL.paper:COL.faint;
     g.fillText(label,x,yA);
   }
   const axisEnd=(mode==='talk'&&!finished&&curY!=null&&yearX[curY])?yearX[curY].x+yearX[curY].w:world.w;
@@ -762,6 +763,9 @@ function drawScene(){
       const p=clamp((now-intro.t0-(e._idel!=null?e._idel:e.seq*intro.gap))/520,0,1),o=1-Math.pow(1-p,3),back=1+2.2*Math.pow(p-1,3)+1.2*Math.pow(p-1,2);
       a*=o;gr*=lerp(.72,1,back);e._iy=(1-o)*46;
     }
+    if(lensMode()==='lift'&&lift.amt){const lf=e._lf||0;a*=1-.42*lift.amt*(1-lf);
+      if(lf>.01){const s=T*cam.z*gr,x=sx(e.cx)+(e._dx||0),y=sy(e.cy)+(e._dy||0)+(e._iy||0);
+        g.save();g.shadowColor='rgba(0,0,0,.75)';g.shadowBlur=34*lf;g.shadowOffsetY=14*lf;g.fillStyle=COL.ground;g.globalAlpha=lf;g.fillRect(x-s/2,y-s/2,s,s);g.restore()}}
     drawTile(e,a,gr,e===sel||e===peek.e||(mode==='browse'&&e.id===audio.id));
   });
   drawHoverPlay();
@@ -1016,6 +1020,54 @@ function paintNow(){
   const e=(audio.id&&items.find(x=>x.id===audio.id))||focus;if(!e)return;
   const n=$('#now');n.querySelector('em').textContent=e.title;n.querySelector('b').textContent=e.artist;n.querySelector('span').textContent=e.year;
 }
+/* Trial lenses for the horizontal timeline, hidden behind ?lens=dock or ?lens=lift until Gunnar picks one.
+   dock: like the Dock on a Mac, the years near the mouse widen along the time axis and the rest close up to make room;
+         nothing moves up or down out of its column, and the ends of the timeline stay where they are.
+   lift: only the cover under the mouse is picked up, larger and with a shadow; its neighbours stay put and dim. */
+let LENS=((location.search.match(/[?&]lens=(\w+)/)||[])[1]||'').toLowerCase();if(!['dock','lift'].includes(LENS))LENS=LENS?'old':'';
+const lensMode=()=>orient==='h'&&(LENS==='dock'||LENS==='lift')?LENS:'';
+function erf(x){const sg=Math.sign(x);x=Math.abs(x);const t=1/(1+.3275911*x);return sg*(1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x))}
+const dock={m:null,a:0,R:1,L:0,Rr:1};
+/* screen x before the dock -> [screen x after, local magnification]; the integral of a bump, rescaled so both ends stay pinned */
+function dockMap(u){
+  const A=dock.a,R=dock.R,m=dock.m;if(!A||m==null)return[u,1];
+  const E=v=>A*R*.8862269*erf((v-m)/R),L=dock.L,Rr=dock.Rr,c=(Rr-L)/((Rr+E(Rr))-(L+E(L))),a=L-c*(L+E(L));
+  return[a+c*(u+E(u)),c*(1+A*Math.exp(-Math.pow((u-m)/R,2)))];
+}
+const lensOn=()=>lens.on&&!sel&&!REDUCED&&intro.t0===null&&mode==='browse'&&morph.t0===null;
+function dockLens(dt){
+  const s0=T*cam.z,on=lensOn(),tA=on?clamp(124/s0-1,0,2.4):0;
+  const k=1-Math.exp(-dt/.12),km=1-Math.exp(-dt/.045),a0=dock.a,m0=dock.m;
+  if(on)dock.m=dock.m==null||dock.a<.02?lens.x:dock.m+(lens.x-dock.m)*km;
+  dock.a+=(tA-dock.a)*k;if(!on&&dock.a<.003)dock.a=0;
+  dock.R=COLW*cam.z*2.3;dock.L=sx(0);dock.Rr=sx(world.w);
+  const yb=sy(0),room=yb-(barH()+16),top={};
+  for(const e of items)top[e.wx]=Math.min(top[e.wx]??0,e.wy);
+  for(const e of items){
+    const u=sx(e.cx),[x,sc]=dockMap(u),gr=Math.min(sc,Math.max(1,room/Math.max(1,-top[e.wx]*cam.z)));
+    e._g=gr;e._dx=x-u;e._dy=(sy(e.cy)-yb)*(gr-1);
+  }
+  return Math.abs(dock.a-a0)>.0004||(dock.m!=null&&m0!=null&&Math.abs(dock.m-m0)>.05);
+}
+const lift={amt:0};
+function liftLens(dt){
+  const s0=T*cam.z,on=lensOn(),tgt=on?hover:null,k=1-Math.exp(-dt/.09),S=clamp(118/s0,1.7,4.4),top=barH()+10;
+  const a0=lift.amt;lift.amt+=((tgt?1:0)-lift.amt)*k;if(lift.amt<.002&&!tgt)lift.amt=0;
+  let busy=Math.abs(lift.amt-a0)>.0005;
+  for(const e of items){
+    const f0=e._lf||0;let f=f0+((e===tgt?1:0)-f0)*k;if(f<.002&&e!==tgt)f=0;if(Math.abs(f-f0)>.0005)busy=true;e._lf=f;
+    const gr=1+(S-1)*f;let dx=0,dy=0;
+    if(f){const s=s0*gr,x=sx(e.cx),y=sy(e.cy);dy=(Math.max(y-s0*.12,top+s/2)-y)*f;dx=(clamp(x,s/2+8,W-s/2-8)-x)*f}
+    e._g=gr;e._dx=dx;e._dy=dy;
+  }
+  return busy;
+}
+function placeTip(){
+  const tip=$('#tip'),e=hover;if(!e||tip.style.display!=='block')return;
+  const s=T*cam.z*(e._g||1),x=sx(e.cx)+(e._dx||0),y=sy(e.cy)+(e._dy||0),w=tip.offsetWidth,h=tip.offsetHeight;
+  let l=x+s/2+12;if(l+w>W-8)l=x-s/2-12-w;
+  tip.style.left=clamp(l,8,W-w-8)+'px';tip.style.top=clamp(y-s/2,barH()+8,H-h-8)+'px';
+}
 function updateLens(dt){
   if(orient==='x')return false;
   if(orient==='v'){
@@ -1033,6 +1085,8 @@ function updateLens(dt){
     if(!sel)setFocus(best);
     return busy;
   }
+  if(lensMode()==='dock')return dockLens(dt);
+  if(lensMode()==='lift')return liftLens(dt);
   const s0=T*cam.z,A=lens.on&&!sel&&!REDUCED?clamp(136/s0-1,0,1.75):0,R=s0*1.6,k=1-Math.exp(-dt/(performance.now()<morphUntil?.26:.075));
   let busy=false;
   for(const e of items){
@@ -1107,7 +1161,7 @@ function frame(now){
   const discBusy=mode==='browse'&&tickDisc(dt,now);
   let intros=false;
   if(intro.t0!==null){intros=true;if(now-intro.t0>(intro.span||items.length*intro.gap+560)){intro.t0=null;intro.span=0;items.forEach(e=>{e._iy=0;e._idel=null})}}
-  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn||breathing||!!wall.phase||morph.t0!==null){draw();positionPeek();dirty=false}
+  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn||breathing||!!wall.phase||morph.t0!==null){draw();positionPeek();if(lensMode())placeTip();dirty=false}
   requestAnimationFrame(frame);
 }
 
@@ -1347,8 +1401,8 @@ async function takeFile(f){if(!sel||!f)return;await putFile(sel.id,f);if(audio.u
 /* ---------- input ---------- */
 function hit(mx,my){
   if(orient==='x'&&view.name==='line'&&mode==='browse')return hvHit(mx,my);
-  let best=null,bg=0;
-  for(const e of items){const gr=e._g||1,s=T*cam.z*gr,x=sx(e.cx)+(e._dx||0)-s/2,y=sy(e.cy)+(e._dy||0)-s/2;if(mx>=x&&mx<=x+s&&my>=y&&my<=y+s&&gr>=bg){best=e;bg=gr}}
+  let best=null,bg=0;const grid=lensMode()==='lift';
+  for(const e of items){const gr=grid?1:e._g||1,s=T*cam.z*gr,x=sx(e.cx)+(grid?0:e._dx||0)-s/2,y=sy(e.cy)+(grid?0:e._dy||0)-s/2;if(mx>=x&&mx<=x+s&&my>=y&&my<=y+s&&gr>=bg){best=e;bg=gr}}
   return best;
 }
 const pts=new Map();let drag=null,moved=0,pinch=0;
@@ -1379,7 +1433,7 @@ cv.addEventListener('pointermove',ev=>{
 let tapped=null,armed=null,camBefore=null,tipTimer=0;
 const TOUCH=matchMedia('(hover: none)').matches;
 const tipHtml=h=>`<em>${esc(h.title)}</em><br><b>${esc(h.artist)}</b><span>${h.year}</span>`;
-function showTip(h,x,y){const tip=$('#tip');tip.style.display='block';tip.innerHTML=tipHtml(h);tip.style.left=clamp(x+14,8,Math.max(8,W-330))+'px';tip.style.top=Math.min(H-90,y+14)+'px'}
+function showTip(h,x,y){const tip=$('#tip');tip.style.display='block';if(tip.dataset.id!==h.id){tip.innerHTML=tipHtml(h);tip.dataset.id=h.id}if(lensMode()){placeTip();return}tip.style.left=clamp(x+14,8,Math.max(8,W-330))+'px';tip.style.top=Math.min(H-90,y+14)+'px'}
 function closeInfo(){
   if(!sel)return;
   if(audio.id!==sel.id)armed=null;
@@ -2138,7 +2192,12 @@ $('#vLine').onclick=()=>setView('line');
 $('#vDisc').onclick=()=>setView('disc');
 $('#discPlay').onclick=discToggle;
 
-window.__cat={wall,openWelcome,enterFrom,sound:()=>soundOn,live:()=>discLive(),discPos,discPhi,view,disc,setView,talk,cam,audio,items:()=>items,select,startTalk,next,plan,cfg,state:()=>({mode,finished,sel:sel&&sel.id})};
+/* the switch between trial lenses shows only when the address asks for one */
+if(LENS){const b=$('#lensSw'),names={dock:'Dock',lift:'Lift',old:'Current'},order=['dock','lift','old'];
+  const show=()=>{b.textContent='Lens · '+names[LENS];};b.hidden=false;show();
+  b.onclick=()=>{LENS=order[(order.indexOf(LENS)+1)%3];dock.a=0;dock.m=null;lift.amt=0;items.forEach(e=>{e._g=1;e._dx=0;e._dy=0;e._lf=0});
+    const u=new URL(location.href);u.searchParams.set('lens',LENS);history.replaceState(history.state,'',u);show();dirty=true}}
+window.__cat={dock,lift,lensMode:()=>lensMode(),wall,openWelcome,enterFrom,sound:()=>soundOn,live:()=>discLive(),discPos,discPhi,view,disc,setView,talk,cam,audio,items:()=>items,select,startTalk,next,plan,cfg,state:()=>({mode,finished,sel:sel&&sel.id})};
 layout();
 addEventListener('resize',resize);resize();fitAll(true);
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
