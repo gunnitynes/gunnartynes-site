@@ -571,7 +571,21 @@ function layout(){
 }
 
 /* ---------- images ---------- */
+/* First the small covers (about 7 KB each, all of them together less than a tenth of the full ones), so the first screen
+   fills at once; the full covers follow once those are in, or after a moment, whichever comes first. */
+const smallOf=c=>c.replace(/^covers\/([^?]+)\.\w+(\?.*)?$/,(m,n,q)=>`covers/s/${n}.webp${q||''}`);
+let smallLeft=0,fullGo=null;
+function loadFull(){if(fullGo===true)return;fullGo=true;ALL.forEach(loadCover)}
 ALL.forEach(e=>{
+  if(!e.cover)return;smallLeft++;
+  const im=new Image();im.decoding='async';
+  const done=()=>{if(--smallLeft<=0)loadFull()};
+  im.onload=()=>{e.wimg=im;if(!e.thumb){const c=document.createElement('canvas');c.width=c.height=128;const tx=c.getContext('2d');tx.imageSmoothingQuality='high';tx.drawImage(im,0,0,128,128);e.thumb=c}dirty=true;done()};
+  im.onerror=done;im.src=smallOf(e.cover);
+});
+setTimeout(loadFull,2500);
+if(!smallLeft)loadFull();
+function loadCover(e){
   if(!e.cover)return;
   const im=new Image();im.onload=()=>{
     /* Posters are tall and covers square: every tile is square, with a poster centred at full height on the plate. */
@@ -583,7 +597,7 @@ ALL.forEach(e=>{
     e.img=src;
     const c=document.createElement('canvas');c.width=c.height=128;const tx=c.getContext('2d');tx.imageSmoothingQuality='high';tx.drawImage(src,0,0,128,128);e.thumb=c;dirty=true;
   };im.src=e.cover;
-});
+}
 
 /* ---------- camera ---------- */
 let W=0,H=0,DPR=1,dirty=true;
@@ -638,7 +652,7 @@ function drawTileAt(e,cxs,cys,s,rot,alpha,outline){
   g.save();g.translate(cxs,cys);if(rot)g.rotate(rot);
   const x=-s/2,y=-s/2;
   g.globalAlpha=alpha;
-  const src=s*DPR<=150&&e.thumb?e.thumb:e.img;
+  const px=s*DPR,src=px<=150&&e.thumb?e.thumb:px<=250&&e.wimg?e.wimg:e.img||e.wimg||e.thumb;
   if(src){g.imageSmoothingQuality='high';g.drawImage(src,x,y,s,s)}
   else if(!e.cover)drawMissing(x,y,s,e);
   else{
@@ -972,8 +986,8 @@ function drawWall(now){
   const dt=Math.min(.1,(now-wall.last)/1000);wall.last=now;
   if(wall.phase!=='fly')wall.clock+=dt;
   /* wait, in the dark, until the covers have arrived (or a moment has passed), so they never pop in one by one */
-  if(!wall.ready){const n=wall.cells.filter(cl=>cl.e.img||!cl.e.cover).length;
-    if(n>=wall.cells.length*.97||now-wall.wait0>3500){wall.ready=true;wall.t0=now}}
+  if(!wall.ready){const n=wall.cells.filter(cl=>cl.e.wimg||cl.e.img||!cl.e.cover).length;
+    if(n>=wall.cells.length*.97||now-wall.wait0>1800){wall.ready=true;wall.t0=now}}
   const age=wall.ready?now-wall.t0:-1,c=wall.cell;
   if(wall.phase==='out'){wall.fade=1-clamp((now-wall.out0)/600,0,1);if(wall.fade<=0){wall.phase=null;document.body.classList.remove('wall');return}}
   if(wall.phase==='fly'){
@@ -989,7 +1003,7 @@ function drawWall(now){
     const p=wallPos(cl);if(p.y<-c||p.y>H+c||cl.e===wall.hide)continue;
     /* the mural assembles: each cover arrives at its own moment */
     /* one slow, even sweep from the earliest years to the latest; a cover still loading joins when it arrives */
-    if(cl.at===null&&age>=(REDUCED?0:cl.d*1400)&&(cl.e.img||!cl.e.cover))cl.at=now;
+    if(cl.at===null&&age>=(REDUCED?0:cl.d*1100)&&(cl.e.wimg||cl.e.img||!cl.e.cover))cl.at=now;
     const a=cl.at===null?0:REDUCED?1:clamp((now-cl.at)/1100,0,1),o=a*a*(3-2*a);
     if(cl.at!==null&&wall.mx>=0&&Math.abs(wall.mx-p.x)<c/2&&Math.abs(wall.my-p.y)<c/2)hot={cl,p};
     drawTileAt(cl.e,p.x,p.y,p.s*lerp(.96,1,o),0,.62*o*wall.fade,false);
@@ -1111,7 +1125,7 @@ function updateLens(dt){
 const intro={t0:null,gap:11,span:0};
 /* A faint play (or pause) mark on the cover under the mouse: clicking the mark plays, clicking the rest of the cover names it in the header. */
 /* The play button sits small in the lower-left corner of the cover, so the rest of the cover is free for a click that opens the details. */
-function playMark(e){const s=T*cam.z*(e._g||1),r=clamp(s*.095,9,15),pad=Math.max(5,s*.045);
+function playMark(e){const s=T*cam.z*(e._g||1),r=clamp(s*.13,12,20),pad=Math.max(6,s*.05);
   return{x:sx(e.cx)+(e._dx||0)-s/2+pad+r,y:sy(e.cy)+(e._dy||0)+(e._iy||0)+s/2-pad-r,r}}
 const onMark=(e,x,y)=>{const m=playMark(e);return Math.hypot(x-m.x,y-m.y)<=m.r+6};
 let markHot=false;
@@ -1951,7 +1965,7 @@ function vinylCanvas(){
 }
 function drawLabel(e,alpha,rl){
   g.globalAlpha=alpha;
-  if(e.img){g.imageSmoothingQuality='high';g.drawImage(e.img,disc.cx-rl,disc.cy-rl,rl*2,rl*2)}
+  if(e.img||e.wimg){g.imageSmoothingQuality='high';g.drawImage(e.img||e.wimg,disc.cx-rl,disc.cy-rl,rl*2,rl*2)}
   else if(!e.cover)drawMissing(disc.cx-rl,disc.cy-rl,rl*2,e,true);
   else{
     g.fillStyle=COL.plate2;g.fillRect(disc.cx-rl,disc.cy-rl,rl*2,rl*2);
@@ -2223,7 +2237,7 @@ function startIntro(){
   intro.t0=performance.now()+1e7;
   const go=()=>{if(intro.t0>performance.now()){intro.t0=performance.now()+120;startCine()}};
   const pending=ALL.filter(e=>e.cover&&items.includes(e));
-  const tick=()=>{if(pending.filter(e=>e.img).length>=pending.length*.9)go();else if(mode==='browse'&&intro.t0>performance.now())setTimeout(tick,60)};
+  const tick=()=>{if(pending.filter(e=>e.img||e.wimg).length>=pending.length*.9)go();else if(mode==='browse'&&intro.t0>performance.now())setTimeout(tick,60)};
   tick();setTimeout(go,1100);
 }
 /* ---------- Live, with the music still playing ----------

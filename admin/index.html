@@ -158,7 +158,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
-let token='',cat=[],openId=null,isNew=false,clip=null,coverFile=null,dropBite=false,saving=false;
+let token='',cat=[],openId=null,isNew=false,clip=null,coverFile=null,coverSmall=null,dropBite=false,saving=false;
 
 /* ---------- GitHub ---------- */
 const store={get(){try{return localStorage.getItem('gt.key')||''}catch(e){return ''}},set(v){try{v?localStorage.setItem('gt.key',v):localStorage.removeItem('gt.key')}catch(e){}}};
@@ -288,7 +288,7 @@ function field(label,name,val,o={}){
   return `<label${cls} for="${id}">${label}<input id="${id}" name="${name}" type="${o.type||'text'}" value="${esc(val)}"${o.ph?` placeholder="${esc(o.ph)}"`:''}${o.req?' required':''}${o.type==='number'?' min="1950" max="2100"':''}></label>`;
 }
 function openEditor(id){
-  isNew=id==null;openId=id;clip=null;coverFile=null;dropBite=false;
+  isNew=id==null;openId=id;clip=null;coverFile=null;coverSmall=null;dropBite=false;
   const e=isNew?{artist:'',title:'',year:new Date().getFullYear(),roles:[],labels:[],formats:[],styles:[],places:[],others:[],links:{},tier:'core',tracks:[]}:cat.find(x=>x.id===id);
   if(!e)return;
   const f=e.film||{};
@@ -385,6 +385,13 @@ async function takeCover(file){
     const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(bmp,0,0,c.width,c.height);
     const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.88));
     coverFile=await blob.arrayBuffer();
+    /* the small square copy the first screen of the site loads first (posters sit centred on the dark plate) */
+    const S=240,sc=document.createElement('canvas');sc.width=sc.height=S;const sx=sc.getContext('2d');sx.imageSmoothingQuality='high';
+    if(Math.abs(bmp.width/bmp.height-1)>.04){sx.fillStyle='#1a1e28';sx.fillRect(0,0,S,S);const kk=S/Math.max(bmp.width,bmp.height),w=bmp.width*kk,h=bmp.height*kk;sx.drawImage(bmp,(S-w)/2,(S-h)/2,w,h)}
+    else sx.drawImage(bmp,0,0,S,S);
+    /* a browser that can't write WebP (older Safari) writes a JPEG; browsers read an image by its contents, so the name doesn't matter */
+    let small=await new Promise(r=>sc.toBlob(r,'image/webp',.74));if(!small||small.type!=='image/webp')small=await new Promise(r=>sc.toBlob(r,'image/jpeg',.8));
+    coverSmall=small?await small.arrayBuffer():null;
     const img=$('#coverImg');img.src=URL.createObjectURL(blob);img.style.visibility='';
   }catch(e){status('That image couldn\'t be read. Try a JPEG or PNG.','bad')}
 }
@@ -537,7 +544,7 @@ $('#form').addEventListener('submit',async ev=>{
       const made=await encodeClip(p=>status(`Making the clip… ${Math.round(p*100)}%`,'',true));
       bitePath=`audio/${id}-${stamp()}.${made.ext}`;files.push({path:bitePath,data:made.data});
     }
-    if(coverFile){const s=stamp();files.push({path:`covers/${id}.jpg`,data:coverFile});coverPath=`covers/${id}.jpg?v=${s}`}
+    if(coverFile){const s=stamp();files.push({path:`covers/${id}.jpg`,data:coverFile});if(coverSmall)files.push({path:`covers/s/${id}.webp`,data:coverSmall});coverPath=`covers/${id}.jpg?v=${s}`}
     status('Saving…','',true);
     const biteTitle=v('bite_title');
     const r=await commit(list=>{
