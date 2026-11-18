@@ -493,7 +493,7 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
 /* Booking links appear once the booking script is connected. */
 if(window.BOOKING&&BOOKING.endpoint){document.getElementById('bookLink').hidden=false;document.getElementById('wBook').hidden=false}
 const PUBLIC=!/[?&]edit\b/.test(location.search);
-const ALL=window.CATALOGUE;
+const ALL=window.CATALOGUE.filter(e=>!e.hide);
 const ROLE={P:['Produced','--p'],R:['Recorded','--r'],M:['Mixed','--m'],B:['Band, performed, wrote','--b'],F:['Film & screen','--f']};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const C={};for(const k in ROLE)C[k]=css(ROLE[k][1]);

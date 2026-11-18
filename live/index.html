@@ -568,7 +568,7 @@ function showCaption(){
 /* ---------- radio: the Record's snippets as one continuous station. Each piece plays to its end, then crossfades into the next, chosen from around the year on the map. ---------- */
 const Radio={pool:[],els:[new Audio(),new Audio()],cur:0,item:null,next:null,played:new Set(),fade:0,on:false,timer:0,unlocked:false};
 (function buildPool(){
-  for(const e of (window.CATALOGUE||[])){
+  for(const e of (window.CATALOGUE||[]).filter(e=>!e.hide)){
     if(e.tier!=='core')continue;const list=[];
     if(e.bite&&!e.trackFirst)list.push({src:'../'+e.bite.src,title:e.bite.title||e.title,e});
     const tr=e.tracks||[],first=e.dt!=null&&tr[e.dt]&&tr[e.dt].p?e.dt:tr.findIndex(t=>t.p);
@@ -881,7 +881,7 @@ yc.addEventListener('pointerleave',()=>{hoverYear=null;hoverX=null;$('#tip').sty
 const Rel={on:true,list:[],i:0,queue:[],cur:null,t:0,gap:0,lastPos:0};
 (function buildReleases(){
   const stage=/live score|concert|theatre|orchestral/i;
-  const core=(window.CATALOGUE||[]).filter(e=>e.tier==='core'),byYear={};
+  const core=(window.CATALOGUE||[]).filter(e=>e.tier==='core'&&!e.hide),byYear={};
   /* A date counts only if it is real and in the year the Timeline gives: 1 January is a placeholder, and later years are reissues. Those show the year alone, spread evenly through it. */
   const exact=e=>e.date&&!/-01-01$/.test(e.date)&&+e.date.slice(0,4)===e.year;
   for(const e of core)if(!exact(e))(byYear[e.year]=byYear[e.year]||[]).push(e);

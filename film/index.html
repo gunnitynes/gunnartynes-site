@@ -106,7 +106,7 @@ section.g header p{flex-basis:100%;margin:2px 0 0;color:var(--dim);font-size:14p
 'use strict';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 if(window.BOOKING&&BOOKING.endpoint)$('#bookLink').hidden=false;
-const ALL=(window.CATALOGUE||[]).filter(e=>e.tier==='core'&&(e.roles||[]).includes('F'));ALL.forEach(e=>{if(!e.film)e.film={}});
+const ALL=(window.CATALOGUE||[]).filter(e=>e.tier==='core'&&!e.hide&&(e.roles||[]).includes('F'));ALL.forEach(e=>{if(!e.film)e.film={}});
 const KIND={film:'Film',documentary:'Documentary',series:'Series',miniseries:'Miniseries',short:'Short film','video game':'Video game',podcast:'Podcast'};
 const kind=e=>KIND[e.film.kind]||(e.film.kind?e.film.kind[0].toUpperCase()+e.film.kind.slice(1):'');
 /* What Gunnar did, read from the credit itself. The order matters: songs before score, assistant before composer. */

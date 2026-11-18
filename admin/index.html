@@ -52,6 +52,8 @@ a{color:var(--paper)}
 #list .a{font-size:12.5px;color:var(--dim);display:block}
 #list .y{font:11.5px var(--mono);color:var(--faint);text-align:right}
 #list .mark{display:block;font:10.5px var(--mono);color:var(--ok);margin-top:2px}
+#list .mark.off{color:var(--dim)}#list li.off img,#list li.off .noart{opacity:.35}
+.offNote{margin:4px 0 0;font:12px var(--mono);color:var(--dim)}
 
 #main{overflow-y:auto;min-height:0}
 #empty{padding:48px 32px;color:var(--dim);max-width:52ch}
@@ -127,6 +129,7 @@ section>h3{font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;c
           <option value="film">On the Film &amp; TV page</option>
           <option value="filmtodo">Film &amp; TV: credit to describe</option>
           <option value="hidden">Other appearances</option>
+          <option value="off">Hidden from the site</option>
         </select>
         <button id="addBtn">Add a release</button>
       </div>
@@ -240,6 +243,7 @@ function visible(){
   const q=$('#q').value.trim().toLowerCase(),show=$('#show').value;
   return cat.filter(e=>{
     if(q&&!((e.artist+' '+e.title+' '+e.year).toLowerCase().includes(q)))return false;
+    if(show==='off')return !!e.hide;
     if(show==='hidden')return e.tier!=='core';
     if(e.tier!=='core')return show==='all'&&!!q;
     if(show==='nobite')return !e.bite;
@@ -252,9 +256,9 @@ function visible(){
   });
 }
 function renderList(){
-  const core=cat.filter(e=>e.tier==='core');
-  $('#counts').textContent=`${core.length} releases · ${core.filter(e=>e.bite).length} with your soundbite · ${core.filter(e=>!e.cover).length} without cover`;
-  $('#list').innerHTML=visible().map(e=>`<li><button type="button" data-id="${esc(e.id)}" class="${e.id===openId?'on':''}">${e.cover?`<img loading="lazy" src="${esc(coverUrl(e))}" alt="">`:'<span class="noart"></span>'}<span><span class="t">${esc(e.title)}</span><span class="a">${esc(e.artist)}</span>${e.bite?'<span class="mark">soundbite</span>':''}</span><span class="y">${esc(e.year)}</span></button></li>`).join('')||'<li style="padding:18px 16px;color:var(--dim)">Nothing matches.</li>';
+  const core=cat.filter(e=>e.tier==='core'&&!e.hide),off=cat.filter(e=>e.hide).length;
+  $('#counts').textContent=`${core.length} releases · ${core.filter(e=>e.bite).length} with your soundbite · ${core.filter(e=>!e.cover).length} without cover${off?` · ${off} hidden`:''}`;
+  $('#list').innerHTML=visible().map(e=>`<li${e.hide?' class="off"':''}><button type="button" data-id="${esc(e.id)}" class="${e.id===openId?'on':''}">${e.cover?`<img loading="lazy" src="${esc(coverUrl(e))}" alt="">`:'<span class="noart"></span>'}<span><span class="t">${esc(e.title)}</span><span class="a">${esc(e.artist)}</span>${e.hide?'<span class="mark off">hidden from the site</span>':''}${e.bite?'<span class="mark">soundbite</span>':''}</span><span class="y">${esc(e.year)}</span></button></li>`).join('')||'<li style="padding:18px 16px;color:var(--dim)">Nothing matches.</li>';
 }
 $('#q').addEventListener('input',renderList);$('#show').addEventListener('change',renderList);
 $('#list').addEventListener('click',ev=>{const b=ev.target.closest('[data-id]');if(b)openEditor(b.dataset.id)});
@@ -292,7 +296,7 @@ function openEditor(id){
   const form=$('#form');form.hidden=false;document.body.classList.add('open');
   form.innerHTML=`
   <button type="button" class="back" id="back">← All releases</button>
-  <h2>${isNew?'New release':esc(e.title)}</h2>
+  <h2>${isNew?'New release':esc(e.title)}</h2>${e.hide?'<p class="offNote">Hidden from the site. Only you see it here.</p>':''}
   <section style="border:0;margin-top:6px;padding-top:6px"><div class="grid">
     ${field('Title','title',e.title,{req:1,full:1})}
     ${field('Artist','artist',e.artist)}
@@ -338,11 +342,12 @@ function openEditor(id){
   <div id="saveBar">
     <button type="submit" class="solid" id="saveBtn">Save and publish</button>
     <span class="spacer"></span>
-    ${isNew?'':'<button type="button" class="danger" id="delBtn">Delete release</button>'}
+    ${isNew?'':`<button type="button" id="hideBtn">${e.hide?'Show on the site again':'Hide from the site'}</button><button type="button" class="danger" id="delBtn">Delete release</button>`}
   </div>`;
   renderBiteBox(e);
   $('#back').onclick=closeEditor;
   const del=$('#delBtn');if(del)del.onclick=()=>confirmDelete(e);
+  const hb=$('#hideBtn');if(hb)hb.onclick=()=>toggleHide(e);
   const ci=$('#coverIn');ci.onchange=()=>takeCover(ci.files[0]);
   dropArea($('#coverDrop'),f=>f.type.startsWith('image')&&takeCover(f));
   $('#main').scrollTop=0;renderList();
@@ -352,6 +357,14 @@ function dropArea(el,fn){
   ['dragenter','dragover'].forEach(n=>el.addEventListener(n,e=>{e.preventDefault();el.classList.add('over')}));
   ['dragleave','drop'].forEach(n=>el.addEventListener(n,e=>{e.preventDefault();el.classList.remove('over')}));
   el.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)fn(f)});
+}
+/* Hiding keeps the release in the catalogue, with everything it has, but leaves it off every page of the site. */
+async function toggleHide(e){
+  const off=!e.hide;
+  try{status(off?'Hiding…':'Showing it again…','',true);
+    const r=await commit(l=>l.map(x=>{if(x.id!==e.id)return x;const y={...x};if(off)y.hide=true;else delete y.hide;return y}),[],`${off?'Hide':'Show again'}: ${e.title}`);
+    cat=r.list;openEditor(e.id);watchLive(r.text)}
+  catch(err){status(friendly(err),'bad')}
 }
 function confirmDelete(e){
   const bar=$('#saveBar');
