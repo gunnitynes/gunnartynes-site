@@ -591,11 +591,12 @@ if(!smallLeft)loadFull();
 function loadCover(e){
   if(!e.cover)return;
   const im=new Image();im.onload=()=>{
-    /* Posters are tall and covers square: every tile is square, with a poster centred at full height on the plate. */
+    /* Every tile is square: a poster or a wide still is cut to a square at e.crop (0 top/left .. 1 bottom/right),
+       chosen by tools/pick_crops.py so the title stays in view. The details window still shows the whole poster. */
     let src=im;
     if(Math.abs(im.naturalWidth/im.naturalHeight-1)>.04){
-      const S=640,k=S/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*k,h=im.naturalHeight*k,c=document.createElement('canvas');c.width=c.height=S;
-      const x=c.getContext('2d');x.fillStyle=COL.plate;x.fillRect(0,0,S,S);x.imageSmoothingQuality='high';x.drawImage(im,(S-w)/2,(S-h)/2,w,h);src=c;
+      const S=640,nw=im.naturalWidth,nh=im.naturalHeight,sd=Math.min(nw,nh),f=e.crop??.5,c=document.createElement('canvas');c.width=c.height=S;
+      const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(im,nw>nh?(nw-sd)*f:0,nh>nw?(nh-sd)*f:0,sd,sd,0,0,S,S);src=c;
     }
     e.img=src;
     const c=document.createElement('canvas');c.width=c.height=128;const tx=c.getContext('2d');tx.imageSmoothingQuality='high';tx.drawImage(src,0,0,128,128);e.thumb=c;dirty=true;

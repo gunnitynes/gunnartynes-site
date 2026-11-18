@@ -385,10 +385,9 @@ async function takeCover(file){
     const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(bmp,0,0,c.width,c.height);
     const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.88));
     coverFile=await blob.arrayBuffer();
-    /* the small square copy the first screen of the site loads first (posters sit centred on the dark plate) */
+    /* the small square copy the first screen of the site loads first (a poster is cut square through its middle, as the site does for a new cover) */
     const S=240,sc=document.createElement('canvas');sc.width=sc.height=S;const sx=sc.getContext('2d');sx.imageSmoothingQuality='high';
-    if(Math.abs(bmp.width/bmp.height-1)>.04){sx.fillStyle='#1a1e28';sx.fillRect(0,0,S,S);const kk=S/Math.max(bmp.width,bmp.height),w=bmp.width*kk,h=bmp.height*kk;sx.drawImage(bmp,(S-w)/2,(S-h)/2,w,h)}
-    else sx.drawImage(bmp,0,0,S,S);
+    const sd=Math.min(bmp.width,bmp.height);sx.drawImage(bmp,(bmp.width-sd)/2,(bmp.height-sd)/2,sd,sd,0,0,S,S);
     /* a browser that can't write WebP (older Safari) writes a JPEG; browsers read an image by its contents, so the name doesn't matter */
     let small=await new Promise(r=>sc.toBlob(r,'image/webp',.74));if(!small||small.type!=='image/webp')small=await new Promise(r=>sc.toBlob(r,'image/jpeg',.8));
     coverSmall=small?await small.arrayBuffer():null;
@@ -567,7 +566,7 @@ $('#form').addEventListener('submit',async ev=>{
         if(fg)e.film.group=fg;else delete e.film.group;
       }else delete e.film;
       if(d.get('screen'))e.screen=true;else delete e.screen;
-      if(coverPath)e.cover=coverPath;
+      if(coverPath){e.cover=coverPath;delete e.crop}   /* a new picture is cut through its middle until a crop is chosen for it */
       const song=v('song');
       if(song&&song!=='bite'){
         const tr=e.tracks||[],auto=e.dt!=null&&tr[e.dt]&&tr[e.dt].p?e.dt:tr.findIndex(t=>t.p);
