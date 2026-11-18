@@ -188,7 +188,7 @@ body.peeking #mini{opacity:0;pointer-events:none}
 #hxNote.on{opacity:1}
 #lensSw{position:fixed;left:14px;bottom:14px;z-index:40;font:11px "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:#ece8dc;background:#11141bdd;border:1px solid #ffffff22;border-radius:20px;padding:7px 13px;cursor:pointer}
 #tip{position:fixed;pointer-events:none;background:var(--plate2);padding:6px 9px;font-size:13px;z-index:6;max-width:320px;border-radius:2px;display:none}
-#tip b{font-weight:500}#tip em{font:italic 15px var(--serif)}#tip span{display:block;font:11px var(--mono);color:var(--dim)}
+#tip b{font-weight:500}#tip em{font:italic 15px var(--serif)}#tip span{display:block;font:11px var(--mono);color:var(--dim)}#tip small{display:block;margin-top:5px;font:10.5px var(--mono);color:var(--faint);letter-spacing:.02em}
 
 #panel{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:100%;background:var(--plate);border-left:1px solid var(--rule);z-index:7;overflow-y:auto;padding:22px 24px 40px;transform:translateX(102%);transition:transform .28s cubic-bezier(.2,.7,.2,1);visibility:hidden}
 #panel.open{transform:none;visibility:visible}
@@ -1053,11 +1053,13 @@ function dockLens(dt){
   }
   return Math.abs(dock.a-a0)>.0004||(dock.m!=null&&m0!=null&&Math.abs(dock.m-m0)>.05);
 }
-const lift={amt:0};
+/* hold: once the mouse rests on a lifted cover it stays picked up while the mouse is anywhere over it, so its corner button can be reached */
+const lift={amt:0,hold:null,fast:0,ax:0,ay:0};
 function liftLens(dt){
   const s0=T*cam.z,on=lensOn(),tgt=on?hover:null,k=1-Math.exp(-dt/.09),S=clamp(118/s0,1.7,4.4),top=barH()+10;
   const a0=lift.amt;lift.amt+=((tgt?1:0)-lift.amt)*k;if(lift.amt<.002&&!tgt)lift.amt=0;
   let busy=Math.abs(lift.amt-a0)>.0005;
+  if(!tgt)lift.hold=null;else if(tgt!==lift.hold&&(tgt._lf||0)>.85&&performance.now()-lift.fast>160)lift.hold=tgt;
   for(const e of items){
     const f0=e._lf||0;let f=f0+((e===tgt?1:0)-f0)*k;if(f<.002&&e!==tgt)f=0;if(Math.abs(f-f0)>.0005)busy=true;e._lf=f;
     const gr=1+(S-1)*f;let dx=0,dy=0;
@@ -1108,12 +1110,17 @@ function updateLens(dt){
 }
 const intro={t0:null,gap:11,span:0};
 /* A faint play (or pause) mark on the cover under the mouse: clicking the mark plays, clicking the rest of the cover names it in the header. */
-function playMark(e){const s=T*cam.z*(e._g||1);return{x:sx(e.cx)+(e._dx||0),y:sy(e.cy)+(e._dy||0)+(e._iy||0),r:clamp(s*.2,9,30)}}
+/* The play button sits small in the lower-left corner of the cover, so the rest of the cover is free for a click that opens the details. */
+function playMark(e){const s=T*cam.z*(e._g||1),r=clamp(s*.095,9,15),pad=Math.max(5,s*.045);
+  return{x:sx(e.cx)+(e._dx||0)-s/2+pad+r,y:sy(e.cy)+(e._dy||0)+(e._iy||0)+s/2-pad-r,r}}
+const onMark=(e,x,y)=>{const m=playMark(e);return Math.hypot(x-m.x,y-m.y)<=m.r+6};
+let markHot=false;
 function drawHoverPlay(){
   const e=hover;if(!e||orient==='x'||sel||mode!=='browse'||view.name!=='line'||W<=700||TOUCH||!biteOf(e)||intro.t0!==null)return;
+  const lf=lensMode()==='lift'?(e._lf||0):1;if(lf<.5)return;
   const m=playMark(e),on=audioPlaying(e.id);
-  g.save();g.globalAlpha=.9;g.fillStyle='#11141bb3';g.beginPath();g.arc(m.x,m.y,m.r,0,Math.PI*2);g.fill();
-  g.strokeStyle='#ece8dc55';g.lineWidth=1;g.stroke();g.fillStyle='#ece8dc';const r=m.r*.42;
+  g.save();g.globalAlpha=(lf-.5)*2;g.fillStyle=markHot?'#ece8dc':'#11141bd9';g.beginPath();g.arc(m.x,m.y,m.r,0,Math.PI*2);g.fill();
+  g.strokeStyle='#ece8dc66';g.lineWidth=1;g.stroke();g.fillStyle=markHot?'#11141b':'#ece8dc';const r=m.r*.42;
   if(on){g.fillRect(m.x-r*.8,m.y-r,r*.55,r*2);g.fillRect(m.x+r*.25,m.y-r,r*.55,r*2)}
   else{g.beginPath();g.moveTo(m.x-r*.6,m.y-r);g.lineTo(m.x+r*1.05,m.y);g.lineTo(m.x-r*.6,m.y+r);g.closePath();g.fill()}
   g.restore();
@@ -1406,6 +1413,7 @@ async function takeFile(f){if(!sel||!f)return;await putFile(sel.id,f);if(audio.u
 function hit(mx,my){
   if(orient==='x'&&view.name==='line'&&mode==='browse')return hvHit(mx,my);
   let best=null,bg=0;const grid=lensMode()==='lift';
+  if(grid&&lift.hold){const e=lift.hold,s=T*cam.z*(e._g||1),x=sx(e.cx)+(e._dx||0),y=sy(e.cy)+(e._dy||0);if(Math.abs(mx-x)<=s/2&&Math.abs(my-y)<=s/2)return e;lift.hold=null}
   for(const e of items){const gr=grid?1:e._g||1,s=T*cam.z*gr,x=sx(e.cx)+(grid?0:e._dx||0)-s/2,y=sy(e.cy)+(grid?0:e._dy||0)-s/2;if(mx>=x&&mx<=x+s&&my>=y&&my<=y+s&&gr>=bg){best=e;bg=gr}}
   return best;
 }
@@ -1426,9 +1434,10 @@ cv.addEventListener('pointermove',ev=>{
     flick.x=lerp(flick.x,-dx/cam.tz/(ms/1000),.35);flick.y=lerp(flick.y,-dy/cam.tz/(ms/1000),.35);
     if(moved>6){lens.on=false;$('#tip').style.display='none'}
     cam.tx-=dx/cam.tz;cam.ty-=dy/cam.tz;clampCam();cam.x=cam.tx;cam.y=cam.ty;dirty=true;return}
-  if(ev.pointerType==='mouse'){lens.x=ev.clientX;lens.y=ev.clientY;lens.on=true}
+  if(ev.pointerType==='mouse'){if(Math.hypot(ev.clientX-lift.ax,ev.clientY-lift.ay)>4){lift.fast=performance.now();lift.ax=ev.clientX;lift.ay=ev.clientY}lens.x=ev.clientX;lens.y=ev.clientY;lens.on=true}
   const h=hit(ev.clientX,ev.clientY);
   if(h!==hover){hover=h;dirty=true;cv.classList.toggle('over',!!h);if(h&&ev.pointerType==='mouse')preload(h)}
+  const hot=!!h&&ev.pointerType==='mouse'&&!TOUCH&&W>700&&!sel&&orient!=='x'&&!!biteOf(h)&&onMark(h,ev.clientX,ev.clientY);if(hot!==markHot){markHot=hot;dirty=true}
   const tip=$('#tip');
   if(h&&!sel&&h!==peek.e&&ev.pointerType==='mouse')showTip(h,ev.clientX,ev.clientY);else if(ev.pointerType==='mouse')tip.style.display='none';
 });
@@ -1436,7 +1445,7 @@ cv.addEventListener('pointermove',ev=>{
    This waits for the click itself, which every browser accepts as permission to play. */
 let tapped=null,armed=null,camBefore=null,tipTimer=0;
 const TOUCH=matchMedia('(hover: none)').matches;
-const tipHtml=h=>`<em>${esc(h.title)}</em><br><b>${esc(h.artist)}</b><span>${h.year}</span>`;
+const tipHtml=h=>`<em>${esc(h.title)}</em><br><b>${esc(h.artist)}</b><span>${h.year}</span>${!TOUCH&&W>700?`<small>Click for details${biteOf(h)?' · ▶ to listen':''}</small>`:''}`;
 function showTip(h,x,y){const tip=$('#tip');tip.style.display='block';if(tip.dataset.id!==h.id){tip.innerHTML=tipHtml(h);tip.dataset.id=h.id}if(lensMode()){placeTip();return}tip.style.left=clamp(x+14,8,Math.max(8,W-330))+'px';tip.style.top=Math.min(H-90,y+14)+'px'}
 function closeInfo(){
   if(!sel)return;
@@ -1472,7 +1481,8 @@ cv.addEventListener('click',ev=>{
   const h=tapped.e;tapped=null;clearTimeout(tipTimer);
   const follow=()=>{if(soundOn&&anyPlaying()&&biteOf(h)&&audio.id!==h.id&&audio.wantId!==h.id){player.e=h;playBite(h,.25,.6)}};
   if(!h){if(sel)closeInfo();else hidePeek();$('#tip').style.display='none';return}
-  if(orient!=='x'&&W>700&&!TOUCH&&!sel&&biteOf(h)){const m=playMark(h);if(Math.hypot(ev.clientX-m.x,ev.clientY-m.y)<=m.r*1.3){showPeek(h);playerToggle(h);setTimeout(syncPeek,40);dirty=true;return}}
+  if(orient!=='x'&&W>700&&!TOUCH&&!sel&&biteOf(h)&&onMark(h,ev.clientX,ev.clientY)){showPeek(h);playerToggle(h);setTimeout(syncPeek,40);dirty=true;return}
+  if(orient!=='x'&&W>700&&!TOUCH&&!sel){hidePeek();camBefore=camBefore||{x:cam.tx,y:cam.ty,z:cam.tz};armed=h;select(h);return}
   if(sel&&sel!==h){follow();armed=h;select(h);return}
   if(sel===h)return;
   if(peek.e===h){camBefore=camBefore||{x:cam.tx,y:cam.ty,z:cam.tz};select(h);return}
