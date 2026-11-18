@@ -203,6 +203,7 @@ body.peeking #mini{opacity:0;pointer-events:none}
 #pHead .pcov{width:112px;height:112px;object-fit:cover;display:block;background:var(--plate2);box-shadow:0 8px 24px #0008}
 #pHead .pcov.none{background:repeating-linear-gradient(-45deg,#ffffff0b 0 1px,transparent 1px 9px),var(--plate2);outline:1px dashed #ece8dc48;outline-offset:-8px}
 #pHead h3{font-size:26px;margin:0 0 4px}#pHead h2{margin:0;font:500 14px/1.3 var(--sans);padding:0}
+#pHead .plink{margin-top:9px;font:11.5px var(--mono);letter-spacing:.04em;color:var(--dim);border:1px solid var(--rule);border-radius:14px;padding:4px 11px;transition:color .2s,border-color .2s}#pHead .plink:hover{color:var(--paper);border-color:#ece8dc66}
 #pHead .when{font:12px var(--mono);color:#e6b450;margin-bottom:6px;letter-spacing:.02em}
 /* info panel body: specs strip, his part, tracks, credits, links */
 #panel{--tint:#1a1e28;background:linear-gradient(180deg,color-mix(in srgb,var(--tint) 34%,var(--plate)) 0,color-mix(in srgb,var(--tint) 10%,var(--plate)) 220px,var(--plate) 420px)}
@@ -403,7 +404,6 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
     <span id="axis" role="group" aria-label="Timeline direction"><button type="button" data-o="h" aria-label="Across" title="Across: the years run left to right"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 10h13M11.5 6l4 4-4 4"/></svg></button><button type="button" data-o="v" aria-label="Down" title="Down: the years run top to bottom"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5v13M6 11.5l4 4 4-4"/></svg></button><button type="button" data-o="x" aria-label="Helix" title="Helix: every cover on a turning spiral"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4.5c0 1.6 12 1.6 12 3.2S4 9.3 4 10.9s12 1.6 12 3.2-12 1.6-12 3.2"/></svg></button></span>
     <button class="quiet" id="vOrient" aria-pressed="false" hidden>Vertical</button>
     <button class="quiet" id="vDisc" aria-pressed="false">Record</button>
-    <a class="quiet" id="vFilm" href="film/" style="text-decoration:none" hidden>Film &amp; TV</a>
     <a class="quiet live" id="vLive" href="live/" title="Every concert, tour by tour, on a map"><i aria-hidden="true"></i>Live<span class="arr" aria-hidden="true">→</span></a>
   </div>
   <div id="right">
@@ -488,9 +488,9 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
     <ul class="doors">
       <li class="rise" style="--d:.55s"><button type="button" class="door" data-go="line"><span class="n">01</span><span class="t">Timeline</span><span class="d">All recorded projects</span><span class="pv"><svg class="route" id="wLine" viewBox="0 0 150 46" aria-hidden="true"></svg></span></button></li>
       <li class="rise" style="--d:.68s"><button type="button" class="door" data-go="disc"><span class="n">02</span><span class="t">Record</span><span class="d">Play the catalogue like a record</span><span class="pv"><span class="disc"><img id="wDisc" alt=""></span></span></button></li>
-      <li class="rise" style="--d:.81s" hidden><button type="button" class="door" data-go="film"><span class="n">03</span><span class="t">Film &amp; TV</span><span class="d">Scores and screen work</span><span class="pv"><span class="reel"><span class="frames" id="wFilm"></span></span></span></button></li>
       <li class="rise" style="--d:.81s"><button type="button" class="door" data-go="live"><span class="n">03</span><span class="t">Live</span><span class="d">The concerts, tour by tour, on a map</span><span class="pv"><svg class="route" viewBox="0 0 150 46" aria-hidden="true"><path id="wPath" d="M6 36 Q34 4 62 24 T118 16 Q132 12 144 30" fill="none" stroke="#ffffff38" stroke-width="1.2" stroke-dasharray="3 4"/><circle cx="6" cy="36" r="2.2" fill="#a3a6ad"/><circle cx="62" cy="24" r="2.2" fill="#a3a6ad"/><circle cx="118" cy="16" r="2.2" fill="#a3a6ad"/><circle cx="144" cy="30" r="2.2" fill="#a3a6ad"/><circle r="3.6" fill="#e6b450" opacity="0"><animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines=".45 0 .55 1"><mpath href="#wPath"/></animateMotion><animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="0;1;1;0;0" keyTimes="0;.1;.84;.96;1"/><animate attributeName="r" dur="5s" repeatCount="indefinite" values="1.5;3.6;3.6;1.5;1.5" keyTimes="0;.1;.84;.96;1"/></circle></svg></span></button></li>
     </ul>
+    <a class="book rise" id="wAbout" href="about/" style="--d:.95s;margin-right:24px">About <span>→</span></a>
     <a class="book rise" id="wBook" href="booking/" style="--d:.95s" hidden>Booking requests <span>→</span></a>
   </div>
 </section>
@@ -508,7 +508,7 @@ const ALL=window.CATALOGUE.filter(e=>!e.hide);
 /* fill the plain-text list (see #readable): year by year, title, artist, type and what Gunnar did */
 (function(){const RT={P:'production',R:'recording',M:'mixing',B:'band member, performer, writer',F:'film and screen'};const H=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const core=ALL.filter(e=>e.tier==='core'),by={};core.forEach(e=>(by[e.year]=by[e.year]||[]).push(e));
-  document.getElementById('readableList').innerHTML=`<p>${core.length} releases, ${Object.keys(by)[0]}–${Object.keys(by).slice(-1)[0]}.</p>`+Object.keys(by).map(y=>`<h3>${y}</h3><ul>${by[y].map(e=>`<li><cite>${H(e.title)}</cite> · ${H(e.artist)}${e.type?` (${H(e.type)})`:''}${(e.roles||[]).length?` · ${H(e.roles.map(r=>RT[r]).filter(Boolean).join(', '))}`:''}${e.roleText?`. ${H(e.roleText)}`:''}${e.film&&e.film.role?`. ${H(e.film.role[0].toUpperCase()+e.film.role.slice(1))}`:''}</li>`).join('')}</ul>`).join('');
+  document.getElementById('readableList').innerHTML=`<p>${core.length} releases, ${Object.keys(by)[0]}–${Object.keys(by).slice(-1)[0]}.</p>`+Object.keys(by).map(y=>`<h3>${y}</h3><ul>${by[y].map(e=>`<li><cite><a href="r/${e.id}/">${H(e.title)}</a></cite> · ${H(e.artist)}${e.type?` (${H(e.type)})`:''}${(e.roles||[]).length?` · ${H(e.roles.map(r=>RT[r]).filter(Boolean).join(', '))}`:''}${e.roleText?`. ${H(e.roleText)}`:''}${e.film&&e.film.role?`. ${H(e.film.role[0].toUpperCase()+e.film.role.slice(1))}`:''}</li>`).join('')}</ul>`).join('');
 })();
 const ROLE={P:['Produced','--p'],R:['Recorded','--r'],M:['Mixed','--m'],B:['Band, performed, wrote','--b'],F:['Film & screen','--f']};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -1329,7 +1329,12 @@ function flyTo(e){
   const z=Math.max(cam.tz>targetPx/T?cam.tz:targetPx/T,.2);
   cam.tz=z;cam.tx=e.cx+(pw/2)/z;cam.ty=e.cy+(phone?(H/2-(headH+gap/2))/z:0);cam.tau=.28;dirty=true;
 }
+/* every release on the timeline has its own page at /r/<id>/ (built by .github/build_release_pages.mjs);
+   the address bar follows the open release as ?r=<id>, so it can be copied or reloaded */
+const pageOf=e=>`https://gunnartynes.com/r/${e.id}/`;
+function syncUrl(e){try{const u=new URL(location.href);if(e&&e.tier==='core')u.searchParams.set('r',e.id);else u.searchParams.delete('r');if(u.href!==location.href)history.replaceState(history.state,'',u)}catch(_){}}
 function select(e,opts={}){
+  syncUrl(e);
   clearTimeout(soundTimer);sel=e;hover=null;dirty=true;$('#tip').style.display='none';hidePeek();document.body.classList.toggle('selopen',!!e);
   if(!e){$('#panel').classList.remove('open');syncPlay();syncYears();return}
   if(orient==='v'&&view.name==='line')setFocus(e);
@@ -1369,7 +1374,7 @@ function renderPanel(e){
   const fmtTxt=[e.type,(e.formats||[]).join(' · ')].filter(Boolean).join(' · ');
   const catno=(X.cat||[]).map(c=>c.split(' · ')[1]).filter(Boolean).join(', ');
   const specs=[[e.film&&e.film.label?'Date':'Released',when,X.country||''],['Label',(e.labels||[]).join(', '),catno],['Format',fmtTxt,'']].filter(f=>f[1]);
-  $('#pHead').innerHTML=`${e.cover?`<img class="pcov" src="${esc(e.cover)}" alt="">`:'<i class="pcov none"></i>'}<div><div class="when">${esc(when)}</div><h3>${esc(e.title)}</h3><h2>${esc(e.artist)}</h2></div>`;
+  $('#pHead').innerHTML=`${e.cover?`<img class="pcov" src="${esc(e.cover)}" alt="">`:'<i class="pcov none"></i>'}<div><div class="when">${esc(when)}</div><h3>${esc(e.title)}</h3><h2>${esc(e.artist)}</h2>${e.tier==='core'?`<button class="plink" type="button" data-link="${esc(pageOf(e))}">${navigator.share&&TOUCH?'Share':'Copy link'}</button>`:''}</div>`;
   tintFrom(e);
   const part=e.roleText||(e.film?e.film.role:'')||'';
   $('#pBody').innerHTML=`<div class="specs">${specs.map(f=>`<div><small>${f[0]}</small><b>${esc(f[1])}</b>${f[2]?`<i>${esc(f[2])}</i>`:''}</div>`).join('')}</div>
@@ -2249,7 +2254,12 @@ layout();
 addEventListener('resize',resize);resize();fitAll(true);
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
 const wantedView=(location.search.match(/[?&]view=(record|timeline)/)||[])[1];
-const startDisc=wantedView?wantedView==='record':store.get('gt.view2','line')==='disc';
+/* a link to /?r=<id> (from a release's own page) opens straight on that release's details, without the welcome */
+const wantR=(location.search.match(/[?&]r=([\w-]+)/)||[])[1],rItem=wantR?ALL.find(e=>e.id===wantR&&e.tier==='core'):null;
+document.getElementById('pHead').addEventListener('click',async ev=>{const b=ev.target.closest('.plink');if(!b)return;const url=b.dataset.link;
+  if(navigator.share&&TOUCH){try{await navigator.share({title:sel?`${sel.title} · ${sel.artist}`:'Gunnar Tynes',url})}catch(_){}return}
+  try{await navigator.clipboard.writeText(url);b.textContent='Link copied'}catch(_){prompt('Copy this link',url)}setTimeout(()=>{if(b.isConnected)b.textContent='Copy link'},1800)});
+const startDisc=rItem?false:wantedView?wantedView==='record':store.get('gt.view2','line')==='disc';
 /* The covers fly in once they have loaded, or after a moment regardless. */
 function startIntro(){
   if(REDUCED)return;
@@ -2327,7 +2337,7 @@ let seenWelcome=false;try{seenWelcome=sessionStorage.getItem('gt.welcomed')==='1
      requestAnimationFrame(tick)};requestAnimationFrame(tick)}
   const rec=covers.find(e=>/finally we are no one/i.test(e.title))||covers[0];if(rec)$('#wDisc').src=rec.cover;
   const films=ALL.filter(e=>e.tier==='core'&&e.cover&&(e.roles||[]).includes('F')).sort((a,b)=>a.year-b.year);
-  const fr=films.filter((e,i)=>i%2===0).slice(0,10);$('#wFilm').innerHTML=[...fr,...fr].map(e=>`<img src="${esc(e.cover)}" alt="" decoding="async">`).join('');
+  const fr=films.filter((e,i)=>i%2===0).slice(0,10);if($('#wFilm'))$('#wFilm').innerHTML=[...fr,...fr].map(e=>`<img src="${esc(e.cover)}" alt="" decoding="async">`).join('');
 })();
 function openWelcome(){
   const w=$('#welcome');select(null);stopAudio(.4);hover=null;$('#tip').style.display='none';hideEnterHint();
@@ -2348,7 +2358,6 @@ function showEnterHint(){return;   /* retired: the player bar now teaches the tw
 cv.addEventListener('pointerdown',()=>{if($('#enterHint').classList.contains('on'))setTimeout(hideEnterHint,1200)});
 function enterFrom(go){
   if(go==='live'){if(openLive())return;wallOut();location.href='live/';return}
-  if(go==='film'){location.href='film/';return}
   try{sessionStorage.setItem('gt.welcomed','1')}catch(e){}
   const w=$('#welcome');w.classList.add('out');setTimeout(()=>{if(w.classList.contains('out'))w.hidden=true},REDUCED?0:900);
   if(go==='disc'){wallOut();focus=null;if(view.name!=='disc')setView('disc');else{disc.target=disc.stops[0];discTouch()}return}
@@ -2396,10 +2405,12 @@ $('#welcome').addEventListener('pointerleave',()=>{wall.mx=wall.my=-1});
 addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!$('#welcome').hidden&&!$('#welcome').classList.contains('out')){ev.stopPropagation();enterFrom('line')}},true);
 const wantStart=/[?&]start\b/.test(location.search);
 if(wantStart)history.replaceState(null,'',location.pathname);
-if(wantStart||(!wantedView&&!seenWelcome)||/[?&]wall\b/.test(location.search)){
+if(!rItem&&(wantStart||(!wantedView&&!seenWelcome)||/[?&]wall\b/.test(location.search))){
   /* Behind the welcome the covers wait in their places, unseen, until a door is chosen. */
   if(!REDUCED)intro.t0=performance.now()+1e7;
   $('#welcome').hidden=false;if(WALL)wallShow();
+}else if(rItem){
+  setTimeout(()=>{const e=items.find(x=>x.id===rItem.id);if(e){camBefore=null;select(e)}},120);
 }else{
   if(!startDisc)startIntro();
 }

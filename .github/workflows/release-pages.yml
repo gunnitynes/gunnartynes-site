@@ -1,0 +1,36 @@
+# Keeps the page for every release (r/<id>/) and sitemap.xml in step with the catalogue:
+# whenever catalogue.js or extra.js changes (an admin save, for example), the pages are rebuilt and committed.
+name: Release pages
+on:
+  push:
+    branches: [main]
+    paths: [catalogue.js, extra.js, .github/build_release_pages.mjs]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: release-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node .github/build_release_pages.mjs
+      - name: Commit if anything changed
+        run: |
+          git add -A r sitemap.xml
+          if git diff --cached --quiet; then echo "Pages already up to date"; exit 0; fi
+          git config user.name "release-pages"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Release pages follow the catalogue"
+          for i in 1 2 3; do git pull --rebase -q origin main && git push -q origin HEAD:main && pushed=1 && break; sleep 5; done
+          [ -n "$pushed" ] || exit 1
+          # a push made by this workflow doesn't start a Pages build by itself, so ask for one
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" >/dev/null || echo "Pages build request failed; the next push will publish the pages"
+        env:
+          GH_TOKEN: ${{ github.token }}

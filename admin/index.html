@@ -126,8 +126,7 @@ section>h3{font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;c
           <option value="nosound">No sound at all</option>
           <option value="nocover">No cover</option>
           <option value="norole">No role marked</option>
-          <option value="film">On the Film &amp; TV page</option>
-          <option value="filmtodo">Film &amp; TV: credit to describe</option>
+          <option value="film">Film &amp; screen work</option>
           <option value="hidden">Other appearances</option>
           <option value="off">Hidden from the site</option>
         </select>
@@ -323,11 +322,10 @@ function openEditor(id){
     ${field('Other credits, one per line','others',lines(e.others),{area:3,full:1})}
   </div></section>
   <section><h3>Film &amp; TV</h3>
-    <p class="hint" style="color:var(--dim);margin:-4px 0 12px;max-width:62ch">Tick <b>Film &amp; screen</b> under roles to show this on the Film &amp; TV page. ${(e.roles||[]).includes('F')&&!isNew?`It is there now, in <b>${esc((FILM_GROUPS.find(g=>g[0]===filmGroup(e))||['',''])[1])}</b>. <a href="../film/#${esc(e.id)}" target="_blank" rel="noopener" style="color:var(--paper)">See it on the page</a>`:''}</p>
+    <p class="hint" style="color:var(--dim);margin:-4px 0 12px;max-width:62ch">For film, television and other screen work. Your screen credit shows in the details window on the site.</p>
     <div class="checks" style="margin-bottom:12px"><label><input type="checkbox" name="screen"${e.screen?' checked':''}> This is a screen work with no record of its own</label></div><div class="grid">
     ${field('Kind','f_kind',f.kind||'',{select:[['','Choose'],...FILM_KINDS.map(k=>[k,k[0].toUpperCase()+k.slice(1)]),...(f.kind&&!FILM_KINDS.includes(f.kind)?[[f.kind,f.kind]]:[])]})}
-    ${field('Group on the Film &amp; TV page','f_group',f.group||'',{select:FILM_GROUPS})}
-    ${field('Your screen credit, as shown on the page','f_role',f.role||'',{full:1,ph:'composer · music editor, 5 episodes · performed “Song”, with múm'})}
+    ${field('Your screen credit','f_role',f.role||'',{full:1,ph:'composer · music editor, 5 episodes · performed “Song”, with múm'})}
     ${field('Director, commas between names','f_director',(f.director||[]).join(', '))}
     ${field('Music by','f_composer',f.composer||'')}
     ${field('Genre, commas between','f_genres',(f.genres||[]).join(', '))}
