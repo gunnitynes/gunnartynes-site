@@ -150,8 +150,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 <div id="view" hidden role="dialog" aria-label="Photos"><button id="vClose" aria-label="Close photos">×</button><figure><img id="vImg" alt=""></figure><button class="nav" id="vPrev" aria-label="Previous photo">‹</button><button class="nav" id="vNext" aria-label="Next photo">›</button><div class="meta"><em id="vCap"></em><small id="vBy"></small></div></div>
 <aside id="panel" aria-label="Shows in this city"><button id="close" aria-label="Close">×</button><div id="pBody"></div></aside>
 <script src="map.js"></script>
-<script src="shows.js"></script>
-<script src="../catalogue.js"></script>
+<!-- the catalogue changes from the admin at any time: ask for a fresh copy each minute instead of a browser's ten-minute old one -->
+<script>document.write('<script src="shows.js?t='+Math.floor(Date.now()/6e4)+'"><\/script>')</script>
+<!-- the catalogue changes from the admin at any time: ask for a fresh copy each minute instead of a browser's ten-minute old one -->
+<script>document.write('<script src="../catalogue.js?t='+Math.floor(Date.now()/6e4)+'"><\/script>')</script>
 <script>
 'use strict';
 const $=s=>document.querySelector(s),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

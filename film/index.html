@@ -101,7 +101,8 @@ section.g header p{flex-basis:100%;margin:2px 0 0;color:var(--dim);font-size:14p
 <aside id="panel" role="dialog" aria-modal="true" aria-label="Details" tabindex="-1"><button id="close" aria-label="Close">×</button><div id="pBody"></div></aside>
 
 <script src="../booking/config.js"></script>
-<script src="../catalogue.js"></script>
+<!-- the catalogue changes from the admin at any time: ask for a fresh copy each minute instead of a browser's ten-minute old one -->
+<script>document.write('<script src="../catalogue.js?t='+Math.floor(Date.now()/6e4)+'"><\/script>')</script>
 <script>
 'use strict';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

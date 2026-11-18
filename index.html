@@ -486,7 +486,8 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
 </section>
 <div id="enterHint" aria-live="polite"></div>
 <script src="booking/config.js"></script>
-<script src="catalogue.js"></script>
+<!-- the catalogue changes from the admin at any time: ask for a fresh copy each minute instead of a browser's ten-minute old one -->
+<script>document.write('<script src="catalogue.js?t='+Math.floor(Date.now()/6e4)+'"><\/script>')</script>
 <script src="extra.js"></script>
 <script>
 'use strict';
