@@ -30,6 +30,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #map.over{cursor:pointer}#map.drag{cursor:grabbing}
 #bar{position:fixed;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:14px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#11141bf2 60%,#11141b00);z-index:3}
 #bar h1{margin:0;font:400 20px/1 var(--serif);white-space:nowrap}
+/* the music carried over from the timeline: only when Live is opened on top of it */
+#carry{margin-left:auto;display:flex;align-items:center;gap:9px;max-width:min(380px,52vw);height:40px;padding:0 6px 0 4px;border:1px solid var(--rule);border-radius:22px;background:#0b0d12b3}
+#carry[hidden]{display:none}
+#carry img{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:none;animation:cspin 9s linear infinite;animation-play-state:paused}
+#carry.on img{animation-play-state:running}@keyframes cspin{to{transform:rotate(360deg)}}
+#carry button{flex:none;width:28px;height:28px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;cursor:pointer;background:none;color:var(--paper)}
+#carry #cPlay{background:#e6b450;color:#0b0d12}
+#carry svg{width:14px;height:14px;fill:currentColor}
+#carry .ct{min-width:0;flex:1;display:grid;line-height:1.15}
+#carry em{font:italic 400 14px var(--serif);color:var(--paper);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#carry b{font:400 11px var(--sans);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:700px){#carry{order:1;max-width:none;flex:1 1 100%;margin-left:0}}
+@media (prefers-reduced-motion:reduce){#carry img{animation:none}}
 #views{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}#right{margin-left:auto;display:flex;gap:16px;align-items:center}
 .quiet{font-size:13px;color:var(--dim);padding:3px 2px;border-bottom:1px solid transparent;text-decoration:none;transition:color .15s}
 .quiet:hover{color:var(--paper)}.quiet[aria-pressed=true],.quiet.on{color:var(--paper);border-color:var(--paper)}
@@ -111,6 +124,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
     <button class="quiet" id="relBtn" aria-pressed="false" title="Show each record as the journey reaches it">Releases</button>
   </nav>
   <span id="tag" hidden>draft list, not published</span>
+  <div id="carry" hidden><img alt=""><button type="button" id="cPlay" aria-label="Pause"></button><span class="ct"><em></em><b></b></span><button type="button" id="cNext" aria-label="Next preview" title="Another release, at random"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5.5v13l9-6.5zM16.5 5.5h2.4v13h-2.4z"/></svg></button></div>
   <!-- Hidden for now, at Gunnar's request; World and Doubtful still work when shown. -->
   <div id="right" hidden>
     <button class="quiet" id="fit" title="Show the whole world">World</button>
@@ -1045,5 +1059,28 @@ window.__live={Rel,storyDay,setInfo,syncChrome,showCaption,redraw:()=>{dirty=tru
 syncMenus();syncSpeed();syncChrome();resize();fitWorld();cam.x=cam.tx;cam.y=cam.ty;cam.z=cam.tz;showCaption();
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
 requestAnimationFrame(frame);
+/* ---------- opened on top of the timeline, with its music still playing ----------
+   The sound lives in the page underneath; this header shows it and passes play/pause and "next" down to it.
+   Timeline and Record go back to that page instead of loading it again, so the music never stops. */
+(function(){
+  if(!/[?&]embed\b/.test(location.search)||window.parent===window)return;
+  const P0=window.parent,O=location.origin,send=(cmd,extra)=>P0.postMessage(Object.assign({type:'gt-cmd',cmd},extra||{}),O);
+  const box=document.getElementById('carry'),pl=document.getElementById('cPlay');
+  const ICON={play:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg>',pause:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg>'};
+  pl.onclick=()=>send('toggle');document.getElementById('cNext').onclick=()=>send('next');
+  addEventListener('message',ev=>{
+    if(ev.origin!==O||ev.source!==P0)return;const d=ev.data||{};if(d.type!=='gt-now')return;
+    box.hidden=!d.title;box.classList.toggle('on',!!d.on);
+    pl.innerHTML=d.on?ICON.pause:ICON.play;pl.setAttribute('aria-label',d.on?'Pause':'Play');
+    box.querySelector('em').textContent=d.title;box.querySelector('b').textContent=[d.artist,d.year].filter(Boolean).join(' · ');
+    const im=box.querySelector('img');if(d.cover&&im.src!==d.cover)im.src=d.cover;im.hidden=!d.cover;
+    dispatchEvent(new Event('resize'));
+  });
+  const go=(a,v)=>{if(a)a.addEventListener('click',ev=>{ev.preventDefault();send('go',{view:v})})};
+  go(document.querySelector('#bar a[href="../?view=timeline"]'),'line');
+  go(document.querySelector('#bar a[href="../?view=record"]'),'disc');
+  go(document.querySelector('#bar h1 a'),'start');
+  send('hello');
+})();
 </script>
 </body></html>
