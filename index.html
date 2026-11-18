@@ -314,6 +314,15 @@ kbd{font:inherit;color:var(--paper);border:1px solid var(--rule);padding:0 5px;b
 #welcome{position:fixed;inset:0;z-index:20;display:grid;place-items:center;overflow:auto;padding:max(24px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));
   background:radial-gradient(120% 90% at 50% 30%,#181c27 0%,#11141b 62%);transition:opacity .8s ease,visibility 0s linear .8s,transform 1s cubic-bezier(.2,.7,.2,1)}
 #welcome.out{opacity:0;visibility:hidden;transform:scale(1.03);pointer-events:none}
+/* with the wall behind it, the front door is see-through; the doors sit on frosted glass */
+body.wall #welcome{background:none}
+body.wall>*{transition:opacity .8s}
+body.wall:has(#welcome:not(.out):not([hidden]))>:not(#welcome):not(#world):not(script){opacity:0;pointer-events:none}
+body.wall #welcome .wk{pointer-events:none}body.wall #welcome .wk>*{pointer-events:auto}
+body.wall #welcome h2{text-shadow:0 2px 40px #0b0d12,0 0 80px #0b0d12}
+body.wall #welcome .doors{background:#0b0d12b8;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d12,0 0 4px #0b0d12}
+@media (max-width:700px){body.wall #welcome .door{padding-left:14px;padding-right:12px}}
 #welcome .wk{width:min(1060px,100%)}
 #welcome .eyebrow{font:500 12px/1 var(--mono);letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
 #welcome h2{margin:16px 0 0;font:400 clamp(52px,9vw,124px)/.95 var(--serif);letter-spacing:-.015em;color:#fff}
@@ -572,7 +581,7 @@ ALL.forEach(e=>{
 /* ---------- camera ---------- */
 let W=0,H=0,DPR=1,dirty=true;
 const cam={x:0,y:0,z:.3,tx:0,ty:0,tz:.3,tau:.35};
-function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;dirty=true;if(orient==='v'&&colsFor(W)!==vCols){layout();if(mode==='browse'&&!sel){cam.ty=-1e9;clampCam();cam.y=cam.ty}}if(mode==='browse'&&!sel)fitAll(orient!=='v');else if(mode==='talk')aimTalk(true)}
+function resize(){if(wall.phase==='show')setTimeout(wallBuild);DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;dirty=true;if(orient==='v'&&colsFor(W)!==vCols){layout();if(mode==='browse'&&!sel){cam.ty=-1e9;clampCam();cam.y=cam.ty}}if(mode==='browse'&&!sel)fitAll(orient!=='v');else if(mode==='talk')aimTalk(true)}
 /* Whole catalogue: the time axis rests just above the reserved bottom band, like the baseline of a bar chart. */
 const barH=()=>$('#bar').offsetHeight;
 function vZoom(){return W>700?Math.max(vFitZ(vCols,W,H),Math.min(vOldZ(W),(W-24)/world.w)):Math.min((W-24)/world.w,170/T)}
@@ -723,7 +732,12 @@ function drawAura(){
   g.restore();
 }
 function draw(){
-  g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle=COL.ground;g.fillRect(0,0,W,H);drawAura();
+  g.setTransform(DPR,0,0,DPR,0,0);
+  if(wall.phase!=='show'||wall.fade<1)drawScene();
+  if(wall.phase)drawWall(performance.now());
+}
+function drawScene(){
+  g.fillStyle=COL.ground;g.fillRect(0,0,W,H);drawAura();
   if(mode==='talk'){
     drawAxis(talk.cur?talk.cur.year:null);
     const cur=talk.seq[talk.i];
@@ -901,8 +915,78 @@ function drawMorph(now){
     const dx=x1-m.x,dy=y1-m.y,L=Math.hypot(dx,dy)||1,arc=Math.min(L*.28,Math.max(W,H)*.22)*b*morph.dir;
     list.push({e,x:lerp(m.x,x1,k)-dy/L*arc,y:lerp(m.y,y1,k)+dx/L*arc,s:lerp(m.s,e1,k)*(1-.22*b),r:b*.32*morph.dir,b})}
   list.sort((a,b)=>a.b-b.b).forEach(p=>drawTileAt(p.e,p.x,p.y,p.s,p.r,1,false));
-  if(done){morph.t0=null;dirty=true;items.forEach(e=>{e._m=null})}
+  if(done){morph.t0=null;morph.dur=1000;morph.spread=900;dirty=true;items.forEach(e=>{e._m=null})}
 }
+/* ---------- the wall (not public yet: only with ?wall) ----------
+   The front door opens on every cover at once, a mural in career order (oldest on the left), its columns drifting
+   slowly up and down. Choosing Timeline does not fade it away: each cover flies from the wall to its own place. */
+const WALL=/[?&]wall\b/.test(location.search);
+const wall={phase:null,t0:0,fade:1,cells:[],cell:0,R:0,cols:0,v:[],mx:-1,my:-1,hot:null,hotA:0,out0:0,last:0,clock:0};
+function wallBuild(){
+  const order=[...items].filter(e=>e.cover).sort((a,b)=>a.year-b.year||a.seq-b.seq),N=order.length;if(!N)return;
+  let c=Math.sqrt(W*H/N)*.98,cols,R;
+  for(let k=0;k<40;k++){cols=Math.ceil(W/c);R=Math.ceil(H/c)+1;if(cols*R>=N)break;c*=.95}
+  wall.cell=c;wall.cols=cols;wall.R=R;wall.x0=(W-cols*c)/2;wall.cells=[];
+  /* every cover once in career order; the cells left over repeat the catalogue so the wall has no holes */
+  for(let j=0;j<cols;j++)for(let i=0;i<R;i++){const n=j*R+i;wall.cells.push({e:order[n%N],j,i,first:n<N,d:Math.random()})}
+  wall.v=[...Array(cols)].map((_,j)=>REDUCED?0:(j%2?1:-1)*(5+((j*7919)%11)*.9));
+}
+function wallPos(c){
+  const L=wall.R*wall.cell,o=wall.clock*wall.v[c.j];
+  let y=((c.i*wall.cell+o)%L+L)%L-wall.cell*.5;
+  return{x:wall.x0+(c.j+.5)*wall.cell,y,s:wall.cell-2};
+}
+function wallShow(){wallBuild();wall.phase='show';wall.t0=performance.now();wall.last=wall.t0;wall.fade=1;wall.hot=null;document.body.classList.add('wall');dirty=true}
+function wallOut(){if(wall.phase!=='show')return;wall.phase='out';wall.out0=performance.now()}
+function wallFly(){
+  if(wall.phase!=='show')return false;
+  const sorted=wall.cells.filter(c=>c.first);
+  items.forEach(e=>{e._m=null});
+  for(const c of sorted){const p=wallPos(c);c.e._m={x:p.x,y:clamp(p.y,-p.s,H+p.s),s:p.s};c.e._dx=c.e._dy=0;c.e._g=1;c.e._iy=0}
+  items.forEach(e=>{if(!e._m)e._m={x:W/2,y:H/2,s:0}});
+  /* the oldest leave first, so the career assembles on the timeline from its beginning */
+  const n=items.length;items.forEach(e=>e._md=e.seq/Math.max(1,n-1));if(wall.pick)wall.pick._md=0;
+  morph.dur=1500;morph.spread=1300;morph.dir=1;morph.t0=performance.now()+(REDUCED?0:60);
+  intro.t0=null;cine.t0=null;wall.phase='fly';wall.out0=performance.now();dirty=true;return true;
+}
+function drawWall(now){
+  const dt=Math.min(.1,(now-wall.last)/1000);wall.last=now;
+  if(wall.phase!=='fly')wall.clock+=dt;
+  const age=now-wall.t0,c=wall.cell;
+  if(wall.phase==='out'){wall.fade=1-clamp((now-wall.out0)/600,0,1);if(wall.fade<=0){wall.phase=null;document.body.classList.remove('wall');return}}
+  if(wall.phase==='fly'){
+    /* the repeats sink away while the real covers leave */
+    const f=1-clamp((now-wall.out0)/700,0,1);
+    for(const cl of wall.cells){if(cl.first)continue;const p=wallPos(cl);if(p.y<-c||p.y>H+c)continue;drawTileAt(cl.e,p.x,p.y,p.s*(1-.1*(1-f)),0,.5*f,false)}
+    if(f<=0&&morph.t0===null){wall.phase=null;document.body.classList.remove('wall')}
+    return;
+  }
+  g.save();g.globalAlpha=wall.fade;g.fillStyle=COL.ground;g.fillRect(0,0,W,H);g.restore();
+  let hot=null;
+  for(const cl of wall.cells){
+    const p=wallPos(cl);if(p.y<-c||p.y>H+c)continue;
+    /* the mural assembles: each cover arrives at its own moment */
+    const a=REDUCED?1:clamp((age-cl.d*1500)/700,0,1),o=1-Math.pow(1-a,3);
+    if(wall.mx>=0&&Math.abs(wall.mx-p.x)<c/2&&Math.abs(wall.my-p.y)<c/2)hot={cl,p};
+    drawTileAt(cl.e,p.x,p.y,p.s*lerp(.86,1,o),0,.62*o*wall.fade,false);
+  }
+  /* darker where the name and the doors sit, open towards the edges */
+  const gr=g.createRadialGradient(W/2,H*.48,0,W/2,H*.48,Math.max(W,H)*.62);
+  gr.addColorStop(0,'rgba(11,13,18,.86)');gr.addColorStop(.55,'rgba(11,13,18,.62)');gr.addColorStop(1,'rgba(11,13,18,.18)');
+  g.save();g.globalAlpha=wall.fade;g.fillStyle=gr;g.fillRect(0,0,W,H);g.restore();
+  /* the cover under the pointer lights up and says what it is */
+  if(hot&&(!wall.hot||hot.cl!==wall.hot.cl)){wall.hot=hot;wall.hotA=0}
+  if(!hot&&wall.hot){wall.hotA-=dt*4;if(wall.hotA<=0)wall.hot=null}else if(wall.hot)wall.hotA=Math.min(1,wall.hotA+dt*6);
+  if(wall.hot){
+    const cl=wall.hot.cl,p=wallPos(cl),k=wall.hotA*wall.fade,s=p.s*(1+.12*k);
+    g.save();g.shadowColor='#000';g.shadowBlur=30*k;drawTileAt(cl.e,p.x,p.y,s,0,k,false);g.restore();
+    const fs=Math.max(10.5,Math.min(13,c*.13)),txt=`${cl.e.year} · ${cl.e.title}`;
+    g.save();g.globalAlpha=k;g.font=`${fs}px "IBM Plex Mono",monospace`;g.textBaseline='top';
+    const tw=g.measureText(txt).width,tx=clamp(p.x-tw/2,8,W-tw-8),ty=p.y+s/2+8>H-fs-14?p.y-s/2-fs-14:p.y+s/2+8;
+    g.fillStyle='#0b0d12d9';g.fillRect(tx-7,ty-5,tw+14,fs+10);g.fillStyle=COL.paper;g.fillText(txt,tx,ty);g.restore();
+  }
+}
+function wallHit(x,y){if(wall.phase!=='show')return null;const c=wall.cell;for(const cl of wall.cells){const p=wallPos(cl);if(Math.abs(x-p.x)<c/2&&Math.abs(y-p.y)<c/2)return cl.e}return null}
 function setFocus(e){
   if(e===focus)return;focus=e;dirty=true;
   if(!e)return;
@@ -1005,7 +1089,7 @@ function frame(now){
   const discBusy=mode==='browse'&&tickDisc(dt,now);
   let intros=false;
   if(intro.t0!==null){intros=true;if(now-intro.t0>(intro.span||items.length*intro.gap+560)){intro.t0=null;intro.span=0;items.forEach(e=>{e._iy=0;e._idel=null})}}
-  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn||breathing||morph.t0!==null){draw();positionPeek();dirty=false}
+  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn||breathing||!!wall.phase||morph.t0!==null){draw();positionPeek();dirty=false}
   requestAnimationFrame(frame);
 }
 
@@ -2064,7 +2148,7 @@ let seenWelcome=false;try{seenWelcome=sessionStorage.getItem('gt.welcomed')==='1
 })();
 function openWelcome(){
   const w=$('#welcome');select(null);stopAudio(.4);hover=null;$('#tip').style.display='none';hideEnterHint();
-  w.hidden=false;w.classList.remove('out');
+  w.hidden=false;w.classList.remove('out');if(WALL)wallShow();
   /* replay the entrance */
   w.querySelectorAll('.rise').forEach(el=>{el.style.animation='none';void el.offsetWidth;el.style.animation=''});
 }
@@ -2080,14 +2164,14 @@ function showEnterHint(){return;   /* retired: the player bar now teaches the tw
 }
 cv.addEventListener('pointerdown',()=>{if($('#enterHint').classList.contains('on'))setTimeout(hideEnterHint,1200)});
 function enterFrom(go){
-  if(go==='live'){location.href='live/';return}
+  if(go==='live'){wallOut();location.href='live/';return}
   if(go==='film'){location.href='film/';return}
   try{sessionStorage.setItem('gt.welcomed','1')}catch(e){}
   const w=$('#welcome');w.classList.add('out');setTimeout(()=>{if(w.classList.contains('out'))w.hidden=true},REDUCED?0:900);
-  if(go==='disc'){focus=null;if(view.name!=='disc')setView('disc');else{disc.target=disc.stops[0];discTouch()}return}
+  if(go==='disc'){wallOut();focus=null;if(view.name!=='disc')setView('disc');else{disc.target=disc.stops[0];discTouch()}return}
   if(view.name!=='line')setView('line');
-  if(orient==='v'){cam.ty=-1e9;clampCam();cam.y=cam.ty}else fitAll(true);
-  items.forEach(e=>{e._iy=0});startIntro();dirty=true;
+  if(orient==='v'){cam.ty=wall.pick?wall.pick.cy:-1e9;clampCam();cam.y=cam.ty}else fitAll(true);
+  items.forEach(e=>{e._iy=0});if(!wallFly())startIntro();dirty=true;
   setTimeout(showEnterHint,REDUCED?0:1500);
 }
 /* The line over a door grows from the side the pointer came in by, and shrinks towards the side it left by,
@@ -2097,14 +2181,18 @@ document.querySelectorAll('#welcome .door').forEach(d=>{
   d.addEventListener('pointerenter',ev=>{if(ev.pointerType==='mouse')d.style.setProperty('--from',side(ev))});
   d.addEventListener('pointerleave',ev=>{if(ev.pointerType==='mouse')d.style.setProperty('--from',side(ev))});
 });
-$('#welcome').addEventListener('click',ev=>{const d=ev.target.closest('[data-go]');if(d)enterFrom(d.dataset.go)});
+$('#welcome').addEventListener('click',ev=>{const d=ev.target.closest('[data-go]');if(d){enterFrom(d.dataset.go);return}
+  if(!WALL||ev.target.closest('a,button,h2'))return;const e=wallHit(ev.clientX,ev.clientY);if(!e)return;
+  wall.pick=e;enterFrom('line');wall.pick=null;setTimeout(()=>{if(mode==='browse'&&view.name==='line')showPeek(e)},REDUCED?0:2400)});
+$('#welcome').addEventListener('pointermove',ev=>{if(!WALL||ev.pointerType!=='mouse')return;const over=ev.target.closest('.door,h2,.eyebrow,.book');wall.mx=over?-1:ev.clientX;wall.my=over?-1:ev.clientY});
+$('#welcome').addEventListener('pointerleave',()=>{wall.mx=wall.my=-1});
 addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!$('#welcome').hidden&&!$('#welcome').classList.contains('out')){ev.stopPropagation();enterFrom('line')}},true);
 const wantStart=/[?&]start\b/.test(location.search);
 if(wantStart)history.replaceState(null,'',location.pathname);
-if(wantStart||(!wantedView&&!seenWelcome)){
+if(wantStart||(WALL&&!wantedView)||(!wantedView&&!seenWelcome)){
   /* Behind the welcome the covers wait in their places, unseen, until a door is chosen. */
   if(!REDUCED)intro.t0=performance.now()+1e7;
-  $('#welcome').hidden=false;
+  $('#welcome').hidden=false;if(WALL)wallShow();
 }else{
   if(!startDisc)startIntro();
 }
