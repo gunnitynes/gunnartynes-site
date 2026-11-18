@@ -923,18 +923,27 @@ function drawMorph(now){
 const WALL=/[?&]wall\b/.test(location.search);
 const wall={phase:null,t0:0,fade:1,cells:[],cell:0,R:0,cols:0,v:[],mx:-1,my:-1,hot:null,hotA:0,out0:0,last:0,clock:0};
 function wallBuild(){
-  const order=[...items].filter(e=>e.cover).sort((a,b)=>a.year-b.year||a.seq-b.seq),N=order.length;if(!N)return;
-  let c=Math.sqrt(W*H/N)*.98,cols,R;
-  for(let k=0;k<40;k++){cols=Math.ceil(W/c);R=Math.ceil(H/c)+1;if(cols*R>=N)break;c*=.95}
-  wall.cell=c;wall.cols=cols;wall.R=R;wall.x0=(W-cols*c)/2;wall.cells=[];
-  /* every cover once in career order; the cells left over repeat the catalogue so the wall has no holes */
-  for(let j=0;j<cols;j++)for(let i=0;i<R;i++){const n=j*R+i;wall.cells.push({e:order[n%N],j,i,first:n<N,d:Math.random()})}
-  wall.v=[...Array(cols)].map((_,j)=>REDUCED?0:(j%2?1:-1)*(5+((j*7919)%11)*.9));
+  /* every release exactly once, in career order (oldest top left, reading down each column) */
+  const order=[...items].sort((a,b)=>a.year-b.year||a.seq-b.seq),N=order.length;if(!N)return;
+  /* pick the grid that fills the screen with the fewest covers cut off and the fewest empty places;
+     the empty places go where the screen crops, so none is seen */
+  const A=REDUCED?0:.22;let best=null;
+  for(let cols=3;cols<=60;cols++){
+    const rows=Math.ceil(N/cols),c=Math.max(W/cols,H/(rows-2*A)),ox=(cols*c-W)/2,oy=(rows*c-H)/2;
+    const cells=[];for(let j=0;j<cols;j++)for(let i=0;i<rows;i++){
+      const x0=j*c-ox,y0=i*c-oy,vis=Math.max(0,Math.min(W,x0+c)-Math.max(0,x0))*Math.max(0,Math.min(H,y0+c)-Math.max(0,y0))/(c*c);cells.push({j,i,vis})}
+    const E=cols*rows-N,hide=[...cells].sort((p,q)=>p.vis-q.vis).slice(0,E),lost=hide.reduce((t,q)=>t+q.vis,0)+cells.filter(q=>!hide.includes(q)&&q.vis<.5).length;
+    const score=lost*3+Math.abs(Math.log(c/Math.sqrt(W*H/N)));
+    if(!best||score<best.score)best={score,cols,rows,c,ox,oy,hide:new Set(hide.map(q=>q.j*rows+q.i))};
+  }
+  const{cols,rows,c}=best;wall.cell=c;wall.cols=cols;wall.R=rows;wall.x0=-best.ox;wall.y0=-best.oy;wall.A=A*c;wall.cells=[];
+  let n=0;for(let j=0;j<cols;j++)for(let i=0;i<rows;i++){if(best.hide.has(j*rows+i)||n>=N)continue;wall.cells.push({e:order[n++],j,i,first:true,d:Math.random()})}
+  /* each column sways very slowly, never more than a fifth of a cover, neighbours out of step */
+  wall.v=[...Array(cols)].map((_,j)=>({ph:j*2.399,per:70+((j*7919)%13)*3}));
 }
-function wallPos(c){
-  const L=wall.R*wall.cell,o=wall.clock*wall.v[c.j];
-  let y=((c.i*wall.cell+o)%L+L)%L-wall.cell*.5;
-  return{x:wall.x0+(c.j+.5)*wall.cell,y,s:wall.cell-2};
+function wallPos(cl){
+  const v=wall.v[cl.j],y=wall.y0+(cl.i+.5)*wall.cell+wall.A*Math.sin(wall.clock*2*Math.PI/v.per+v.ph);
+  return{x:wall.x0+(cl.j+.5)*wall.cell,y,s:wall.cell-2};
 }
 function wallShow(){wallBuild();wall.phase='show';wall.t0=performance.now();wall.last=wall.t0;wall.fade=1;wall.hot=null;document.body.classList.add('wall');dirty=true}
 function wallOut(){if(wall.phase!=='show')return;wall.phase='out';wall.out0=performance.now()}
@@ -2120,7 +2129,7 @@ $('#vLine').onclick=()=>setView('line');
 $('#vDisc').onclick=()=>setView('disc');
 $('#discPlay').onclick=discToggle;
 
-window.__cat={openWelcome,enterFrom,sound:()=>soundOn,live:()=>discLive(),discPos,discPhi,view,disc,setView,talk,cam,audio,items:()=>items,select,startTalk,next,plan,cfg,state:()=>({mode,finished,sel:sel&&sel.id})};
+window.__cat={wall,openWelcome,enterFrom,sound:()=>soundOn,live:()=>discLive(),discPos,discPhi,view,disc,setView,talk,cam,audio,items:()=>items,select,startTalk,next,plan,cfg,state:()=>({mode,finished,sel:sel&&sel.id})};
 layout();
 addEventListener('resize',resize);resize();fitAll(true);
 if(document.fonts)document.fonts.ready.then(()=>dirty=true);
