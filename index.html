@@ -674,8 +674,56 @@ function drawAxis(curY){
   const axisEnd=(mode==='talk'&&!finished&&curY!=null&&yearX[curY])?yearX[curY].x+yearX[curY].w:world.w;
   g.fillStyle='#ffffff22';g.fillRect(sx(0),sy(4),axisEnd*cam.z,1);
 }
+/* ---------- the breathing light ----------
+   While a preview plays, the dark ground takes the colours of that release's cover. The low end of the music
+   swells a glow from below, the middle drifts a second colour around, the highs shimmer at the edges.
+   Nothing changes while it is silent. */
+const aura={lvl:0,b:0,m:0,h:0,id:null,pal:null,buf:null,t:0};
+const palettes={};
+function paletteOf(e){
+  if(palettes[e.id])return palettes[e.id];
+  const src=e.thumb||e.img;if(!src)return null;
+  try{const c=document.createElement('canvas');c.width=c.height=24;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(src,0,0,24,24);const d=x.getImageData(0,0,24,24).data;
+    let r=0,gg=0,b=0,n=0,best=null,bs=-1;
+    for(let i=0;i<d.length;i+=4){const R=d[i],G=d[i+1],B=d[i+2],mx=Math.max(R,G,B),mn=Math.min(R,G,B),sat=(mx-mn)/(mx+1),lum=(R+G+B)/3;r+=R;gg+=G;b+=B;n++;
+      const sc=sat*Math.min(1,lum/60)*(lum<235?1:.3);if(sc>bs){bs=sc;best=[R,G,B]}}
+    const lift=v=>Math.min(255,v);const avg=[r/n,gg/n,b/n].map(lift);
+    /* push both colours towards a lit, saturated version so they read on the dark ground */
+    const vivid=c=>{const m=Math.max(...c)||1,k=Math.max(1,170/m);return c.map(v=>Math.min(255,Math.round(v*k)))};
+    return palettes[e.id]={a:vivid(best||avg),b:vivid(avg)};
+  }catch(x){return null}
+}
+function tickAura(dt){
+  if(!BREATHE)return false;
+  const a=audio.el,on=!!(a&&!a.paused&&a._m&&!audio.fading.has(a));
+  if(on&&audio.id!==aura.id){const e=items.find(x=>x.id===audio.id);const p=e&&paletteOf(e);if(p){aura.pal=p;aura.id=audio.id}}
+  aura.lvl+=((on&&aura.pal?1:0)-aura.lvl)*Math.min(1,dt*(on?1.6:.8));
+  if(on){const m=a._m;if(!aura.buf||aura.buf.length!==m.frequencyBinCount)aura.buf=new Uint8Array(m.frequencyBinCount);m.getByteFrequencyData(aura.buf);
+    const bw=(audio.ctx?audio.ctx.sampleRate:44100)/(m.fftSize||2048),band=(f0,f1)=>{let s=0,n=0;for(let k=Math.max(1,Math.floor(f0/bw));k<=Math.floor(f1/bw)&&k<aura.buf.length;k++){s+=aura.buf[k];n++}return n?s/n/255:0};
+    const bb=band(30,160),mm=band(300,2500),hh=band(5000,14000);
+    const env=(cur,v,att,rel)=>cur+(v-cur)*Math.min(1,dt*(v>cur?att:rel));
+    aura.b=env(aura.b,Math.pow(bb,1.6),14,3.5);aura.m=env(aura.m,mm,8,2.5);aura.h=env(aura.h,Math.pow(hh,.8),20,5)}
+  else{aura.b*=Math.exp(-dt*2);aura.m*=Math.exp(-dt*2);aura.h*=Math.exp(-dt*2)}
+  aura.t+=dt;
+  return aura.lvl>.003;
+}
+function drawAura(){
+  if(!BREATHE||aura.lvl<.003||!aura.pal)return;
+  const L=aura.lvl,[a0,a1,a2]=aura.pal.a,[b0,b1,b2]=aura.pal.b,t=aura.t,M=Math.max(W,H);
+  g.save();g.globalCompositeOperation='lighter';
+  /* the low end: a glow swelling up from below */
+  let r=M*(.46+.26*aura.b),gr=g.createRadialGradient(W/2,H*1.02,0,W/2,H*1.02,r);
+  gr.addColorStop(0,`rgba(${a0},${a1},${a2},${(.15+.42*aura.b)*L})`);gr.addColorStop(1,`rgba(${a0},${a1},${a2},0)`);g.fillStyle=gr;g.fillRect(0,0,W,H);
+  /* the middle: a second colour drifting slowly across */
+  const cx=W*(.5+.32*Math.sin(t*.13)),cy=H*(.42+.18*Math.cos(t*.17));r=M*(.30+.12*aura.m);
+  gr=g.createRadialGradient(cx,cy,0,cx,cy,r);gr.addColorStop(0,`rgba(${b0},${b1},${b2},${(.05+.2*aura.m)*L})`);gr.addColorStop(1,`rgba(${b0},${b1},${b2},0)`);g.fillStyle=gr;g.fillRect(0,0,W,H);
+  /* the highs: a fine shimmer around the edges */
+  const sh=(.03+.16*aura.h)*L*(.85+.15*Math.sin(t*23));
+  gr=g.createRadialGradient(W/2,H/2,Math.min(W,H)*.42,W/2,H/2,M*.78);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,`rgba(${a0},${a1},${a2},${sh})`);g.fillStyle=gr;g.fillRect(0,0,W,H);
+  g.restore();
+}
 function draw(){
-  g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle=COL.ground;g.fillRect(0,0,W,H);
+  g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle=COL.ground;g.fillRect(0,0,W,H);drawAura();
   if(mode==='talk'){
     drawAxis(talk.cur?talk.cur.year:null);
     const cur=talk.seq[talk.i];
@@ -950,13 +998,14 @@ function frame(now){
     const d=Math.exp(-dt/.42);flick.x*=d;flick.y*=d;glide=true;
   }
   const cineOn=tickCine(now)||tickHelix(now)||tickHV(dt);
+  const breathing=tickAura(dt);
   const moving=step(dt);
   if(mode==='talk')talkTick(now);
   const lensBusy=mode==='browse'&&view.name==='line'&&view.mix===0&&updateLens(dt);
   const discBusy=mode==='browse'&&tickDisc(dt,now);
   let intros=false;
   if(intro.t0!==null){intros=true;if(now-intro.t0>(intro.span||items.length*intro.gap+560)){intro.t0=null;intro.span=0;items.forEach(e=>{e._iy=0;e._idel=null})}}
-  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn||morph.t0!==null){draw();positionPeek();dirty=false}
+  if(moving||dirty||mode==='talk'||lensBusy||glide||intros||discBusy||cineOn||breathing||morph.t0!==null){draw();positionPeek();dirty=false}
   requestAnimationFrame(frame);
 }
 
@@ -978,7 +1027,9 @@ async function urlOf(e){
 }
 function preload(e){if(!e||audio.pre.has(e.id))return;urlOf(e).then(u=>{if(!u||audio.pre.has(e.id))return;const a=newAudio(u);a.preload='auto';a.load();audio.pre.set(e.id,a);if(audio.pre.size>10){const k=audio.pre.keys().next().value;audio.pre.delete(k)}})}
 /* iPhones ignore an audio element's volume, so there each clip goes through a gain node instead. If that route turns out silent, playback falls back to plain elements. */
-let GAIN_ROUTE=(()=>{const a=new Audio();a.volume=.5;return a.volume!==.5||location.search.includes('webaudio')})();
+/* The site breathes with the music: not public yet, only with ?breathe in the address. */
+const BREATHE=/[?&]breathe\b/.test(location.search);
+let GAIN_ROUTE=(()=>{const a=new Audio();a.volume=.5;return a.volume!==.5||location.search.includes('webaudio')||BREATHE})();
 function newAudio(u){const a=new Audio();if(GAIN_ROUTE)a.crossOrigin='anonymous';a.src=u;return a}
 function wire(a){
   if(!GAIN_ROUTE||a._g)return;
