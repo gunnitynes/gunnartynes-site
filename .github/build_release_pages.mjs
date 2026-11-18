@@ -1,7 +1,7 @@
 // Writes one plain page per release at r/<id>/index.html, so every release has its own address that can be shared
 // (with its cover in the preview) and found by search engines; also writes sitemap.xml.
 // Only releases on the main timeline get a page; a hidden or deleted release loses its page on the next run.
-// Run after any catalogue change: node .github/build_release_pages.mjs  (the GitHub workflow does this on every push)
+// Run after any catalogue change (it also restores a missing page): node .github/build_release_pages.mjs  (the GitHub workflow does this on every push)
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
