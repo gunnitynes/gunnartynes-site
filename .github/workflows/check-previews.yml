@@ -1,0 +1,37 @@
+# Once a month: test every music preview, repair the ones Apple has moved, and drop the ones that are gone for good.
+# Anything dropped is listed in preview-report.md and in a GitHub issue, so Gunnar hears about it.
+name: Check previews
+on:
+  schedule:
+    - cron: '17 6 3 * *'   # the 3rd of every month, early morning
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  issues: write
+concurrency:
+  group: release-pages
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node .github/check_previews.mjs
+      - name: Publish any repairs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet catalogue.js; then echo "Every preview works"; exit 0; fi
+          node .github/build_release_pages.mjs
+          git add catalogue.js preview-report.md r sitemap.xml
+          git config user.name "preview-check"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Music previews: repair or remove the ones that stopped working"
+          for i in 1 2 3; do git pull --rebase -q origin main && git push -q origin HEAD:main && pushed=1 && break; sleep 5; done
+          [ -n "$pushed" ] || exit 1
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" >/dev/null || true
+          if grep -q "^## Removed" preview-report.md; then gh issue create --title "Some music previews no longer work" --body-file preview-report.md || true; fi
