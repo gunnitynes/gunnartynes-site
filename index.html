@@ -339,7 +339,7 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
 #welcome .eyebrow{font:500 12px/1 var(--mono);letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
 #welcome h2{margin:16px 0 0;font:400 clamp(52px,9vw,124px)/.95 var(--serif);letter-spacing:-.015em;color:#fff}
 #welcome .lede{margin:22px 0 0;max-width:34em;font:400 clamp(16px,1.5vw,19px)/1.5 var(--sans);color:var(--dim)}
-#welcome .doors{list-style:none;margin:clamp(36px,7vh,72px) 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--rule)}
+#welcome .doors{list-style:none;margin:clamp(36px,7vh,72px) 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--rule)}
 #welcome .doors li+li .door{border-left:1px solid var(--rule)}
 #welcome .door{display:grid;grid-template-rows:auto auto 1fr auto;gap:6px;width:100%;height:100%;text-align:left;padding:20px 22px 22px;position:relative;transition:background .35s;outline:none}
 #welcome .door:hover,#welcome .door:focus-visible{background:#ffffff07}
@@ -356,6 +356,10 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
 #welcome .strip img{width:40px;height:40px;object-fit:cover;flex:none;border-radius:1px;opacity:.9}
 @keyframes drift{to{transform:translateX(-50%)}}
 #welcome .rec{position:relative;width:46px;height:46px;flex:none;margin-right:10px}
+#welcome .stems{display:flex;align-items:center;gap:7px;height:46px}
+#welcome .stems i{width:8px;height:8px;border-radius:50%;background:var(--c);opacity:.25;animation:stem var(--t) ease-in-out infinite;animation-delay:var(--w)}
+#welcome .stems i:nth-child(1){--c:#f6c86b;--t:4.2s;--w:-.4s}#welcome .stems i:nth-child(2){--c:#b9a3f2;--t:5.6s;--w:-2.1s}#welcome .stems i:nth-child(3){--c:#f29ba0;--t:3.8s;--w:-1.3s}#welcome .stems i:nth-child(4){--c:#8fd3c5;--t:6.4s;--w:-3.3s}#welcome .stems i:nth-child(5){--c:#e6b450;--t:4.9s;--w:-.9s}#welcome .stems i:nth-child(6){--c:#9cc2f4;--t:5.2s;--w:-2.7s}#welcome .stems i:nth-child(7){--c:#ece8dc;--t:7s;--w:-4.1s}
+@keyframes stem{0%,100%{opacity:.22;transform:scale(.7)}35%,60%{opacity:1;transform:scale(1.25)}}
 #welcome .vin{position:absolute;inset:0}
 #welcome .disc{position:absolute;inset:0;border-radius:50%;background:repeating-radial-gradient(circle at 50% 50%,#08090c 0 1.1px,#22262f 1.3px 2.1px);animation:spin 3.6s linear infinite;box-shadow:0 0 0 1px #ffffff22,0 4px 12px #000a}
 #welcome .disc img{position:absolute;inset:21%;width:58%;height:58%;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px #0008}
@@ -392,7 +396,7 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
 }
 @media (max-height:740px) and (max-width:700px){#welcome .door{padding-top:11px;padding-bottom:11px}#welcome .door .t{font-size:26px}#welcome .door .d{font-size:13px}#welcome .doors{margin-top:26px}}
 @media (max-height:640px){#welcome h2{font-size:clamp(44px,8vw,84px)}#welcome .lede{margin-top:12px;font-size:15px}#welcome .doors{margin-top:22px}#welcome .door{padding-top:12px;padding-bottom:12px}#welcome .door .t{font-size:27px}}
-@media (prefers-reduced-motion:reduce){#welcome .rise{animation:none;opacity:1;transform:none}#welcome .strip,#welcome .disc{animation:none}#welcome{transition:none}}
+@media (prefers-reduced-motion:reduce){#welcome .rise{animation:none;opacity:1;transform:none}#welcome .strip,#welcome .disc,#welcome .stems i{animation:none}#welcome{transition:none}}
 </style>
 </head>
 <body>
@@ -496,6 +500,7 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
       <li class="rise" style="--d:.55s"><button type="button" class="door" data-go="line"><span class="n">01</span><span class="t">Timeline</span><span class="d">All recorded projects</span><span class="pv"><svg class="route" id="wLine" viewBox="0 0 150 46" aria-hidden="true"></svg></span></button></li>
       <li class="rise" style="--d:.68s"><button type="button" class="door" data-go="disc"><span class="n">02</span><span class="t">Record</span><span class="d">Play the catalogue like a record</span><span class="pv"><span class="rec"><span class="vin"><span class="disc"><img id="wDisc" alt=""><i class="hole"></i></span><i class="sheen"></i><i class="arm"></i></span></span></span></button></li>
       <li class="rise" style="--d:.81s"><button type="button" class="door" data-go="live"><span class="n">03</span><span class="t">Live</span><span class="d">The concerts, tour by tour, on a map</span><span class="pv"><svg class="route" viewBox="0 0 150 46" aria-hidden="true"><path id="wPath" d="M6 36 Q34 4 62 24 T118 16 Q132 12 144 30" fill="none" stroke="#ffffff38" stroke-width="1.2" stroke-dasharray="3 4"/><circle cx="6" cy="36" r="2.2" fill="#a3a6ad"/><circle cx="62" cy="24" r="2.2" fill="#a3a6ad"/><circle cx="118" cy="16" r="2.2" fill="#a3a6ad"/><circle cx="144" cy="30" r="2.2" fill="#a3a6ad"/><circle id="wLiveDot" r="3.6" fill="#e6b450" opacity="0"/></svg></span></button></li>
+      <li class="rise" style="--d:.94s"><button type="button" class="door" data-go="play"><span class="n">04</span><span class="t">Play</span><span class="d">Take a múm song apart</span><span class="pv"><span class="stems" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span></button></li>
     </ul>
     <a class="book rise" id="wBook" href="booking/" style="--d:.95s;margin-right:24px" hidden>Booking requests <span>→</span></a>
     <a class="book rise" id="wAbout" href="about/" style="--d:1s">About <span>→</span></a>
@@ -2383,6 +2388,7 @@ function showEnterHint(){return;   /* retired: the player bar now teaches the tw
 cv.addEventListener('pointerdown',()=>{if($('#enterHint').classList.contains('on'))setTimeout(hideEnterHint,1200)});
 function enterFrom(go){
   if(go==='live'){if(openLive())return;wallOut();location.href='live/';return}
+  if(go==='play'){stopAudio(.2);wallOut();location.href='play/';return}
   try{sessionStorage.setItem('gt.welcomed','1')}catch(e){}
   const w=$('#welcome');w.classList.add('out');setTimeout(()=>{if(w.classList.contains('out'))w.hidden=true},REDUCED?0:900);
   if(go==='disc'){wallOut();focus=null;if(view.name!=='disc')setView('disc');else{disc.target=disc.stops[0];discTouch()}return}
