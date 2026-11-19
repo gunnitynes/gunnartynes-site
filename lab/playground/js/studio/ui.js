@@ -107,6 +107,7 @@ export class Keys {
 
 /** A ring knob bound to a param path: drag up/down (Shift for fine), wheel, arrows; double-click resets. */
 export function knob(P, path, label, { min = 0, max = 1, step = 0, fmt = (v) => Math.round(((v - min) / (max - min)) * 100), bipolar = false } = {}) {
+  (P.range ??= {})[path] = [min, max, label];
   const NS = 'http://www.w3.org/2000/svg', R = 15, C = 20;
   const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 40 40');
   const arc = (a0, a1) => { const p = (a) => [C + R * Math.cos(a), C + R * Math.sin(a)], [x0, y0] = p(a0), [x1, y1] = p(a1); return `M${x0} ${y0}A${R} ${R} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}`; };

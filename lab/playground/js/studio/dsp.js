@@ -190,21 +190,26 @@ class Shifter extends AudioWorkletProcessor {
 registerProcessor('shifter', Shifter);
 
 // ------------------------------------------------------------------------------------------- repeat
+// Hold to loop the last fraction of a beat. Starts and stops can be timed (`at`), the loop can be read faster or
+// slower (pitch) and each pass can fade (decay).
 class Repeat extends AudioWorkletProcessor {
   constructor() {
     super(); this.n = sampleRate * 4; this.buf = [new Float32Array(this.n), new Float32Array(this.n)]; this.w = 0;
-    this.on = false; this.len = 0; this.start = 0; this.r = 0; this.x = 0; this.decay = 1; this.g = 1;
-    this.port.onmessage = (e) => { const d = e.data; if (d.on) { this.len = Math.max(64, Math.round(d.len * sampleRate)); this.start = (this.w - this.len + this.n) % this.n; this.r = 0; this.g = 1; this.decay = d.decay ?? 1; this.on = true; } if (d.off) this.on = false; };
+    this.on = false; this.len = 0; this.start = 0; this.r = 0; this.x = 0; this.decay = 0.98; this.g = 1; this.rate = 1; this.q = [];
+    this.port.onmessage = (e) => { const d = e.data; if (d.p) { if (d.p.rate) this.rate = d.p.rate; if (d.p.decay !== undefined) this.decay = d.p.decay; } if (d.on || d.off) this.q.push(d); };
   }
+  begin(d) { this.len = Math.max(64, Math.round(d.len * sampleRate)); this.start = (this.w - this.len + this.n) % this.n; this.r = 0; this.g = 1; this.on = true; }
   process(inputs, outputs) {
     const inp = inputs[0], out = outputs[0], n = out[0].length, xf = 1 / 240;
+    if (this.q.length) this.q = this.q.filter((d) => { if ((d.at ?? 0) > currentTime + n / sampleRate) return true; if (d.on) this.begin(d); else this.on = false; return false; });
     for (let k = 0; k < n; k++) {
       for (let c = 0; c < 2; c++) this.buf[c][this.w] = (inp[c] || inp[0] || [])[k] || 0;
       this.x += ((this.on ? 1 : 0) - this.x) * xf;
       if (this.x > 1e-4) {
-        const i = (this.start + this.r) % this.n, edge = Math.min(1, this.r / 96, (this.len - this.r) / 96);
-        for (let c = 0; c < out.length; c++) { const d = (inp[c] || inp[0] || [])[k] || 0; out[c][k] = d * (1 - this.x) + this.buf[c][i] * edge * this.g * this.x; }
-        if (++this.r >= this.len) { this.r = 0; this.g *= this.decay; }
+        const p = this.r, i0 = (this.start + (p | 0)) % this.n, i1 = (i0 + 1) % this.n, f = p - (p | 0);
+        const edge = Math.min(1, p / 96, (this.len - p) / 96);
+        for (let c = 0; c < out.length; c++) { const d = (inp[c] || inp[0] || [])[k] || 0, b = this.buf[c]; out[c][k] = d * (1 - this.x) + (b[i0] + (b[i1] - b[i0]) * f) * edge * this.g * this.x; }
+        this.r += this.rate; if (this.r >= this.len) { this.r -= this.len; this.g *= this.decay; }
       } else for (let c = 0; c < out.length; c++) out[c][k] = (inp[c] || inp[0] || [])[k] || 0;
       if (!this.on || this.x < 0.5) this.w = (this.w + 1) % this.n;   // keep listening, but hold still while looping
     }
@@ -212,3 +217,28 @@ class Repeat extends AudioWorkletProcessor {
   }
 }
 registerProcessor('repeat', Repeat);
+
+// ------------------------------------------------------------------------------------------- gate
+// A rhythmic chopper locked to the band's bar grid: 16 steps, each open or shut; "pluck" makes open steps decay.
+class Gate extends AudioWorkletProcessor {
+  constructor() {
+    super(); this.p = { steps: [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0], depth: 0, smooth: 0.25, pluck: 0, rate: 4, bar0: 0, beatDur: 0.5, playing: false }; this.g = 1;
+    this.port.onmessage = (e) => Object.assign(this.p, e.data);
+  }
+  process(inputs, outputs) {
+    const inp = inputs[0], out = outputs[0], n = out[0].length, p = this.p, sr = sampleRate;
+    if (p.depth <= 0.001 && Math.abs(this.g - 1) < 1e-4) { for (let c = 0; c < out.length; c++) { const x = inp[c] || inp[0]; if (x) out[c].set(x); else out[c].fill(0); } return true; }
+    const stepDur = p.beatDur / p.rate, N = p.steps.length, coef = 1 - Math.exp(-1 / (sr * (0.0015 + p.smooth * p.smooth * stepDur * 0.7)));
+    for (let k = 0; k < n; k++) {
+      let target = 1;
+      if (p.playing && p.depth > 0.001) {
+        const ph = (currentTime + k / sr - p.bar0) / stepDur, s = Math.floor(ph), idx = ((s % N) + N) % N;
+        target = p.steps[idx] ? 1 - p.depth * p.pluck * (ph - s) : 1 - p.depth;
+      }
+      this.g += (target - this.g) * coef;
+      for (let c = 0; c < out.length; c++) out[c][k] = ((inp[c] || inp[0] || [])[k] || 0) * this.g;
+    }
+    return true;
+  }
+}
+registerProcessor('gate', Gate);

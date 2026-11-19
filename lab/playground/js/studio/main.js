@@ -6,8 +6,11 @@ import { CellLoader } from '../engine/loader.js';
 import { Player } from '../engine/player.js';
 import { Session, initialState } from '../state/session.js';
 import { $, h, api } from '../lib/util.js';
-import { Params, loadSource, loudestCells, loudestWindow, sliceOf, CloudVoice, SamplerVoice, StringsVoice, buildTextures, Sequencer, CHORDS } from './core.js';
+import { Params, loadSource, loudestCells, loudestWindow, sliceOf, CloudVoice, SamplerVoice, StringsVoice, buildTextures, Sequencer, PATS } from './core.js';
 import { Wave, Keys, knob, group } from './ui.js';
+import { buildStrips, buildMixRoom } from './mixer.js';
+import { buildSong } from './song.js';
+import { buildTexturesRoom } from './textures.js';
 
 const params = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {} };
@@ -35,21 +38,31 @@ async function boot() {
   for (const s of song.stems) player.addSource(s.id, { id: s.id, kind: 'stem', name: s.name, cells: s.cells, gain: s.gain });
   Object.assign(S, { song, engine, ctx: engine.ctx, loader, session, player, params: new Params() });
 
-  // the master: band → its own switch → textures; instruments → textures; then the engine's glue and limiter
+  // the master: every source is a channel strip (mixer.js); each strip feeds the textures rack and/or straight to
+  // the engine's glue and limiter. The band reaches its strip through its own on/off switch.
   const tex = buildTextures(S);
+  S.tex = tex; S.resFreqs = tex.resFreqs;
+  S.dryBus = engine.ctx.createGain(); S.dryBus.connect(engine.lp);
   S.bandGate = engine.ctx.createGain();
-  engine.bus.disconnect(); engine.bus.connect(S.bandGate).connect(engine.post);
-  engine.post.disconnect(); engine.post.connect(tex.input); tex.output.connect(engine.lp);
-  S.tex = tex;
-  S.instBus = engine.ctx.createGain(); S.instBus.connect(tex.input);
+  engine.bus.disconnect(); engine.post.disconnect();
+  engine.post.connect(tex.input); tex.output.connect(engine.lp);   // post now carries only the space and echo returns
+  buildStrips(S, COLORS, NAMES);
+  engine.bus.connect(S.bandGate).connect(S.strips.band.input);
   S.seq = new Sequencer(S);
   S.params.recorder = (path, v) => S.seq.moveIn(path, v);
+  S.heard = [];
+  let retuneT = 0;
+  S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (S.params.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; S.tex.retune(); }, 60); };
 
-  buildDeck(); buildHeader(); buildArrange(); buildCloud(); buildForge(); buildTextures2();
-  restore();
+  buildDeck(); buildHeader(); buildArrange(); buildCloud(); buildForge();
+  buildTexturesRoom(S, { seg, sw, recBtn }); buildMixRoom(S); buildSong(S, { COLORS, NAMES });
+  const had = restore();
+  if (!S.seq.arr.bars) S.seq.fillFromSong();
+  if (!had) S.seq.setMode('song');
+  S.seq.emit();
   S.rooms.cloud.init(); S.forges.forEach((f) => f.init());
   S.selectSlot(0);
-  showRoom(params.get('room') || 'cloud');
+  showRoom(params.get('room') || 'song');
 
   const first = ids.map((id) => player.resolve(session.state.tracks[id], 0)).filter(Boolean).map((w) => w.url);
   let n = 0; await Promise.all(first.map((u) => loader.load(u).catch(() => {}).finally(() => { $('#gate-bar').style.width = `${(++n / first.length) * 100}%`; })));
@@ -67,10 +80,14 @@ function buildHeader() {
   P.define('band.level', 0.9, (v) => S.engine.bus.gain.setTargetAtTime(v, S.ctx.currentTime, 0.05));
   $('#band-sw').onclick = () => P.set('band.on', !P.get('band.on'));
   $('#band-knob').append(knob(P, 'band.level', 'Band'));
-  P.define('inst.level', 0.9, (v) => S.instBus.gain.setTargetAtTime(v, S.ctx.currentTime, 0.05));
+  P.define('inst.level', 0.9, () => ['cloud', 'f1', 'f2', 'f3'].forEach((k) => S.strips[k].setFader()));
   $('#inst-knob').append(knob(P, 'inst.level', 'Instruments'));
   $('#t-play').onclick = () => (player.playing ? player.stop() : player.play());
-  $('#t-rew').onclick = () => session.dispatch({ t: 'seek', bar: 0 });
+  $('#t-rew').onclick = () => session.dispatch({ t: 'seek', bar: S.seq.mode === 'song' && S.seq.arr.cycle ? S.seq.arr.cycle[0] : 0 });
+  const modeBtns = [['jam', 'Loop', 'Loop one pattern over the band as it is in Re-arrange'], ['song', 'Song', 'Play the arrangement on the Song timeline']].map(([m, l, t]) => h('button', { type: 'button', title: t, onclick: () => S.seq.setMode(m) }, l));
+  $('#mode').append(...modeBtns);
+  const showMode = () => { modeBtns.forEach((b, i) => b.setAttribute('aria-pressed', ['jam', 'song'][i] === S.seq.mode)); document.body.classList.toggle('songmode', S.seq.mode === 'song'); };
+  S.seq.addEventListener('change', showMode); showMode();
   player.on('transport', ({ playing }) => { $('#t-play').classList.toggle('on', playing); $('#t-play').setAttribute('aria-label', playing ? 'Stop' : 'Play'); });
   document.querySelectorAll('#rooms button').forEach((b) => { b.onclick = () => showRoom(b.dataset.room); });
   addEventListener('keydown', (e) => {
@@ -80,6 +97,7 @@ function buildHeader() {
     else if (e.key === 'b' || e.key === 'B') P.set('band.on', !P.get('band.on'));
     else if (e.key === 'Home') session.dispatch({ t: 'seek', bar: 0 });
     else if (/^[1-4]$/.test(e.key)) S.selectSlot(+e.key - 1);
+    else if (e.key === 'Enter' && !e.target.closest('button')) S.seq.setMode(S.seq.mode === 'song' ? 'jam' : 'song');
   });
 }
 function toggleRec() { const q = S.seq; q.arm(!q.rec); if (q.rec && !S.player.playing) S.player.play(); }
@@ -104,7 +122,7 @@ function sourcePicker(onPick) {
 const seg = (P, path, options, title) => { const b = options.map(([v, l]) => h('button', { type: 'button', onclick: () => P.set(path, v) }, l)); const show = () => b.forEach((x, i) => x.setAttribute('aria-pressed', options[i][0] === P.get(path))); P.on(({ path: p }) => p === path && show()); show(); return h('div', { class: 'seg', title }, ...b); };
 const sw = (P, path, label, title) => { const b = h('button', { type: 'button', class: 'sw', title, onclick: () => P.set(path, !P.get(path)) }, h('i'), label); const show = () => b.setAttribute('aria-pressed', !!P.get(path)); P.on(({ path: p }) => p === path && show()); show(); return b; };
 const pick = (P, path, options, title) => { const s = h('select', { title, 'aria-label': title, onchange: (e) => P.set(path, isNaN(+e.target.value) ? e.target.value : +e.target.value) }, ...options.map(([v, l]) => h('option', { value: v }, l))); const show = () => { s.value = P.get(path); }; P.on(({ path: p }) => p === path && show()); show(); return s; };
-const recBtn = (label) => { const b = h('button', { type: 'button', class: 'rec', title: 'Record every note and move into the current variation (R)', onclick: toggleRec }, h('i'), label); const s = () => b.classList.toggle('on', S.seq.rec); S.seq.addEventListener('change', s); s(); return b; };
+const recBtn = (label) => { const b = h('button', { type: 'button', class: 'rec', title: 'Record every note and move (R) · in Loop into the pattern, in Song as a new take on the timeline', onclick: toggleRec }, h('i'), label); const s = () => b.classList.toggle('on', S.seq.rec); S.seq.addEventListener('change', s); s(); return b; };
 
 // ------------------------------------------------------------------------------------------------ Re-arrange (the band: map + mixer)
 function buildArrange() {
@@ -117,6 +135,8 @@ function buildArrange() {
     P.define(`band.${id}.gain`, 0.85, (v) => session.dispatch({ t: 'track/set', id, p: { gain: v } }, { log: false }));
     P.define(`band.${id}.mute`, false, (v) => session.dispatch({ t: 'track/set', id, p: { mute: v } }, { log: false }));
     P.define(`band.${id}.solo`, false, (v) => session.dispatch({ t: 'track/set', id, p: { solo: v } }, { log: false }));
+    P.define(`band.${id}.pan`, 0, (v) => session.dispatch({ t: 'track/set', id, p: { pan: v } }, { log: false }));
+    P.define(`band.${id}.rev`, 0, (v) => session.dispatch({ t: 'track/set', id, p: { rev: v * v * 0.8 } }, { log: false }));
     const lvl = h('i', { class: 'lvl' }), bar = h('div', { class: 'gain', title: `${st.name} level · drag` }, lvl);
     const meter = h('i', { class: 'meter' }); S.meters.push([id, meter]);
     const showG = () => { lvl.style.width = `${P.get(`band.${id}.gain`) * 100}%`; }; P.on(({ path }) => path === `band.${id}.gain` && showG()); showG();
@@ -125,11 +145,14 @@ function buildArrange() {
     const ms = (k, l, t) => { const b = h('button', { type: 'button', class: `ms ${k}`, title: t, onclick: () => P.set(`band.${id}.${k}`, !P.get(`band.${id}.${k}`)) }, l); const show = () => b.setAttribute('aria-pressed', !!P.get(`band.${id}.${k}`)); P.on(({ path }) => path === `band.${id}.${k}` && show()); show(); return b; };
     mixer.append(h('div', { class: 'strip' }, h('span', { class: 'nm', title: st.name }, st.name), ms('mute', 'M', 'Mute'), ms('solo', 'S', 'Solo'), h('div', { class: 'gw' }, bar, meter)));
   }
+  const jam = () => S.seq.setMode('jam');
   const tools = h('div', { class: 'bar2' },
-    h('button', { type: 'button', class: 'pill', title: 'Let every musician play the song as written', onclick: () => session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'follow' }])) }) }, 'Everyone follows the song'),
-    h('button', { type: 'button', class: 'pill', title: 'Keep every musician on the four bars playing now', onclick: () => { const c = Math.floor(Math.max(0, player.barNow()) / song.barsPerCell); session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'loop', cell: c }])) }); } }, 'Hold this moment'),
+    h('button', { type: 'button', class: 'pill', title: 'Let every musician play the song as written', onclick: () => jam() || session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'follow' }])) }) }, 'Everyone follows the song'),
+    h('button', { type: 'button', class: 'pill', title: 'Keep every musician on the four bars playing now', onclick: () => { jam(); const c = Math.floor(Math.max(0, player.barNow()) / song.barsPerCell); session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'loop', cell: c }])) }); } }, 'Hold this moment'),
     h('span', { class: 'sp' }), h('span', { class: 'legend' }, h('i', { class: 'lf' }), 'plays the song', h('i', { class: 'lh' }), 'held on these 4 bars', h('i', { class: 'lo' }), 'waiting'));
-  room.append(tools, h('div', { class: 'arr' }, mixer, box));
+  const songNote = h('div', { class: 'arr-song' }, h('span', {}, 'The Song timeline is playing the band'), h('button', { type: 'button', class: 'pill on', onclick: () => jam() }, 'Hold and loop here instead'));
+  room.append(tools, h('div', { class: 'arr' }, mixer, box, songNote));
+  const showSong = () => { songNote.hidden = S.seq.mode !== 'song'; }; S.seq.addEventListener('change', showSong); showSong();
   const g = cv.getContext('2d'); let W = 0, H = 0;
   new ResizeObserver(() => { const r = box.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }).observe(box);
   const top = 22, geom = () => ({ cols: song.numCells, cw: W / song.numCells, rh: (H - top) / song.stems.length });
@@ -138,7 +161,7 @@ function buildArrange() {
     const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, { cw, rh } = geom(), c = Math.floor(x / cw);
     if (y < top) { session.dispatch({ t: 'seek', bar: c * song.barsPerCell }); return; }
     const st = song.stems[Math.floor((y - top) / rh)]; if (!st || !st.cells[c]) return;
-    const tr = session.state.tracks[st.id];
+    jam(); const tr = session.state.tracks[st.id];
     session.dispatch({ t: 'track/set', id: st.id, p: tr.mode === 'loop' && tr.cell === c ? { mode: 'follow' } : { mode: 'loop', cell: c } });
   });
   let hover = null; cv.addEventListener('pointermove', (e) => { const r = cv.getBoundingClientRect(); hover = [e.clientX - r.left, e.clientY - r.top]; }); cv.addEventListener('pointerleave', () => { hover = null; });
@@ -165,7 +188,7 @@ function buildArrange() {
 // ------------------------------------------------------------------------------------------------ Cloud
 const YAXES = { spray: ['Spray', 'cloud.spread', (y) => +(0.5 * y ** 1.5).toFixed(4)], size: ['Grain size', 'cloud.size', (y) => +y.toFixed(4)], pitch: ['Pitch', 'cloud.pitch', (y) => Math.round(-24 + y * 48)], density: ['Density', 'cloud.density', (y) => +y.toFixed(4)] };
 function buildCloud() {
-  const P = S.params, room = $('#room-cloud'), voice = new CloudVoice(S, S.instBus);
+  const P = S.params, room = $('#room-cloud'), voice = new CloudVoice(S, S.strips.cloud.input);
   S.slots[0] = { name: 'Cloud', voice };
   const send = (k) => (v) => voice.set({ [k]: v });
   P.define('cloud.pos', 0.3, send('pos')); P.define('cloud.size', 0.35, (v) => voice.set({ size: 10 + 990 * v ** 2 }));
@@ -220,7 +243,7 @@ function buildForge() {
   S.rooms.forge = { draw: () => S.forges.forEach((f) => f.wave.draw()) };
 }
 function makeForge(n) {
-  const P = S.params, k = `f${n}`, out = S.ctx.createGain(); out.connect(S.instBus);
+  const P = S.params, k = `f${n}`, out = S.ctx.createGain(); out.connect(S.strips[k].input);
   const voices = { sampler: new SamplerVoice(S, out), strings: new StringsVoice(S, out), grains: new CloudVoice(S, out) };
   const slot = { name: NAMES[n], voices, get voice() { return voices[P.get(`${k}.engine`)]; } };
   S.slots[n] = slot;
@@ -269,29 +292,6 @@ function makeForge(n) {
   return { el, wave, slot, init: () => { const c = slot.src || { stemId: def.id, ...(([a, b]) => ({ a, b }))(loudestCells(def, 1)) }; picker.set(c.stemId, c.a, c.b); } };
 }
 
-// ------------------------------------------------------------------------------------------------ Textures
-function buildTextures2() {
-  const P = S.params, room = $('#room-textures');
-  const hold = (label, div) => { const b = h('button', { type: 'button', class: 'hold', title: `Hold to repeat the last ${label} beat${div > 1 ? 's' : ''}` }, label); const on = () => { b.classList.add('on'); S.tex.repeat(div); }, off = () => { b.classList.remove('on'); S.tex.repeat(0); }; b.addEventListener('pointerdown', (e) => { b.setPointerCapture(e.pointerId); on(); }); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); return b; };
-  P.define('fx.xy.x', 0.5, (v) => { P.set('fx.filter.lp', v < 0.5 ? 0.35 + v * 1.3 : 1, { by: 'macro' }); P.set('fx.filter.hp', v > 0.5 ? (v - 0.5) * 1.3 : 0, { by: 'macro' }); });
-  P.define('fx.xy.y', 0, (v) => { P.set('fx.res.mix', Math.max(0, v - 0.2) * 0.9, { by: 'macro' }); P.set('fx.shim.mix', v * 0.75, { by: 'macro' }); P.set('fx.tape.mix', Math.min(1, v * 1.4), { by: 'macro' }); });
-  const pad = h('div', { class: 'xy', title: 'Drag: left darker, right brighter; up rings and shimmers' }, h('span', { class: 'ax l' }, 'darker'), h('span', { class: 'ax r' }, 'brighter'), h('span', { class: 'ax t' }, 'ringing'), h('span', { class: 'ax b' }, 'dry'), h('i', { class: 'dot' }));
-  const dot = pad.querySelector('.dot'), showDot = () => { dot.style.left = `${P.get('fx.xy.x') * 100}%`; dot.style.top = `${(1 - P.get('fx.xy.y')) * 100}%`; };
-  P.on(({ path }) => path.startsWith('fx.xy') && showDot()); showDot();
-  let drag = false; const at = (e) => { const r = pad.getBoundingClientRect(); P.set('fx.xy.x', +Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)).toFixed(4)); P.set('fx.xy.y', +Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height)).toFixed(4)); };
-  pad.addEventListener('pointerdown', (e) => { drag = true; pad.setPointerCapture(e.pointerId); at(e); }); pad.addEventListener('pointermove', (e) => drag && at(e)); pad.addEventListener('pointerup', () => { drag = false; });
-  const mod = (title, ...kids) => h('section', { class: 'mod' }, h('h3', {}, title), h('div', { class: 'gk' }, ...kids));
-  room.append(h('div', { class: 'tex' }, h('div', { class: 'padcol' }, pad, h('div', { class: 'bar2' }, recBtn('Record'), h('span', { class: 'cap' }, 'one gesture moves filter, tape, resonators and shimmer'))),
-    h('div', { class: 'mods' },
-      mod('Repeat · hold a beat', h('div', { class: 'holds' }, hold('2', 2), hold('1', 1), hold('½', 0.5), hold('¼', 0.25), hold('⅛', 0.125), hold('1⁄16', 0.0625))),
-      mod('Resonators', knob(P, 'fx.res.mix', 'Amount'), knob(P, 'fx.res.decay', 'Ring'), knob(P, 'fx.res.bright', 'Tone'), h('div', { class: 'sel2' }, pick(P, 'fx.res.root', NOTE.map((nn, i) => [i, nn]), 'Tuned to'), pick(P, 'fx.res.chord', Object.keys(CHORDS).map((c) => [c, c]), 'Chord'))),
-      mod('Shimmer', knob(P, 'fx.shim.mix', 'Amount'), knob(P, 'fx.shim.rise', 'Rise'), h('div', { class: 'sel2' }, pick(P, 'fx.shim.interval', [[7, 'up a fifth'], [12, 'up an octave'], [19, 'octave + fifth'], [24, 'two octaves'], [-12, 'down an octave']], 'Interval'))),
-      mod('Tape', knob(P, 'fx.tape.mix', 'Amount'), knob(P, 'fx.tape.wow', 'Wow'), knob(P, 'fx.tape.flutter', 'Flutter'), knob(P, 'fx.tape.drive', 'Drive'), h('button', { type: 'button', class: 'pill', title: 'Slow the whole band to a halt', onclick: () => S.player.stop({ tape: true }) }, 'Tape stop')),
-      mod('Filter', knob(P, 'fx.filter.lp', 'Low pass'), knob(P, 'fx.filter.hp', 'High pass'), knob(P, 'fx.filter.q', 'Peak')),
-      mod('Crush', knob(P, 'fx.crush.mix', 'Amount'), knob(P, 'fx.crush.bits', 'Bits', { fmt: (v) => Math.round(16 - v * 13) }), knob(P, 'fx.crush.down', 'Rate')))));
-  S.rooms.textures = { draw: () => {} };
-}
-
 // ------------------------------------------------------------------------------------------------ deck: instruments, keys, sequencer
 function buildDeck() {
   const { seq } = S;
@@ -299,7 +299,8 @@ function buildDeck() {
   const chips = NAMES.map((nm, i) => h('button', { type: 'button', class: 'chip', style: { '--c': COLORS[i] }, title: `Play ${nm} from the keys (${i + 1})`, onclick: () => S.selectSlot(i) }, h('i'), nm));
   S.selectSlot = (i) => { slot = i; chips.forEach((c, k) => c.setAttribute('aria-pressed', k === i)); document.body.style.setProperty('--play', COLORS[i]); S.forges?.forEach((f, k) => f.slot.card?.classList.toggle('playing', k + 1 === i)); };
   const keysEl = h('div', { class: 'keybed' });
-  const keys = new Keys(keysEl, (note, vel, on) => { const s = S.slots[slot]; if (!s) return; const id = `k${slot}:${note}`; if (on) s.voice.noteOn(id, note, vel); else s.voice.noteOff(id); seq.noteIn(slot, note, vel, on); });
+  const keys = new Keys(keysEl, (note, vel, on) => { const s = S.slots[slot]; if (!s) return; const id = `k${slot}:${note}`; if (on) s.voice.noteOn(id, note, vel); else s.voice.noteOff(id); S.stepNote?.(note, vel, on); seq.noteIn(slot, note, vel, on); });
+  S.slotNow = () => slot;
   S.keys = keys;
   S.flashNote = (sl, note, at, dur) => { if (sl !== slot) return; setTimeout(() => keys.flash(note, dur * 1000), Math.max(0, (at - S.ctx.currentTime) * 1000)); };
   const octl = h('span', { class: 'octl' });
@@ -307,18 +308,21 @@ function buildDeck() {
   const sh = keys.shift.bind(keys); keys.shift = (d) => { sh(d); showOct(); };
   const midi = h('button', { type: 'button', class: 'pill', title: 'Play with a MIDI keyboard', onclick: async () => { try { const names = await keys.midi(); midi.textContent = names.length ? `MIDI · ${names[0]}` : 'No MIDI found'; } catch { midi.textContent = 'No MIDI here'; } } }, 'MIDI');
   const oct = h('div', { class: 'seg oct' }, h('button', { type: 'button', title: 'Octave down (Z)', onclick: () => keys.shift(-12) }, '−'), octl, h('button', { type: 'button', title: 'Octave up (X)', onclick: () => keys.shift(12) }, '+'));
-  const vars = 'ABCD'.split('').map((v) => h('button', { type: 'button', title: `Variation ${v}`, onclick: () => { seq.cur = v; seq.emit(); } }, v));
-  const barsSel = h('select', { title: 'Length of the loop', 'aria-label': 'Loop length', onchange: (e) => { seq.bars = +e.target.value; seq.emit(); } }, ...[1, 2, 4, 8, 16].map((b) => h('option', { value: b }, `${b} bar${b > 1 ? 's' : ''}`)));
-  const quant = h('select', { title: 'Snap notes to the grid', 'aria-label': 'Snap', onchange: (e) => { seq.quant = +e.target.value; seq.emit(); } }, ...[[0, 'free'], [0.25, 'snap 1/16'], [0.5, 'snap 1/8'], [1, 'snap 1/4']].map(([v, l]) => h('option', { value: v }, l)));
-  const chain = h('button', { type: 'button', class: 'sw', title: 'Play A, B, C and D one after another', onclick: () => { seq.chain = !seq.chain; seq.emit(); } }, h('i'), 'Chain');
-  const clear = h('button', { type: 'button', class: 'pill', title: 'Empty this variation', onclick: () => seq.clear() }, 'Clear');
+  const vars = PATS.map((v) => h('button', { type: 'button', title: `Pattern ${v}`, onclick: () => { seq.cur = v; seq.emit(); } }, v));
+  const barsSel = h('select', { title: 'Length of the pattern', 'aria-label': 'Pattern length', onchange: (e) => { seq.snapshot(); seq.bars = +e.target.value; seq.emit(); } }, ...[1, 2, 3, 4, 6, 8, 12, 16].map((b) => h('option', { value: b }, `${b} bar${b > 1 ? 's' : ''}`)));
+  const quant = h('select', { title: 'Snap notes to the grid', 'aria-label': 'Snap', onchange: (e) => { seq.quant = +e.target.value; seq.emit(); } }, ...[[0, 'free'], [0.125, 'snap 1/32'], [0.25, 'snap 1/16'], [0.5, 'snap 1/8'], [1, 'snap 1/4'], [1 / 3, 'snap 1/8 tri']].map(([v, l]) => h('option', { value: v }, l)));
+  const chain = h('button', { type: 'button', class: 'sw', title: 'Loop mode: play the patterns that have something in them, one after another', onclick: () => { seq.chain = !seq.chain; seq.emit(); } }, h('i'), 'Chain');
+  const clear = h('button', { type: 'button', class: 'pill', title: 'Empty this pattern', onclick: () => seq.clear() }, 'Clear');
+  const editB = h('button', { type: 'button', class: 'pill', title: 'Open this pattern in the editor on the Song page', onclick: () => { showRoom('song'); S.openEditor?.(slot); } }, 'Edit');
   const LANES = [0, 1, 2, 3, 'm'];
   const lanes = h('div', { class: 'lanes' }, ...LANES.map((l) => { const b = h('button', { type: 'button', class: 'lane', style: { '--c': l === 'm' ? '#a3a6ad' : COLORS[l] }, title: 'Click to mute this lane · double-click to empty it', onclick: () => { seq.mute.has(l) ? seq.mute.delete(l) : seq.mute.add(l); seq.emit(); }, ondblclick: () => seq.clearLane(l) }, h('i'), l === 'm' ? 'Moves' : NAMES[l].replace('Instrument ', 'Inst ')); b.dataset.l = l; return b; }));
-  const tl = h('div', { class: 'timeline' }), cv = h('canvas'); tl.append(cv);
+  const tl = h('div', { class: 'timeline', title: 'Double-click to edit this pattern' }), cv = h('canvas'); tl.append(cv);
+  const recTarget = h('span', { class: 'cap rect' });
   const g = cv.getContext('2d'); let W = 0, H = 0;
   new ResizeObserver(() => { const r = tl.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }).observe(tl);
   const sync = () => {
     vars.forEach((b) => { const v = b.textContent; b.setAttribute('aria-pressed', v === seq.cur); b.classList.toggle('has', seq.vars[v].length > 0); });
+    recTarget.textContent = seq.mode === 'song' ? (seq.take ? `recording a take into ${seq.take.pat}` : 'records a take onto the Song') : `records into ${seq.cur}`;
     chain.setAttribute('aria-pressed', seq.chain); barsSel.value = seq.bars; quant.value = seq.quant;
     lanes.querySelectorAll('.lane').forEach((b) => { const l = b.dataset.l === 'm' ? 'm' : +b.dataset.l; b.classList.toggle('muted', seq.mute.has(l)); });
     document.body.classList.toggle('recording', seq.rec);
@@ -327,7 +331,8 @@ function buildDeck() {
   $('#deck').append(
     h('div', { class: 'deck-l' }, h('span', { class: 'cap' }, 'The keys play'), h('div', { class: 'chips' }, ...chips), h('div', { class: 'row' }, oct, midi)),
     keysEl,
-    h('div', { class: 'deck-r' }, h('div', { class: 'row' }, recBtn('Record'), h('div', { class: 'seg vars' }, ...vars), barsSel, quant, h('span', { class: 'sp' }), chain, clear), h('div', { class: 'seqbox' }, lanes, tl)));
+    h('div', { class: 'deck-r' }, h('div', { class: 'row' }, recBtn('Record'), recTarget, h('span', { class: 'sp' }), barsSel, quant, chain, editB, clear), h('div', { class: 'row' }, h('span', { class: 'cap' }, 'Pattern'), h('div', { class: 'seg vars' }, ...vars)), h('div', { class: 'seqbox' }, lanes, tl)));
+  tl.addEventListener('dblclick', () => { showRoom('song'); S.openEditor?.(slot); });
   showOct();
   S.rooms.deck = { draw: () => {
     if (!W) return; g.clearRect(0, 0, W, H);
@@ -348,20 +353,23 @@ function buildDeck() {
 
 // ------------------------------------------------------------------------------------------------ rooms, frame
 function showRoom(id) {
-  if (!S.rooms[id]) id = 'cloud';
+  if (!S.rooms[id] || id === 'deck') id = 'song';
   S.room = id;
   document.querySelectorAll('.room').forEach((r) => { r.hidden = r.id !== `room-${id}`; });
   document.querySelectorAll('#rooms button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.room === id));
   const u = new URL(location.href); u.searchParams.set('room', id); history.replaceState(null, '', u);
   if (id === 'cloud') S.selectSlot(0);
+  requestAnimationFrame(() => S.rooms[id]?.show?.());
 }
 const mbuf = new Float32Array(2048);
 function frame() {
   const { player, song } = S;
-  const beat = Math.max(0, player.beatNow()), bar = Math.floor(beat / song.beatsPerBar);
-  $('#pos').textContent = `${String(bar % song.numBars + 1).padStart(3, '0')}.${Math.floor(beat % song.beatsPerBar) + 1}`;
-  const s = song.sections.find((x) => bar / song.barsPerCell >= x.startCell && bar / song.barsPerCell < x.endCell); $('#part').textContent = s ? `part ${s.name}` : '';
-  $('#master-meter').style.transform = `scaleX(${Math.min(1, S.engine.meterLevel(mbuf))})`;
+  const songMode = S.seq.mode === 'song', raw = Math.max(0, songMode ? S.seq.tl(S.seq.nowBeat()) : player.beatNow()), bar = Math.floor(raw / song.beatsPerBar);
+  $('#pos').textContent = `${String((songMode ? bar : bar % song.numBars) + 1).padStart(3, '0')}.${Math.floor(raw % song.beatsPerBar) + 1}`;
+  if (songMode) { const c = S.seq.arr.clips.find((x) => x.lane === 'band' && bar >= x.start && bar < x.start + x.len); $('#part').textContent = c ? (c.name && !c.loop ? `part ${c.name}` : `bar ${(c.src + (c.loop ? (bar - c.start) % c.loop : bar - c.start)) % song.numBars + 1} of the song`) : 'no band here'; }
+  else { const s = song.sections.find((x) => bar / song.barsPerCell >= x.startCell && bar / song.barsPerCell < x.endCell); $('#part').textContent = s ? `part ${s.name}` : ''; }
+  S.masterLevel = S.engine.meterLevel(mbuf);
+  $('#master-meter').style.transform = `scaleX(${Math.min(1, S.masterLevel)})`;
   if (S.room === 'arrange') for (const [id, m] of S.meters) { const ch = S.engine.channels.get(id); m.style.transform = `scaleX(${ch ? Math.min(1, ch.readLevel() * 3) : 0})`; }
   S.rooms[S.room]?.draw(); S.rooms.deck.draw();
   requestAnimationFrame(frame);
@@ -369,13 +377,22 @@ function frame() {
 
 // ------------------------------------------------------------------------------------------------ keeping your work
 const KEY = () => `playground.studio.${S.song.id}`;
-function save() { try { localStorage.setItem(KEY(), JSON.stringify({ v: 1, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.forges.map((f) => f.slot.src || null), band: S.session.state })); } catch { /* full or private */ } }
-function restore() {
-  let d; try { d = JSON.parse(localStorage.getItem(KEY())); } catch { return; }
-  if (!d || d.v !== 1) return;
+S.projectData = () => ({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.forges.map((f) => f.slot.src || null), band: S.session.state, morph: S.morph, mixMem: S.mixMem });
+function save() { try { localStorage.setItem(KEY(), JSON.stringify(S.projectData())); } catch { /* full or private */ } }
+function applyProject(d) {
+  if (!d || (d.v !== 1 && d.v !== 2)) return false;
   S.params.load(d.params); S.seq.load(d.seq);
   if (d.cloud) S.cloudSrc = d.cloud;
   d.forges?.forEach((src, i) => { if (src) S.forges[i].slot.src = src; });
+  if (d.morph) S.morph = d.morph; if (d.mixMem) S.mixMem = d.mixMem;
   if (d.band?.songId === S.song.id) S.session.dispatch({ t: 'state/load', state: d.band }, { log: false });
+  return true;
 }
+function restore() {
+  let d; try { d = JSON.parse(localStorage.getItem(KEY())); } catch { return false; }
+  if (!applyProject(d)) return false;
+  const want = S.seq.wantMode; S.seq.mode = 'jam'; if (want === 'song') { const jt = S.seq.jamTracks; S.seq.setMode('song'); if (jt) S.seq.jamTracks = jt; }
+  return true;
+}
+S.loadProject = (d) => { if (d.song && d.song !== S.song.id) { alert('That file belongs to another song.'); return; } try { localStorage.setItem(KEY(), JSON.stringify(d)); } catch { /* fine */ } location.reload(); };
 S.reset = () => { localStorage.removeItem(KEY()); location.reload(); };
