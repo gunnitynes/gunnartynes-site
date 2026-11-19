@@ -3,7 +3,7 @@
 // the instrument lanes hold pattern clips; the moves lane holds recorded and drawn knob moves. Below it, the
 // pattern editor: a piano roll for notes (drawn, played in step by step, or recorded live) and a pencil for moves.
 import { $, h } from '../lib/util.js';
-import { PATS } from './core.js';
+import { PATS, isTake, takeName } from './core.js';
 
 const NOTE = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 const nn = (m) => `${NOTE[m % 12]}${Math.floor(m / 12) - 1}`;
@@ -17,9 +17,9 @@ export function buildSong(S, { COLORS, NAMES }) {
   const level = (cell) => (cell ? clamp((cell.rms + 50) / 40, 0.08, 1) : 0);
   const bandAt = (bar) => { const c = Math.floor((((bar % song.numBars) + song.numBars) % song.numBars) / cb); let m = 0; for (const st of song.stems) m = Math.max(m, level(st.cells[c])); return m; };
   const lanes = () => {
-    const L = [{ id: 'band', name: 'Band', color: '#ece8dc', h: LANE }];
+    const L = [{ id: 'band', name: 'Stems', color: '#ece8dc', h: LANE }];
     if (expanded) for (const st of song.stems) L.push({ id: 'stem:' + st.id, name: st.name, color: '#a3a6ad', h: STEM, stem: st });
-    for (let i = 0; i < 4; i++) L.push({ id: i, name: NAMES[i], color: COLORS[i], h: LANE });
+    for (let i = 0; i < S.slots.length; i++) L.push({ id: i, name: NAMES[i], color: COLORS[i], h: LANE });
     L.push({ id: 'm', name: 'Moves', color: '#a3a6ad', h: LANE });
     let y = 0; for (const l of L) { l.y = y; y += l.h; } L.total = y; return L;
   };
@@ -29,15 +29,15 @@ export function buildSong(S, { COLORS, NAMES }) {
 
   // ---------------------------------------------------------------- toolbar
   const btn = (label, title, onclick, cls = 'pill') => h('button', { type: 'button', class: cls, title, onclick }, label);
-  const cycle = h('button', { type: 'button', class: 'sw', title: 'Loop one stretch of the song (drag across the ruler to choose it)', onclick: () => { seq.snapshot(); if (seq.arr.cycle) { seq.lastCycle = seq.arr.cycle; seq.arr.cycle = null; } else { const b = Math.floor(seq.tl(seq.nowBeat()) / bpb / 4) * 4; seq.arr.cycle = seq.lastCycle || [b, Math.min(seq.arr.bars, b + 4)]; } seq.changed(); } }, h('i'), 'Cycle');
-  const lenIn = h('input', { type: 'number', min: 1, max: 999, class: 'num', title: 'Length of the song in bars', onchange: (e) => { seq.snapshot(); seq.arr.bars = clamp(Math.round(+e.target.value || 1), 1, 999); seq.changed(); } });
+  const cycle = h('button', { type: 'button', class: 'sw', title: 'Loop one stretch of the arrangement (drag across the ruler to choose it)', onclick: () => { seq.snapshot(); if (seq.arr.cycle) { seq.lastCycle = seq.arr.cycle; seq.arr.cycle = null; } else { const b = Math.floor(seq.tl(seq.nowBeat()) / bpb / 4) * 4; seq.arr.cycle = seq.lastCycle || [b, Math.min(seq.arr.bars, b + 4)]; } seq.changed(); } }, h('i'), 'Loop');
+  const lenIn = h('input', { type: 'number', min: 1, max: 999, class: 'num', title: 'Length of the arrangement in bars', onchange: (e) => { seq.snapshot(); seq.arr.bars = clamp(Math.round(+e.target.value || 1), 1, 999); seq.changed(); } });
   const zoom = (f, at) => { const ph = seq.tl(seq.nowBeat()) / bpb, ox = at ?? (xOf(ph) >= 0 && xOf(ph) <= W ? xOf(ph) : 0), bar = x0 + ox / pxb; fit = false; pxb = clamp(pxb * f, 2, 160); x0 = Math.max(0, bar - ox / pxb); };
   const undo = btn('Undo', 'Undo (⌘Z)', () => seq.undo()), redo = btn('Redo', 'Redo (⇧⌘Z)', () => seq.redo());
-  const bounceB = btn('Bounce .wav', 'Play the whole song (or the cycle) once and save it as a sound file', () => bounce());
+  const bounceB = btn('Bounce .wav', 'Play the whole arrangement (or the loop) once and save it as a sound file', () => bounce());
   const fileIn = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async (e) => { const f = e.target.files[0]; if (!f) return; try { S.loadProject(JSON.parse(await f.text())); } catch (err) { alert('That file could not be opened: ' + err.message); } e.target.value = ''; } });
   room.append(h('div', { class: 'bar2' },
-    h('span', { class: 'cap' }, 'Song'), lenIn, h('span', { class: 'cap' }, 'bars'), cycle,
-    btn('Original song', 'Lay the band out as the original song again (your instrument clips stay)', () => { seq.snapshot(); seq.fillFromSong(); seq.changed(); }),
+    h('span', { class: 'cap' }, 'Arrangement'), lenIn, h('span', { class: 'cap' }, 'bars'), cycle,
+    btn('Reset stems', 'Put the original stems back on the Stems lanes', () => { if (!confirm('Reset the stems?\n\nThis puts the original stems back in the arrangement and replaces every change you made on the Stems lanes (moved, repeated or cut parts, and each stem\'s own lane). Your instrument clips and moves stay.\n\nYou can undo this.')) return; seq.snapshot(); seq.fillFromSong(); seq.arr.clips = seq.arr.clips.filter((c) => !String(c.lane).startsWith('stem:')); seq.changed(); }),
     h('div', { class: 'seg' }, btn('−', 'Zoom out', () => zoom(1 / 1.4), ''), btn('Fit', 'Show the whole song', () => { fit = true; x0 = 0; }, ''), btn('+', 'Zoom in', () => zoom(1.4), '')),
     h('span', { class: 'sp' }), undo, redo,
     btn('Save', 'Save everything as a file on this computer', () => download(new Blob([JSON.stringify(S.projectData())], { type: 'application/json' }), `${song.title} · playground.json`)),
@@ -48,7 +48,7 @@ export function buildSong(S, { COLORS, NAMES }) {
   const parts = h('div', { class: 'pal' }), pats = h('div', { class: 'pal' });
   for (const s of song.sections) {
     const len = (s.endCell - s.startCell) * cb, src = s.startCell * cb;
-    const c = h('button', { type: 'button', class: 'pchip part', draggable: 'true', title: `Part ${s.name}: bars ${src + 1}–${src + len} of the original · drag it onto the band` }, s.name, h('small', {}, `${len}`));
+    const c = h('button', { type: 'button', class: 'pchip part', draggable: 'true', title: `Part ${s.name}: bars ${src + 1}–${src + len} of the original · drag it onto the Stems lane` }, s.name, h('small', {}, `${len}`));
     c.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', JSON.stringify({ src, len, name: s.name })); e.dataTransfer.effectAllowed = 'copy'; drag = { kind: 'part', len }; });
     c.addEventListener('dragend', () => { drag = null; });
     parts.append(c);
@@ -57,7 +57,7 @@ export function buildSong(S, { COLORS, NAMES }) {
     const shown = PATS.filter((k, i) => seq.used(k) || k === seq.cur || i < 4), firstFree = PATS.find((k) => !seq.used(k) && !shown.includes(k));
     if (firstFree) shown.push(firstFree);
     pats.replaceChildren(...shown.map((k) => {
-      const ev = seq.vars[k], dots = [0, 1, 2, 3].filter((s) => ev.some((e) => e.k === 'n' && e.slot === s)).map((s) => h('i', { style: { background: COLORS[s] } }));
+      const ev = seq.vars[k], dots = [...S.slots.keys()].filter((s) => ev.some((e) => e.k === 'n' && e.slot === s)).map((s) => h('i', { style: { background: COLORS[s] } }));
       if (ev.some((e) => e.k === 'm')) dots.push(h('i', { style: { background: '#a3a6ad' } }));
       const c = h('button', { type: 'button', class: 'pchip pat', draggable: 'true', 'aria-pressed': k === seq.cur, title: `Pattern ${k} · ${seq.lens[k]} bars · click to edit, drag onto an instrument lane` , onclick: () => { seq.cur = k; seq.emit(); } }, k, h('span', { class: 'dots' }, ...dots), h('small', {}, `${seq.lens[k]}`));
       c.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', JSON.stringify({ pat: k })); e.dataTransfer.effectAllowed = 'copy'; drag = { kind: 'pat', len: seq.lens[k] }; });
@@ -72,7 +72,7 @@ export function buildSong(S, { COLORS, NAMES }) {
   const ruler = h('div', { class: 'tl-ruler' }), rcv = h('canvas'), rg = rcv.getContext('2d'); ruler.append(rcv);
   const heads = h('div', { class: 'tl-heads' });
   const box = h('div', { class: 'tl-box' }), cv = h('canvas'), g = cv.getContext('2d'); box.append(cv);
-  const jamNote = h('div', { class: 'tl-jam' }, h('span', {}, 'Looping one pattern — the timeline is resting'), h('button', { type: 'button', class: 'pill on', onclick: () => seq.setMode('song') }, 'Play the song'));
+  const jamNote = h('div', { class: 'tl-jam' }, h('span', {}, 'Looping one pattern — the arrangement is resting'), h('button', { type: 'button', class: 'pill on', onclick: () => seq.setMode('song') }, 'Play the arrangement'));
   const scroll = h('div', { class: 'tl-scroll' }, h('div', { class: 'tl-inner' }, heads, box));
   const corner = h('div', { class: 'tl-corner' }, h('span', { class: 'cap' }, 'bar'));
   room.append(h('div', { class: 'tl' }, corner, ruler, scroll, jamNote));
@@ -90,7 +90,7 @@ export function buildSong(S, { COLORS, NAMES }) {
     L = lanes(); box.style.height = L.total + 'px';
     heads.replaceChildren(...L.map((l) => {
       const row = h('div', { class: 'lh' + (l.stem ? ' stem' : ''), style: { height: l.h + 'px', '--c': l.color } });
-      if (l.id === 'band') row.append(h('button', { type: 'button', class: 'exp', title: expanded ? 'Close the musicians' : 'Open the band up: a lane for every musician', onclick: () => { expanded = !expanded; buildHeads(); } }, expanded ? '▾' : '▸'), h('i'), h('span', { class: 'ln' }, 'Band'), sw2('band.on', 'On', 'The whole band on or off (B)'));
+      if (l.id === 'band') row.append(h('button', { type: 'button', class: 'exp', title: expanded ? 'Close the stems' : 'Open the stems up: a lane for every stem', onclick: () => { expanded = !expanded; buildHeads(); } }, expanded ? '▾' : '▸'), h('i'), h('span', { class: 'ln' }, 'Stems'), sw2('band.on', 'On', 'All the stems on or off (B)'));
       else if (l.stem) row.append(h('span', { class: 'ln' }, l.name), ms2(`band.${l.stem.id}.mute`, 'M'));
       else {
         const m = h('button', { type: 'button', class: 'ms mute', title: 'Mute this lane in the song', onclick: () => { seq.mute.has(l.id) ? seq.mute.delete(l.id) : seq.mute.add(l.id); seq.emit(); } }, 'M');
@@ -184,8 +184,12 @@ export function buildSong(S, { COLORS, NAMES }) {
 
   // ---------------------------------------------------------------- the editor / inspector
   const ed = { part: 0, sel: null, path: null, cursor: 0, step: false };
-  const edTabs = h('div', { class: 'seg' }, ...[0, 1, 2, 3, 'm'].map((p) => { const b = h('button', { type: 'button', onclick: () => { ed.part = p; if (p !== 'm') S.selectSlot(p); showEd(); } }, p === 'm' ? 'Moves' : NAMES[p].replace('Instrument ', 'Inst ')); b.dataset.p = p; return b; }));
-  const patSel = h('select', { title: 'Which pattern', 'aria-label': 'Pattern', onchange: (e) => { seq.cur = e.target.value; seq.emit(); } }, ...PATS.map((k) => h('option', { value: k }, `Pattern ${k}`)));
+  const edTabs = h('div', { class: 'seg' });
+  const buildTabs = () => edTabs.replaceChildren(...[...S.slots.keys(), 'm'].map((p) => { const b = h('button', { type: 'button', onclick: () => { ed.part = p; if (p !== 'm') S.selectSlot(p); showEd(); } }, p === 'm' ? 'Moves' : p === 0 ? 'Cloud' : `Inst ${p}`); b.dataset.p = p; return b; }));
+  buildTabs();
+  const sc0 = S.slotsChanged; S.slotsChanged = () => { sc0?.(); buildTabs(); buildHeads(); if (typeof ed.part === 'number' && ed.part >= S.slots.length) ed.part = 0; showEd(); };
+  const patSel = h('select', { title: 'Which pattern (or recorded take) the editor shows', 'aria-label': 'Pattern', onchange: (e) => { seq.cur = e.target.value; seq.emit(); } });
+  const fillPats = () => { const takes = Object.keys(seq.vars).filter((k) => isTake(k) && seq.vars[k].length).sort((a, b) => +a.slice(1) - +b.slice(1)); patSel.replaceChildren(h('optgroup', { label: 'Patterns' }, ...PATS.map((k) => h('option', { value: k }, `Pattern ${k}`))), ...(takes.length ? [h('optgroup', { label: 'Recorded on the arrangement' }, ...takes.map((k) => h('option', { value: k }, takeName(k))))] : [])); };
   const lenSel = h('select', { title: 'Length of this pattern', 'aria-label': 'Pattern length', onchange: (e) => { seq.snapshot(); seq.bars = +e.target.value; seq.emit(); } }, ...[1, 2, 3, 4, 6, 8, 12, 16].map((b) => h('option', { value: b }, `${b} bar${b > 1 ? 's' : ''}`)));
   const snapSel = h('select', { title: 'Grid', 'aria-label': 'Grid', onchange: (e) => { seq.quant = +e.target.value; seq.emit(); } }, ...[[0.125, '1/32'], [0.25, '1/16'], [0.5, '1/8'], [1, '1/4'], [1 / 3, '1/8 triplet'], [0, 'free']].map(([v, l]) => h('option', { value: v }, l)));
   const stepB = h('button', { type: 'button', class: 'sw', title: 'Play notes one at a time into the pattern: each key (or chord) lands on the cursor, which then steps on', onclick: () => { ed.step = !ed.step; stepB.setAttribute('aria-pressed', ed.step); } }, h('i'), 'Step input');
@@ -212,8 +216,13 @@ export function buildSong(S, { COLORS, NAMES }) {
 
   const fillPaths = () => {
     const rec = [...new Set(seq.vars[seq.cur].filter((e) => e.k === 'm').map((e) => e.path))];
-    const label = (p) => { const r = P.range?.[p]; const grp = p.startsWith('cloud') ? 'Cloud' : p.startsWith('f1') ? 'Inst 1' : p.startsWith('f2') ? 'Inst 2' : p.startsWith('f3') ? 'Inst 3' : p.startsWith('fx') ? 'Textures' : p.startsWith('mix') ? 'Mix' : 'Band'; return `${grp} · ${r?.[2] || p.split('.').pop()}`; };
-    const all = Object.keys(P.range || {}).filter((p) => typeof P.get(p) === 'number' && !p.startsWith('band.')).sort((a, b) => label(a).localeCompare(label(b)));
+    const label = (p) => {
+      const r = P.range?.[p], lab = r?.[2] || p.split('.').pop(), f = /^f(\d)\./.exec(p);
+      if (p.startsWith('mix.')) { const k = p.split('.')[1], nm = S.strips[k]?.name || ({ space: 'Space', echo: 'Echo', master: 'Master' })[k] || k; return `Mix · ${String(lab).startsWith(nm) ? lab : `${nm} ${String(lab).toLowerCase()}`}`; }
+      if (p.startsWith('band.')) return `Mix · ${p === 'band.level' ? 'all stems' : lab}`;
+      return `${p.startsWith('cloud') ? 'Cloud' : f ? `Inst ${f[1]}` : p.startsWith('fx') ? 'Textures' : p === 'inst.level' ? 'Mix' : 'Other'} · ${lab}`;
+    };
+    const all = Object.keys(P.range || {}).filter((p) => typeof P.get(p) === 'number' && P.def[p] !== undefined && (!/^f\d\./.test(p) || S.slots[+p[1]])).sort((a, b) => label(a).localeCompare(label(b)));
     pathSel.replaceChildren(...(rec.length ? [h('optgroup', { label: 'Moved in this pattern' }, ...rec.map((p) => h('option', { value: p }, label(p))))] : []), h('optgroup', { label: 'Any knob' }, ...all.filter((p) => !rec.includes(p)).map((p) => h('option', { value: p }, label(p)))));
     if (!ed.path || ![...pathSel.options].some((o) => o.value === ed.path)) ed.path = rec[0] || 'fx.filter.lp';
     pathSel.value = ed.path;
@@ -233,8 +242,8 @@ export function buildSong(S, { COLORS, NAMES }) {
       const setTr = (d) => { seq.snapshot(); c.tr = clamp((c.tr || 0) + d, -24, 24); tr.textContent = `${c.tr > 0 ? '+' : ''}${c.tr}`; seq.emit(); };
       clipBar.append(h('span', { class: 'cap' }, `Clip at bar ${c.start + 1}`),
         h('div', { class: 'seg' }, btn('−', 'Transpose this clip down', () => setTr(-1), ''), tr, btn('+', 'Transpose this clip up', () => setTr(1), '')),
-        c.lane !== 'm' ? btn(`plays ${NAMES[c.part ?? c.lane].replace('Instrument ', 'Inst ')}'s part`, 'Which instrument\'s notes this clip plays (it always sounds as its own lane)', () => { seq.snapshot(); const order = [0, 1, 2, 3]; c.part = order[(order.indexOf(c.part ?? c.lane) + 1) % 4]; seq.emit(); showEd(); }) : '',
-        btn('Own copy', 'Give this clip a pattern of its own, so editing it changes nothing else', () => { const free = PATS.find((k) => !seq.used(k)); if (!free) return; seq.snapshot(); seq.vars[free] = structuredClone(seq.vars[c.pat]); seq.lens[free] = seq.lens[c.pat]; c.pat = free; seq.cur = free; seq.emit(); }),
+        c.lane !== 'm' ? btn(`plays ${NAMES[c.part ?? c.lane].replace('Instrument ', 'Inst ')}'s part`, 'Which instrument\'s notes this clip plays (it always sounds as its own lane)', () => { seq.snapshot(); const order = [...S.slots.keys()]; c.part = order[(order.indexOf(c.part ?? c.lane) + 1) % 4]; seq.emit(); showEd(); }) : '',
+        btn(isTake(c.pat) ? 'Make it a pattern' : 'Own copy', isTake(c.pat) ? 'Copy this recording into a free pattern, to reuse it anywhere' : 'Give this clip a pattern of its own, so editing it changes nothing else', () => { const free = PATS.find((k) => !seq.used(k)); if (!free) return; seq.snapshot(); seq.vars[free] = structuredClone(seq.vars[c.pat]); seq.lens[free] = seq.lens[c.pat]; c.pat = free; seq.cur = free; seq.emit(); }),
         btn('Delete', 'Remove this clip (Delete)', () => delSel()));
     }
   }
@@ -247,7 +256,7 @@ export function buildSong(S, { COLORS, NAMES }) {
       for (let b = 0; b < n; b++) { const v = bandAt(b); sg.fillStyle = '#ece8dc'; sg.globalAlpha = 0.15 + v * 0.5; sg.fillRect(b * bw, 60 - 8 - v * 38, Math.max(1, bw - 1), 8 + v * 38); }
       sg.globalAlpha = 1; for (const s of song.sections) { sg.fillStyle = '#6f747f'; sg.font = '10px "IBM Plex Mono", monospace'; sg.fillText(s.name, s.startCell * cb * bw + 3, 10); sg.fillRect(s.startCell * cb * bw, 0, 1, 60); }
       const span = c.loop || c.len; sg.fillStyle = '#e6b45040'; sg.fillRect(c.src * bw, 0, span * bw, 60); sg.fillStyle = '#e6b450'; sg.fillRect(c.src * bw, 0, 1.5, 60); sg.fillRect((c.src + span) * bw, 0, 1.5, 60);
-      title.textContent = `This clip plays bars ${c.src + 1}–${c.src + span} of the original${c.loop ? `, repeated` : ''} · ${c.len} bars long at bar ${c.start + 1}`;
+      title.textContent = `This clip plays bars ${c.src + 1}–${c.src + span} of the original stems${c.loop ? `, repeated` : ''} · ${c.len} bars long at bar ${c.start + 1}`;
     };
     let mdown = false;
     const setSrc = (e) => { const r = strip.getBoundingClientRect(); c.src = clamp(Math.floor((e.clientX - r.left) / r.width * song.numBars), 0, song.numBars - 1); drawMap(); };
@@ -256,7 +265,7 @@ export function buildSong(S, { COLORS, NAMES }) {
     strip.addEventListener('pointerup', () => { mdown = false; seq.changed(); });
     const loops = h('div', { class: 'seg' }, ...[[0, 'Plays on'], [1, '1'], [2, '2'], [4, '4'], [8, '8']].map(([v, l]) => { const b = h('button', { type: 'button', 'aria-pressed': (c.loop || 0) === v, onclick: () => { seq.snapshot(); c.loop = v || undefined; seq.changed(); showInspector(); } }, l); return b; }));
     const who = c.lane === 'band' ? h('div', { class: 'who' }, ...song.stems.map((st) => { const b = h('button', { type: 'button', class: 'pchip', 'aria-pressed': !(c.mute || []).includes(st.id), title: `${st.name} plays in this clip`, onclick: () => { seq.snapshot(); const m = new Set(c.mute || []); m.has(st.id) ? m.delete(st.id) : m.add(st.id); c.mute = [...m]; b.setAttribute('aria-pressed', !m.has(st.id)); seq.changed(); } }, st.name); return b; })) : '';
-    insp.replaceChildren(title, strip, h('div', { class: 'bar2' }, h('span', { class: 'cap' }, 'Repeat the first'), loops, h('span', { class: 'cap' }, 'bars'), h('span', { class: 'sp' }), btn('Delete clip', 'Remove this clip (Delete)', () => delSel())), c.lane === 'band' ? h('span', { class: 'cap' }, 'Who plays in this clip') : '', who);
+    insp.replaceChildren(title, strip, h('div', { class: 'bar2' }, h('span', { class: 'cap' }, 'Repeat the first'), loops, h('span', { class: 'cap' }, 'bars'), h('span', { class: 'sp' }), btn('Delete clip', 'Remove this clip (Delete)', () => delSel())), c.lane === 'band' ? h('span', { class: 'cap' }, 'Which stems play in this clip') : '', who);
   }
   const delSel = () => { if (!sel) return; seq.snapshot(); seq.arr.clips = seq.arr.clips.filter((c) => c !== sel); sel = null; seq.changed(); showEd(); };
 
@@ -342,7 +351,7 @@ export function buildSong(S, { COLORS, NAMES }) {
   const sync = () => {
     lenIn.value = seq.arr.bars; cycle.setAttribute('aria-pressed', !!seq.arr.cycle);
     undo.disabled = !seq.undos.length; redo.disabled = !seq.redos.length;
-    patSel.value = seq.cur; lenSel.value = seq.bars; snapSel.value = seq.quant;
+    fillPats(); patSel.value = seq.cur; lenSel.value = seq.bars; snapSel.value = seq.quant;
     jamNote.hidden = seq.mode === 'song';
     if (sel && !seq.arr.clips.includes(sel)) { sel = seq.arr.clips.find((c) => c.id === sel.id) || null; }
     showPats();
@@ -398,7 +407,7 @@ export function buildSong(S, { COLORS, NAMES }) {
             g.fillStyle = col; g.fillRect(xOf(t / bpb), py, Math.max(1.5, Math.min(e.d, endB - t) / bpb * pxb - 1), 2.5);
           }
         }
-        if (w > 26) { g.fillStyle = '#ece8dc'; g.font = '500 10px "IBM Plex Mono", monospace'; g.textBaseline = 'top'; g.fillText(`${cl.pat}${cl.part !== undefined && cl.part !== cl.lane && cl.lane !== 'm' ? `·${cl.part + 1}` : ''}${cl.tr ? ` ${cl.tr > 0 ? '+' : ''}${cl.tr}` : ''}`, x + 6, y + 3); }
+        if (w > 26) { g.fillStyle = '#ece8dc'; g.font = '500 10px "IBM Plex Mono", monospace'; g.textBaseline = 'top'; g.fillText(`${isTake(cl.pat) ? '● ' + takeName(cl.pat) : cl.pat}${cl.part !== undefined && cl.part !== cl.lane && cl.lane !== 'm' ? `·${cl.part + 1}` : ''}${cl.tr ? ` ${cl.tr > 0 ? '+' : ''}${cl.tr}` : ''}`, x + 6, y + 3); }
       }
       g.restore(); g.globalAlpha = 1;
     }
@@ -413,7 +422,7 @@ export function buildSong(S, { COLORS, NAMES }) {
     // ruler
     erg.clearRect(0, 0, ERW, 18); erg.font = '10px "IBM Plex Mono", monospace'; erg.textBaseline = 'middle';
     for (let b = 0; b < B; b++) { const x = KEYW + b * p; erg.fillStyle = b % bpb ? '#ffffff22' : '#ffffff55'; erg.fillRect(x, b % bpb ? 11 : 4, 1, 14); if (b % bpb === 0) { erg.fillStyle = '#6f747f'; erg.fillText(String(b / bpb + 1), x + 3, 8); } }
-    erg.fillStyle = '#6f747f'; erg.fillText(`${seq.cur}`, 6, 9);
+    erg.fillStyle = '#6f747f'; erg.fillText(isTake(seq.cur) ? `T${seq.cur.slice(1)}` : `${seq.cur}`, 6, 9);
     const lb = seq.loopBeat(); if (lb !== null) { erg.fillStyle = seq.rec ? '#df8a74' : '#ece8dc'; erg.fillRect(KEYW + lb * p, 0, 1.5, 18); }
     if (ed.step && ed.part !== 'm') { erg.fillStyle = '#e6b450'; erg.fillRect(KEYW + ed.cursor * p, 0, Math.max(2, step * p), 3); }
     eg.clearRect(0, 0, EW, EH);

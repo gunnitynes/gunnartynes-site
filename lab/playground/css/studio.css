@@ -302,3 +302,20 @@ body.songmode #t-play.on{box-shadow:0 0 0 3px #e6b45033}
 .transport .modesw button[aria-pressed=true]{background:var(--paper);color:var(--ground)}
 .deck-r>.row:first-child{flex-wrap:nowrap}.deck-r .rect{overflow:hidden;text-overflow:ellipsis;min-width:0}
 .mods2 .mod:first-child .viz{min-height:30px}
+/* v3.1: more instruments, record-into, mix scroll */
+.chips.many{grid-template-columns:1fr 1fr}.chips.many .chip{padding:3px 6px;font-size:11.5px}
+.into button{padding:4px 9px;font-size:10.5px}
+.forge{grid-template-columns:repeat(auto-fill,minmax(330px,1fr));grid-auto-rows:minmax(270px,1fr);overflow-y:auto}
+.addcard{align-items:center;justify-content:center;border-style:dashed;color:var(--dim);gap:6px;font:italic 400 19px var(--serif);cursor:pointer}
+.addcard:hover{color:var(--paper);border-color:#ffffff55}.addcard .plus{font:300 42px/1 var(--sans);color:var(--faint)}
+.card .rm{padding:2px 8px}
+.chwrap{display:flex;gap:6px;min-height:0;min-width:0;overflow-x:auto;flex:0 1 auto}
+.chs{display:flex;gap:6px}
+.band-mix{min-width:320px}
+#rooms button{white-space:nowrap;padding:6px 11px}
+.into button{white-space:nowrap}
+.deck-r>.row{flex-wrap:nowrap}.deck-r select{max-width:96px;font-size:11.5px;padding:4px 5px}
+.forge{grid-auto-rows:auto;align-content:start}.forge .card{min-height:300px}.forge .card .wave{min-height:110px}
+.forge .knobs.tight{row-gap:6px}
+.forge .card>*{flex-shrink:0}
+.forge{grid-auto-rows:max-content}

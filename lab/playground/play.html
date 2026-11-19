@@ -18,15 +18,15 @@
       <button type="button" id="t-rew" aria-label="Back to the start" title="Back to the start (Home)"><svg viewBox="0 0 20 20"><path d="M5 4v12" stroke="currentColor" stroke-width="1.8"/><path d="M16 4 8 10l8 6z"/></svg></button>
       <button type="button" id="t-play" aria-label="Play" title="Play or stop (Space)"><svg class="i-play" viewBox="0 0 20 20"><path d="M6 4v12l10-6z"/></svg><svg class="i-stop" viewBox="0 0 20 20"><path d="M5 5h10v10H5z"/></svg></button>
       <div class="where"><span class="pos mono" id="pos">001.1</span><span class="part mono" id="part"></span></div>
-      <div class="seg modesw" id="mode" title="Loop a pattern, or play the whole Song (Enter)"></div>
+      <div class="seg modesw" id="mode" title="Loop a pattern, or play the whole arrangement (Enter)"></div>
     </div>
     <div class="mixhead">
-      <button type="button" class="bandsw" id="band-sw" title="Switch the band on or off (B)"><i></i>Band</button>
+      <button type="button" class="bandsw" id="band-sw" title="Switch all the stems on or off (B)"><i></i>Stems</button>
       <div id="band-knob"></div><div id="inst-knob"></div>
     </div>
     <nav id="rooms" aria-label="Rooms">
-      <button type="button" data-room="song" title="The whole piece on a timeline: arrange, record, edit">Song</button>
-      <button type="button" data-room="arrange" title="The band: hold, follow and mix the musicians">Re-arrange</button>
+      <button type="button" data-room="song" title="The whole piece on a timeline: arrange, record, edit">Arrangement</button>
+      <button type="button" data-room="arrange" title="The stems: hold, follow and mix each one">Re-arrange</button>
       <button type="button" data-room="cloud" title="A granular instrument made of the stems">Cloud</button>
       <button type="button" data-room="forge" title="Instruments built from slices of the band">Forge</button>
       <button type="button" data-room="textures" title="Effects on everything">Textures</button>
@@ -53,7 +53,7 @@
       <p class="meta" id="gate-meta"></p>
       <p class="lede">The stems of a múm song, to take apart and make into something else.</p>
       <div class="loadbar"><i id="gate-bar"></i></div>
-      <p class="mono faint" id="gate-status">loading the band</p>
+      <p class="mono faint" id="gate-status">loading the stems</p>
       <button type="button" id="gate-go" disabled>Enter</button>
     </div>
   </div>

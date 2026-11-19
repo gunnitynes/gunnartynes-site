@@ -6,7 +6,7 @@ import { CellLoader } from '../engine/loader.js';
 import { Player } from '../engine/player.js';
 import { Session, initialState } from '../state/session.js';
 import { $, h, api } from '../lib/util.js';
-import { Params, loadSource, loudestCells, loudestWindow, sliceOf, CloudVoice, SamplerVoice, StringsVoice, buildTextures, Sequencer, PATS } from './core.js';
+import { Params, loadSource, loudestCells, loudestWindow, sliceOf, CloudVoice, SamplerVoice, StringsVoice, buildTextures, Sequencer, PATS, isTake, takeName } from './core.js';
 import { Wave, Keys, knob, group } from './ui.js';
 import { buildStrips, buildMixRoom } from './mixer.js';
 import { buildSong } from './song.js';
@@ -16,8 +16,10 @@ const params = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {} };
 window.studio = S;
 const NOTE = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
-const COLORS = ['#e6b450', '#9cc2f4', '#8fd3c5', '#f29ba0'];
-const NAMES = ['Cloud', 'Instrument 1', 'Instrument 2', 'Instrument 3'];
+const COLORS = ['#e6b450', '#9cc2f4', '#8fd3c5', '#f29ba0', '#c3a6f0', '#f0c08f', '#a8d68a', '#7fc9e8'];
+const NAMES = ['Cloud', 'Instrument 1', 'Instrument 2', 'Instrument 3', 'Instrument 4', 'Instrument 5', 'Instrument 6', 'Instrument 7'];
+const MAX_FORGE = 7;
+const short = (n) => n.replace('Instrument ', 'Inst ');
 const sec = (v) => (v < 1 ? `${Math.round(v * 1000)} ms` : `${v.toFixed(1)} s`);
 
 boot().catch((e) => { console.error(e); $('#gate-status').textContent = 'Could not load: ' + e.message; });
@@ -54,8 +56,9 @@ async function boot() {
   let retuneT = 0;
   S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (S.params.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; S.tex.retune(); }, 60); };
 
-  buildDeck(); buildHeader(); buildArrange(); buildCloud(); buildForge();
-  buildTexturesRoom(S, { seg, sw, recBtn }); buildMixRoom(S); buildSong(S, { COLORS, NAMES });
+  let savedN = 3; try { savedN = Math.max(3, Math.min(MAX_FORGE, JSON.parse(localStorage.getItem(KEY()))?.forges?.length || 3)); } catch { /* none */ }
+  buildDeck(); buildHeader(); buildArrange(); buildCloud(); buildForge(savedN);
+  buildTexturesRoom(S, { seg, sw, recBtn }); buildMixRoom(S, { recBtn }); buildSong(S, { COLORS, NAMES });
   const had = restore();
   if (!S.seq.arr.bars) S.seq.fillFromSong();
   if (!had) S.seq.setMode('song');
@@ -79,12 +82,12 @@ function buildHeader() {
   P.define('band.on', true, (v) => { S.bandGate.gain.setTargetAtTime(v ? 1 : 0, S.ctx.currentTime, 0.04); $('#band-sw').setAttribute('aria-pressed', v); document.body.classList.toggle('band-off', !v); });
   P.define('band.level', 0.9, (v) => S.engine.bus.gain.setTargetAtTime(v, S.ctx.currentTime, 0.05));
   $('#band-sw').onclick = () => P.set('band.on', !P.get('band.on'));
-  $('#band-knob').append(knob(P, 'band.level', 'Band'));
-  P.define('inst.level', 0.9, () => ['cloud', 'f1', 'f2', 'f3'].forEach((k) => S.strips[k].setFader()));
+  $('#band-knob').append(knob(P, 'band.level', 'Stems'));
+  P.define('inst.level', 0.9, () => Object.values(S.strips).forEach((st) => st.inst && st.setFader()));
   $('#inst-knob').append(knob(P, 'inst.level', 'Instruments'));
   $('#t-play').onclick = () => (player.playing ? player.stop() : player.play());
   $('#t-rew').onclick = () => session.dispatch({ t: 'seek', bar: S.seq.mode === 'song' && S.seq.arr.cycle ? S.seq.arr.cycle[0] : 0 });
-  const modeBtns = [['jam', 'Loop', 'Loop one pattern over the band as it is in Re-arrange'], ['song', 'Song', 'Play the arrangement on the Song timeline']].map(([m, l, t]) => h('button', { type: 'button', title: t, onclick: () => S.seq.setMode(m) }, l));
+  const modeBtns = [['jam', 'Pattern', 'Loop one pattern over the stems as they are in Re-arrange · Record goes into the pattern'], ['song', 'Arrangement', 'Play the arrangement timeline · Record goes straight onto it']].map(([m, l, t]) => h('button', { type: 'button', title: t, onclick: () => S.seq.setMode(m) }, l));
   $('#mode').append(...modeBtns);
   const showMode = () => { modeBtns.forEach((b, i) => b.setAttribute('aria-pressed', ['jam', 'song'][i] === S.seq.mode)); document.body.classList.toggle('songmode', S.seq.mode === 'song'); };
   S.seq.addEventListener('change', showMode); showMode();
@@ -96,7 +99,7 @@ function buildHeader() {
     else if (e.key === 'r' || e.key === 'R') toggleRec();
     else if (e.key === 'b' || e.key === 'B') P.set('band.on', !P.get('band.on'));
     else if (e.key === 'Home') session.dispatch({ t: 'seek', bar: 0 });
-    else if (/^[1-4]$/.test(e.key)) S.selectSlot(+e.key - 1);
+    else if (/^[1-8]$/.test(e.key) && S.slots[+e.key - 1]) S.selectSlot(+e.key - 1);
     else if (e.key === 'Enter' && !e.target.closest('button')) S.seq.setMode(S.seq.mode === 'song' ? 'jam' : 'song');
   });
 }
@@ -150,7 +153,7 @@ function buildArrange() {
     h('button', { type: 'button', class: 'pill', title: 'Let every musician play the song as written', onclick: () => jam() || session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'follow' }])) }) }, 'Everyone follows the song'),
     h('button', { type: 'button', class: 'pill', title: 'Keep every musician on the four bars playing now', onclick: () => { jam(); const c = Math.floor(Math.max(0, player.barNow()) / song.barsPerCell); session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'loop', cell: c }])) }); } }, 'Hold this moment'),
     h('span', { class: 'sp' }), h('span', { class: 'legend' }, h('i', { class: 'lf' }), 'plays the song', h('i', { class: 'lh' }), 'held on these 4 bars', h('i', { class: 'lo' }), 'waiting'));
-  const songNote = h('div', { class: 'arr-song' }, h('span', {}, 'The Song timeline is playing the band'), h('button', { type: 'button', class: 'pill on', onclick: () => jam() }, 'Hold and loop here instead'));
+  const songNote = h('div', { class: 'arr-song' }, h('span', {}, 'The Arrangement is playing the stems'), h('button', { type: 'button', class: 'pill on', onclick: () => jam() }, 'Hold and loop here instead'));
   room.append(tools, h('div', { class: 'arr' }, mixer, box, songNote));
   const showSong = () => { songNote.hidden = S.seq.mode !== 'song'; }; S.seq.addEventListener('change', showSong); showSong();
   const g = cv.getContext('2d'); let W = 0, H = 0;
@@ -235,15 +238,34 @@ function buildCloud() {
 
 // ------------------------------------------------------------------------------------------------ Forge
 const ENGINES = [['sampler', 'Sampler'], ['strings', 'Strings'], ['grains', 'Grain pad']];
-function buildForge() {
+function buildForge(count) {
   const room = $('#room-forge'), row = h('div', { class: 'forge' });
-  S.forges = [1, 2, 3].map((n) => makeForge(n));
-  row.append(...S.forges.map((f) => f.el));
-  room.append(row);
+  const add = h('button', { type: 'button', class: 'card addcard', title: 'Build another instrument from a slice of the stems', onclick: () => S.addInstrument() }, h('span', { class: 'plus' }, '+'), h('span', {}, 'Another instrument'), h('small', { class: 'cap' }, ''));
+  S.forges = [];
+  S.addInstrument = (init = true) => {
+    if (S.forges.length >= MAX_FORGE) return null;
+    const n = S.forges.length + 1, f = makeForge(n);
+    S.forges.push(f); row.insertBefore(f.el, add);
+    if (init) { f.init(); S.selectSlot(n); }
+    showAdd(); S.slotsChanged?.(); return f;
+  };
+  S.removeInstrument = () => {
+    const f = S.forges[S.forges.length - 1], n = S.forges.length; if (n <= 3) return;
+    if (!confirm(`Remove ${NAMES[n]}? Its clips leave the arrangement (you can undo that).`)) return;
+    S.seq.snapshot(); S.seq.arr.clips = S.seq.arr.clips.filter((c) => c.lane !== n); S.seq.changed();
+    Object.values(f.slot.voices).forEach((v) => v.panic?.()); f.out.disconnect(); f.el.remove(); S.forges.pop(); S.slots.length = n;
+    S.params.set(`mix.f${n}.mute`, true, { by: 'load' });
+    if (S.slotNow() >= n) S.selectSlot(0);
+    showAdd(); S.slotsChanged?.();
+  };
+  const showAdd = () => { add.hidden = S.forges.length >= MAX_FORGE; add.querySelector('small').textContent = `${MAX_FORGE - S.forges.length} more possible`; S.forges.forEach((f, i) => { f.rm.hidden = i !== S.forges.length - 1 || i < 3; }); };
+  row.append(add); room.append(row);
+  for (let i = 0; i < count; i++) S.addInstrument(false);
   S.rooms.forge = { draw: () => S.forges.forEach((f) => f.wave.draw()) };
 }
 function makeForge(n) {
-  const P = S.params, k = `f${n}`, out = S.ctx.createGain(); out.connect(S.strips[k].input);
+  const P = S.params, k = `f${n}`, out = S.ctx.createGain(); out.connect(S.addStrip(n).input);
+  S.params.set(`mix.${k}.mute`, false, { by: 'load' });
   const voices = { sampler: new SamplerVoice(S, out), strings: new StringsVoice(S, out), grains: new CloudVoice(S, out) };
   const slot = { name: NAMES[n], voices, get voice() { return voices[P.get(`${k}.engine`)]; } };
   S.slots[n] = slot;
@@ -261,7 +283,7 @@ function makeForge(n) {
     if (!same || !slot.picked) { const x = loudestWindow(src, 0.06); P.set(`${k}.sel`, `${x.toFixed(4)}:${(x + 0.06).toFixed(4)}`, { by: 'load' }); } reslice(); });
   P.define(`${k}.sel`, '0.2:0.3', reslice);
   const COMP = { sampler: 1, strings: 5, grains: 4.5 }, lvl = () => out.gain.setTargetAtTime((P.get(`${k}.level`) ?? 0.8) * COMP[P.get(`${k}.engine`)], S.ctx.currentTime, 0.03);
-  P.define(`${k}.engine`, ['sampler', 'strings', 'grains'][n - 1], () => { for (const v of Object.values(voices)) v.panic(); if (engineBox) showEngine(); lvl(); });
+  P.define(`${k}.engine`, ['sampler', 'strings', 'grains'][(n - 1) % 3], () => { for (const v of Object.values(voices)) v.panic(); if (engineBox) showEngine(); lvl(); });
   P.define(`${k}.level`, 0.8, lvl);
   const sm = (p, f) => (v) => voices.sampler.set({ [p]: f ? f(v) : v });
   P.define(`${k}.s.attack`, 0.02, sm('attack', (v) => 0.002 + v * v * 3)); P.define(`${k}.s.release`, 0.3, sm('release', (v) => 0.02 + v * v * 6));
@@ -284,19 +306,26 @@ function makeForge(n) {
   engineBox = h('div', { class: 'knobs tight' });
   function showEngine() { engineBox.replaceChildren(...sets[P.get(`${k}.engine`)](), knob(P, `${k}.level`, 'Level')); }
   showEngine();
+  const rm = h('button', { type: 'button', class: 'pill rm', title: `Remove ${NAMES[n]}`, onclick: () => S.removeInstrument() }, '×');
   const el = h('section', { class: 'card', style: { '--c': COLORS[n] }, onpointerdown: (e) => { if (!e.target.closest('select,button,.knob,.wave')) S.selectSlot(n); } },
-    h('header', {}, h('button', { type: 'button', class: 'slotname', title: `Play ${NAMES[n]} from the keys (${n + 1})`, onclick: () => S.selectSlot(n) }, h('i'), NAMES[n]), h('span', { class: 'sp' }), seg(P, `${k}.engine`, ENGINES, 'What the slice becomes')),
+    h('header', {}, h('button', { type: 'button', class: 'slotname', title: `Play ${NAMES[n]} from the keys (${n + 1})`, onclick: () => S.selectSlot(n) }, h('i'), NAMES[n]), h('span', { class: 'sp' }), seg(P, `${k}.engine`, ENGINES, 'What the slice becomes'), rm),
     h('div', { class: 'srcrow' }, picker, status), waveBox, engineBox);
   slot.card = el;
   const def = S.song.stems[(n * 5) % S.song.stems.length];
-  return { el, wave, slot, init: () => { const c = slot.src || { stemId: def.id, ...(([a, b]) => ({ a, b }))(loudestCells(def, 1)) }; picker.set(c.stemId, c.a, c.b); } };
+  return { el, wave, slot, out, rm, init: () => { const c = slot.src || { stemId: def.id, ...(([a, b]) => ({ a, b }))(loudestCells(def, 1)) }; picker.set(c.stemId, c.a, c.b); } };
 }
 
 // ------------------------------------------------------------------------------------------------ deck: instruments, keys, sequencer
 function buildDeck() {
   const { seq } = S;
   let slot = 0;
-  const chips = NAMES.map((nm, i) => h('button', { type: 'button', class: 'chip', style: { '--c': COLORS[i] }, title: `Play ${nm} from the keys (${i + 1})`, onclick: () => S.selectSlot(i) }, h('i'), nm));
+  const chipBox = h('div', { class: 'chips' });
+  let chips = [];
+  const n = () => Math.max(4, S.slots.length);
+  const buildChips = () => {
+    chips = NAMES.slice(0, n()).map((nm, i) => h('button', { type: 'button', class: 'chip', style: { '--c': COLORS[i] }, title: `Play ${nm} from the keys (${i + 1})`, onclick: () => S.selectSlot(i) }, h('i'), n() > 4 ? short(nm) : nm));
+    chipBox.replaceChildren(...chips); chipBox.classList.toggle('many', n() > 4); chips.forEach((c, k) => c.setAttribute('aria-pressed', k === slot));
+  };
   S.selectSlot = (i) => { slot = i; chips.forEach((c, k) => c.setAttribute('aria-pressed', k === i)); document.body.style.setProperty('--play', COLORS[i]); S.forges?.forEach((f, k) => f.slot.card?.classList.toggle('playing', k + 1 === i)); };
   const keysEl = h('div', { class: 'keybed' });
   const keys = new Keys(keysEl, (note, vel, on) => { const s = S.slots[slot]; if (!s) return; const id = `k${slot}:${note}`; if (on) s.voice.noteOn(id, note, vel); else s.voice.noteOff(id); S.stepNote?.(note, vel, on); seq.noteIn(slot, note, vel, on); });
@@ -313,31 +342,37 @@ function buildDeck() {
   const quant = h('select', { title: 'Snap notes to the grid', 'aria-label': 'Snap', onchange: (e) => { seq.quant = +e.target.value; seq.emit(); } }, ...[[0, 'free'], [0.125, 'snap 1/32'], [0.25, 'snap 1/16'], [0.5, 'snap 1/8'], [1, 'snap 1/4'], [1 / 3, 'snap 1/8 tri']].map(([v, l]) => h('option', { value: v }, l)));
   const chain = h('button', { type: 'button', class: 'sw', title: 'Loop mode: play the patterns that have something in them, one after another', onclick: () => { seq.chain = !seq.chain; seq.emit(); } }, h('i'), 'Chain');
   const clear = h('button', { type: 'button', class: 'pill', title: 'Empty this pattern', onclick: () => seq.clear() }, 'Clear');
-  const editB = h('button', { type: 'button', class: 'pill', title: 'Open this pattern in the editor on the Song page', onclick: () => { showRoom('song'); S.openEditor?.(slot); } }, 'Edit');
-  const LANES = [0, 1, 2, 3, 'm'];
-  const lanes = h('div', { class: 'lanes' }, ...LANES.map((l) => { const b = h('button', { type: 'button', class: 'lane', style: { '--c': l === 'm' ? '#a3a6ad' : COLORS[l] }, title: 'Click to mute this lane · double-click to empty it', onclick: () => { seq.mute.has(l) ? seq.mute.delete(l) : seq.mute.add(l); seq.emit(); }, ondblclick: () => seq.clearLane(l) }, h('i'), l === 'm' ? 'Moves' : NAMES[l].replace('Instrument ', 'Inst ')); b.dataset.l = l; return b; }));
+  const editB = h('button', { type: 'button', class: 'pill', title: 'Open this pattern in the editor on the Arrangement page', onclick: () => { showRoom('song'); S.openEditor?.(slot); } }, 'Edit');
+  const lanes = h('div', { class: 'lanes' });
+  const buildLanes = () => { const L = [...Array(n()).keys(), 'm']; lanes.style.gridTemplateRows = `repeat(${L.length},1fr)`; lanes.replaceChildren(...L.map((l) => { const b = h('button', { type: 'button', class: 'lane', style: { '--c': l === 'm' ? '#a3a6ad' : COLORS[l] }, title: 'Click to mute this lane · double-click to empty it', onclick: () => { seq.mute.has(l) ? seq.mute.delete(l) : seq.mute.add(l); seq.emit(); }, ondblclick: () => seq.clearLane(l) }, h('i'), l === 'm' ? 'Moves' : short(NAMES[l])); b.dataset.l = l; return b; })); };
+  const slotsChanged0 = S.slotsChanged; S.slotsChanged = () => { slotsChanged0?.(); buildChips(); buildLanes(); sync(); };
   const tl = h('div', { class: 'timeline', title: 'Double-click to edit this pattern' }), cv = h('canvas'); tl.append(cv);
   const recTarget = h('span', { class: 'cap rect' });
+  const intoBtns = [['jam', 'Pattern', 'Record into the pattern, looping'], ['song', 'Arrangement', 'Record straight onto the arrangement timeline, where the playhead is']].map(([m, l, t]) => h('button', { type: 'button', title: t, onclick: () => seq.setMode(m) }, l));
+  const into = h('div', { class: 'seg into' }, ...intoBtns);
   const g = cv.getContext('2d'); let W = 0, H = 0;
   new ResizeObserver(() => { const r = tl.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }).observe(tl);
   const sync = () => {
     vars.forEach((b) => { const v = b.textContent; b.setAttribute('aria-pressed', v === seq.cur); b.classList.toggle('has', seq.vars[v].length > 0); });
-    recTarget.textContent = seq.mode === 'song' ? (seq.take ? `recording a take into ${seq.take.pat}` : 'records a take onto the Song') : `records into ${seq.cur}`;
+    intoBtns[0].textContent = `Pattern ${isTake(seq.cur) ? (PATS.includes(seq.prevCur) ? seq.prevCur : 'A') : seq.cur}`;
+    intoBtns.forEach((b, i) => b.setAttribute('aria-pressed', ['jam', 'song'][i] === seq.mode));
+    recTarget.textContent = seq.take ? `recording ${takeName(seq.take.pat)}` : '';
     chain.setAttribute('aria-pressed', seq.chain); barsSel.value = seq.bars; quant.value = seq.quant;
     lanes.querySelectorAll('.lane').forEach((b) => { const l = b.dataset.l === 'm' ? 'm' : +b.dataset.l; b.classList.toggle('muted', seq.mute.has(l)); });
     document.body.classList.toggle('recording', seq.rec);
   };
   seq.addEventListener('change', sync); sync();
   $('#deck').append(
-    h('div', { class: 'deck-l' }, h('span', { class: 'cap' }, 'The keys play'), h('div', { class: 'chips' }, ...chips), h('div', { class: 'row' }, oct, midi)),
+    h('div', { class: 'deck-l' }, h('span', { class: 'cap' }, 'The keys play'), chipBox, h('div', { class: 'row' }, oct, midi)),
     keysEl,
-    h('div', { class: 'deck-r' }, h('div', { class: 'row' }, recBtn('Record'), recTarget, h('span', { class: 'sp' }), barsSel, quant, chain, editB, clear), h('div', { class: 'row' }, h('span', { class: 'cap' }, 'Pattern'), h('div', { class: 'seg vars' }, ...vars)), h('div', { class: 'seqbox' }, lanes, tl)));
+    h('div', { class: 'deck-r' }, h('div', { class: 'row' }, recBtn('Record'), h('span', { class: 'cap' }, 'into'), into, recTarget, h('span', { class: 'sp' }), chain, editB, clear), h('div', { class: 'row' }, h('span', { class: 'cap' }, 'Pattern'), h('div', { class: 'seg vars' }, ...vars), h('span', { class: 'sp' }), barsSel, quant), h('div', { class: 'seqbox' }, lanes, tl)));
   tl.addEventListener('dblclick', () => { showRoom('song'); S.openEditor?.(slot); });
+  buildChips(); buildLanes(); sync();
   showOct();
   S.rooms.deck = { draw: () => {
     if (!W) return; g.clearRect(0, 0, W, H);
-    const B = seq.beats, rh = H / 5, list = seq.vars[seq.cur], bpb = S.song.beatsPerBar;
-    for (let r = 0; r < 5; r++) { g.fillStyle = r % 2 ? '#ffffff06' : '#ffffff00'; g.fillRect(0, r * rh, W, rh); }
+    const R = n() + 1, B = seq.beats, rh = H / R, list = seq.vars[seq.cur], bpb = S.song.beatsPerBar;
+    for (let r = 0; r < R; r++) { g.fillStyle = r % 2 ? '#ffffff06' : '#ffffff00'; g.fillRect(0, r * rh, W, rh); }
     for (let b = 0; b <= B; b++) { g.fillStyle = b % bpb ? '#ffffff0c' : '#ffffff26'; g.fillRect((b / B) * W, 0, 1, H); }
     const moves = {};
     for (const e of list) {
@@ -345,7 +380,7 @@ function buildDeck() {
       else (moves[e.path] ??= []).push(e);
     }
     g.globalAlpha = seq.mute.has('m') ? 0.25 : 0.9; g.lineWidth = 1;
-    for (const [path, pts] of Object.entries(moves)) { g.strokeStyle = path.startsWith('cloud') ? COLORS[0] : path.startsWith('f1') ? COLORS[1] : path.startsWith('f2') ? COLORS[2] : path.startsWith('f3') ? COLORS[3] : '#a3a6ad'; pts.sort((a, b) => a.b - b.b); g.beginPath(); pts.forEach((e, i) => { const x = (e.b / B) * W, y = 4 * rh + 2 + (rh - 4) * (1 - Math.max(0, Math.min(1, e.v))); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); }
+    for (const [path, pts] of Object.entries(moves)) { const m = /^(?:mix\.)?f(\d)/.exec(path); g.strokeStyle = /^(mix\.)?cloud/.test(path) ? COLORS[0] : m ? COLORS[+m[1]] : '#a3a6ad'; const [mn, mx] = S.params.range?.[path] || [0, 1]; pts.sort((a, b) => a.b - b.b); g.beginPath(); pts.forEach((e, i) => { const x = (e.b / B) * W, y = (R - 1) * rh + 2 + (rh - 4) * (1 - Math.max(0, Math.min(1, (+e.v - mn) / (mx - mn || 1)))); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); }
     g.globalAlpha = 1;
     const lb = seq.loopBeat(); if (lb !== null) { g.fillStyle = seq.rec ? '#df8a74' : '#ece8dc'; g.fillRect((lb / B) * W, 0, 1.5, H); }
   } };
@@ -366,7 +401,7 @@ function frame() {
   const { player, song } = S;
   const songMode = S.seq.mode === 'song', raw = Math.max(0, songMode ? S.seq.tl(S.seq.nowBeat()) : player.beatNow()), bar = Math.floor(raw / song.beatsPerBar);
   $('#pos').textContent = `${String((songMode ? bar : bar % song.numBars) + 1).padStart(3, '0')}.${Math.floor(raw % song.beatsPerBar) + 1}`;
-  if (songMode) { const c = S.seq.arr.clips.find((x) => x.lane === 'band' && bar >= x.start && bar < x.start + x.len); $('#part').textContent = c ? (c.name && !c.loop ? `part ${c.name}` : `bar ${(c.src + (c.loop ? (bar - c.start) % c.loop : bar - c.start)) % song.numBars + 1} of the song`) : 'no band here'; }
+  if (songMode) { const c = S.seq.arr.clips.find((x) => x.lane === 'band' && bar >= x.start && bar < x.start + x.len); $('#part').textContent = c ? (c.name && !c.loop ? `part ${c.name}` : `bar ${(c.src + (c.loop ? (bar - c.start) % c.loop : bar - c.start)) % song.numBars + 1} of the song`) : 'no stems here'; }
   else { const s = song.sections.find((x) => bar / song.barsPerCell >= x.startCell && bar / song.barsPerCell < x.endCell); $('#part').textContent = s ? `part ${s.name}` : ''; }
   S.masterLevel = S.engine.meterLevel(mbuf);
   $('#master-meter').style.transform = `scaleX(${Math.min(1, S.masterLevel)})`;

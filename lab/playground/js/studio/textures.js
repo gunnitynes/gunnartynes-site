@@ -220,11 +220,28 @@ export function buildTexturesRoom(S, { seg, sw, recBtn }) {
     g.fillStyle = '#ffffff22'; g.fillRect(w / 2 - (w * 0.22 * wd), hh - 5, w * 0.44 * wd, 2);
   });
 
+  // ensemble: three drifting voices
+  const enviz = surface(); let enph = 0;
+  const ensMod = mod('Ensemble · chorus and vibrato', 'fx.ens.mix', ['fx.ens.mix', 'fx.ens.rate', 'fx.ens.depth', 'fx.ens.spread'], enviz.box,
+    row(knob(P, 'fx.ens.mix', 'Amount'), knob(P, 'fx.ens.rate', 'Speed', { fmt: (v) => `${(0.08 + 6 * v * v).toFixed(1)} Hz` }), knob(P, 'fx.ens.depth', 'Depth'), knob(P, 'fx.ens.spread', 'Spread')),
+    h('div', { class: 'subcap' }, sw(P, 'fx.ens.vib', 'Vibrato', 'Only the drifting voices: everything wavers in pitch'), h('span', { class: 'cap' }, 'three voices, each drifting on its own')));
+  draws.push(() => {
+    const { g, w, h: hh } = enviz; if (!w) return; g.clearRect(0, 0, w, hh);
+    const rate = 0.08 + 6 * P.get('fx.ens.rate') ** 2, dep = P.get('fx.ens.depth'), sp = P.get('fx.ens.spread'), amt = P.get('fx.ens.mix');
+    enph += rate / 60;
+    ['#e6b450', '#ece8dc', '#e6b450'].forEach((col, i) => {
+      const cx = w / 2 + (i - 1) * sp * w * 0.32; g.beginPath();
+      for (let y = 0; y <= hh; y += 3) { const x = cx + Math.sin((y / hh) * 6.28 * 1.5 + enph * 6.28 * (1 + i * 0.31) + i) * (4 + dep * w * 0.08); y ? g.lineTo(x, y) : g.moveTo(x, y); }
+      g.strokeStyle = col; g.globalAlpha = 0.3 + 0.7 * amt; g.lineWidth = 1.3; g.stroke();
+    });
+    g.globalAlpha = 1;
+  });
+
   // layout
   room.append(h('div', { class: 'tex2' },
     h('div', { class: 'padcol' },
       h('div', { class: 'bar2' }, segP('fx.xy.mode', [['gesture', 'Gesture'], ['morph', 'Morph']], 'What the pad does'), h('span', { class: 'sp' }), recBtn('Record')),
       pad, padHint, repeatMod),
-    h('div', { class: 'mods2' }, gateMod, filterMod, echoMod, tapeMod, resMod, shimMod, crushMod)));
+    h('div', { class: 'mods2' }, gateMod, filterMod, echoMod, tapeMod, resMod, shimMod, ensMod, crushMod)));
   S.rooms.textures = { draw: () => draws.forEach((d) => d()) };
 }

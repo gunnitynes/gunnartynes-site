@@ -149,6 +149,10 @@ export function buildTextures(studio) {
   eLo.type = 'lowpass'; eHi.type = 'highpass'; eHi.frequency.value = 160;
   const panL = c.createStereoPanner(), panR = c.createStereoPanner();
   const post = g();
+  // ensemble: three slowly drifting delay voices spread across the stereo field (chorus; vibrato when dry is off)
+  const ensIn = g(), ensDry = g(1), ensWet = g(0), ensOut = g();
+  const ens = [0, 1, 2].map((i) => { const d = c.createDelay(0.1); d.delayTime.value = 0.011 + i * 0.0065; const o = c.createOscillator(); o.frequency.value = 0.5; const og = g(0.002); o.connect(og).connect(d.delayTime); o.start(c.currentTime + i * 0.37); const pn = c.createStereoPanner(); pn.pan.value = (i - 1) * 0.7; ensIn.connect(d).connect(pn).connect(ensWet); return { d, o, og, pn }; });
+  ensIn.connect(ensDry).connect(ensOut); ensWet.connect(ensOut);
   // repeat, crush, width
   const rep = new AudioWorkletNode(c, 'repeat', { outputChannelCount: [2] });
   const crush = new AudioWorkletNode(c, 'crusher', { outputChannelCount: [2] });
@@ -160,7 +164,7 @@ export function buildTextures(studio) {
   res.connect(mid); res.connect(shIn).connect(shLong); shLong.connect(shTone).connect(shOut).connect(mid); shLong.connect(shift).connect(shFb).connect(shLong);
   mid.connect(post); mid.connect(eIn).connect(eL); eL.connect(eR); eR.connect(eLo).connect(eHi).connect(eFb).connect(eL);
   eL.connect(panL).connect(eOut); eR.connect(panR).connect(eOut); eOut.connect(post);
-  post.connect(rep).connect(crush).connect(split);
+  post.connect(ensIn); ensOut.connect(rep).connect(crush).connect(split);
   split.connect(wLL, 0); split.connect(wRL, 1); split.connect(wLR, 0); split.connect(wRR, 1);
   wLL.connect(merge, 0, 0); wRL.connect(merge, 0, 0); wLR.connect(merge, 0, 1); wRR.connect(merge, 0, 1);
   merge.connect(output);
@@ -207,6 +211,11 @@ export function buildTextures(studio) {
   P.define('fx.echo.fb', 0.45, (v) => eFb.gain.setTargetAtTime(v * 0.98, t(), 0.05));
   P.define('fx.echo.tone', 0.6, (v) => eLo.frequency.setTargetAtTime(500 * 30 ** v, t(), 0.05));
   P.define('fx.echo.spin', 0.6, (v) => { panL.pan.setTargetAtTime(-v, t(), 0.05); panR.pan.setTargetAtTime(v, t(), 0.05); });
+  const ensMix = () => { const m = P.get('fx.ens.mix') ?? 0, vib = P.get('fx.ens.vib'); ensWet.gain.setTargetAtTime(vib ? m * 1.1 : m * 0.75, t(), 0.05); ensDry.gain.setTargetAtTime(vib ? 1 - m : 1 - m * 0.3, t(), 0.05); };
+  P.define('fx.ens.mix', 0, ensMix); P.define('fx.ens.vib', false, ensMix);
+  P.define('fx.ens.rate', 0.3, (v) => ens.forEach((x, i) => x.o.frequency.setTargetAtTime((0.08 + 6 * v * v) * (1 + i * 0.31), t(), 0.05)));
+  P.define('fx.ens.depth', 0.4, (v) => ens.forEach((x) => x.og.gain.setTargetAtTime(0.0002 + v * v * 0.006, t(), 0.05)));
+  P.define('fx.ens.spread', 0.7, (v) => ens.forEach((x, i) => x.pn.pan.setTargetAtTime((i - 1) * v, t(), 0.05)));
   P.define('fx.rep.pitch', 0, (v) => rep.port.postMessage({ p: { rate: 2 ** (v / 12) } }));
   P.define('fx.rep.decay', 0.85, (v) => rep.port.postMessage({ p: { decay: 0.55 + v * 0.45 } }));
   P.define('fx.rep.steps', '0000000000000000');
@@ -237,6 +246,8 @@ function makeHall(ctx, seconds) {
 //         pattern clips play one instrument's part (or the moves) of a pattern, looped to the clip's length.
 // Recording in song mode makes a take: a fresh pattern, laid on the timeline as clips when you stop.
 export const PATS = 'ABCDEFGHIJKLMNOP'.split('');
+export const isTake = (k) => !PATS.includes(k);
+export const takeName = (k) => `take ${String(k).slice(1)}`;
 export class Sequencer extends EventTarget {
   constructor(studio) {
     super(); this.s = studio;
@@ -291,15 +302,15 @@ export class Sequencer extends EventTarget {
     else { const e = this.held.get(key); if (!e) return; this.held.delete(key); let d = b - e.start; if (d <= 0) d += this.wrap() < 1e8 ? this.wrap() : 0; e.d = +Math.max(this.quant || 0.1, this.quant ? Math.round(d / this.quant) * this.quant : d).toFixed(3); delete e.start; this.list.push(e); this.emit(); }
   }
   moveIn(path, value) {
-    if (!this.rec || !this.s.player.playing || typeof value !== 'number') return;
-    const b = +this.recBeat().toFixed(3), list = this.list;
+    if (!this.rec || !this.s.player.playing || (typeof value !== 'number' && typeof value !== 'boolean')) return;
+    const b = +this.recBeat().toFixed(3), list = this.list, val = typeof value === 'number' ? +value.toFixed(4) : value;
     this.touched.add(path);
     // the gesture being drawn now replaces what earlier passes left on this path, here; its own points all stay
     const last = this.lastMove?.[path];
     for (let i = list.length - 1; i >= 0; i--) { const e = list[i]; if (e.k !== 'm' || e.path !== path || e.p === this.pass) continue; const lo = last && last.p === this.pass ? last.b : b - 0.25; if (lo <= b ? e.b >= lo && e.b <= b + 0.01 : e.b >= lo || e.b <= b + 0.01) list.splice(i, 1); }
     // thin a fast gesture to about 1/32 of a beat
-    if (last && last.p === this.pass && Math.abs(b - last.b) < 0.03) { last.v = +value.toFixed(4); this.emit(); return; }
-    const ev = { k: 'm', path, v: +value.toFixed(4), b, p: this.pass }; list.push(ev); (this.lastMove ??= {})[path] = ev;
+    if (last && last.p === this.pass && Math.abs(b - last.b) < 0.03) { last.v = val; this.emit(); return; }
+    const ev = { k: 'm', path, v: val, b, p: this.pass }; list.push(ev); (this.lastMove ??= {})[path] = ev;
     this.emit();
   }
   clear(which = this.cur) { this.snapshot(); this.vars[which] = []; this.emit(); }
@@ -312,13 +323,14 @@ export class Sequencer extends EventTarget {
     this.emit();
   }
   startTake() {
-    const free = PATS.find((k) => !this.used(k)); if (!free) return;
+    let n = 1; while (this.vars['T' + n]) n++;
+    const free = 'T' + n; this.vars[free] = []; this.lens[free] = 4;
     const c = this.arr.cycle, bar = c ? c[0] : Math.floor(this.tl(this.nowBeat()) / this.bpb);
-    this.take = { pat: free, start: bar, len: c ? c[1] - c[0] : 0 }; this.cur = free;
+    this.take = { pat: free, start: bar, len: c ? c[1] - c[0] : 0 }; this.prevCur = this.cur; this.cur = free;
   }
   endTake() {
     const T = this.take; this.take = null;
-    const ev = this.vars[T.pat]; if (!ev.length) return;
+    const ev = this.vars[T.pat]; if (!ev.length) { delete this.vars[T.pat]; delete this.lens[T.pat]; this.cur = this.prevCur || 'A'; return; }
     let end = 0; for (const e of ev) end = Math.max(end, e.b + (e.d || 0.01));
     const len = T.len || Math.max(1, Math.ceil(end / this.bpb - 1e-6));
     this.lens[T.pat] = len;
@@ -359,7 +371,7 @@ export class Sequencer extends EventTarget {
       this.jamTracks = Object.fromEntries(st.order.map((id) => { const t = st.tracks[id]; return [id, { mode: t.mode === 'pattern' ? 'follow' : t.mode, cell: t.cell ?? 0 }]; }));
       this.mode = 'song'; this.applyBand();
     } else {
-      this.mode = 'jam';
+      this.mode = 'jam'; if (isTake(this.cur)) this.cur = PATS.includes(this.prevCur) ? this.prevCur : 'A';
       this.s.session.dispatch({ t: 'tracks/set', p: this.jamTracks || Object.fromEntries(st.order.map((id) => [id, { mode: 'follow' }])) }, { log: false });
     }
     this.last = -1; this.emit();
@@ -438,7 +450,7 @@ export class Sequencer extends EventTarget {
   dump() { return { vars: this.vars, lens: this.lens, cur: this.cur, quant: this.quant, chain: this.chain, mode: this.mode, arr: this.arr, uid: this.uid, jamTracks: this.jamTracks, mute: [...this.mute] }; }
   load(d) {
     if (!d) return;
-    const vars = Object.fromEntries(PATS.map((k) => [k, d.vars?.[k] || []])), lens = Object.fromEntries(PATS.map((k) => [k, d.lens?.[k] || d.bars || 4]));
+    const vars = { ...Object.fromEntries(PATS.map((k) => [k, []])), ...(d.vars || {}) }, lens = { ...Object.fromEntries(PATS.map((k) => [k, d.bars || 4])), ...(d.lens || {}) };
     Object.assign(this, { vars, lens, cur: d.cur || 'A', quant: d.quant ?? 0.25, chain: !!d.chain, arr: d.arr || { bars: 0, clips: [], cycle: null }, uid: d.uid || 1, jamTracks: d.jamTracks || null, mute: new Set(d.mute || []) });
     this.wantMode = d.mode || 'jam';
     this.emit();
