@@ -108,6 +108,6 @@ for (const d of readdirSync(OUT, { withFileTypes: true })) if (d.isDirectory() &
 list.forEach((e, i) => { mkdirSync(join(OUT, e.id), { recursive: true }); writeFileSync(join(OUT, e.id, 'index.html'), page(e, i)); });
 
 const today = new Date().toISOString().slice(0, 10);
-const urls = [[`${SITE}/`, '1.0'], [`${SITE}/about/`, '0.9'], ...(ARCH.length ? [[`${SITE}/archive/`, '0.8']] : []), [`${SITE}/live/`, '0.8'], [`${SITE}/play/`, '0.7'], [`${SITE}/booking/`, '0.6'], ...list.map(e => [`${SITE}/r/${e.id}/`, '0.5'])];
+const urls = [[`${SITE}/`, '1.0'], [`${SITE}/about/`, '0.9'], ...(ARCH.length ? [[`${SITE}/archive/`, '0.8']] : []), [`${SITE}/live/`, '0.8'], [`${SITE}/booking/`, '0.6'], ...list.map(e => [`${SITE}/r/${e.id}/`, '0.5'])];
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, p]) => `  <url><loc>${u}</loc><lastmod>${today}</lastmod><priority>${p}</priority></url>`).join('\n')}\n</urlset>\n`);
 console.log(`${list.length} release pages, sitemap with ${urls.length} addresses`);
