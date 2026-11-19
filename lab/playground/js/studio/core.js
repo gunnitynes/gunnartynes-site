@@ -179,6 +179,7 @@ export class Sequencer extends EventTarget {
   constructor(studio) {
     super(); this.s = studio; this.vars = { A: [], B: [], C: [], D: [] }; this.cur = 'A'; this.bars = 4;
     this.rec = false; this.on = true; this.chain = false; this.quant = 0.25; this.touched = new Set(); this.last = -1; this.held = new Map();
+    this.pass = 0; this.mute = new Set();
     setInterval(() => this.tick(), 25);
   }
   get beats() { return this.bars * this.s.song.beatsPerBar; }
@@ -187,7 +188,7 @@ export class Sequencer extends EventTarget {
   noteIn(slot, note, vel, on) {
     if (!this.rec || !this.s.player.playing) return;
     const b = this.loopBeat(), key = slot + ':' + note;
-    if (on) this.held.set(key, { k: 'n', slot, note, vel: +vel.toFixed(2), b: +this.q(b).toFixed(3), d: this.quant || 0.25, start: b });
+    if (on) this.held.set(key, { k: 'n', slot, note, vel: +vel.toFixed(2), b: +this.q(b).toFixed(3), d: this.quant || 0.25, start: b, p: this.pass });
     else { const e = this.held.get(key); if (!e) return; this.held.delete(key); let d = b - e.start; if (d <= 0) d += this.beats; e.d = +Math.max(this.quant || 0.1, this.quant ? Math.round(d / this.quant) * this.quant : d).toFixed(3); delete e.start; this.vars[this.cur].push(e); this.emit(); }
   }
   moveIn(path, value) {
@@ -195,11 +196,17 @@ export class Sequencer extends EventTarget {
     const b = +this.loopBeat().toFixed(3), list = this.vars[this.cur];
     this.touched.add(path);
     // replace this path's older moves within a beat of here, so a re-recorded gesture overwrites, not stacks
-    for (let i = list.length - 1; i >= 0; i--) { const e = list[i]; if (e.k === 'm' && e.path === path && Math.abs(e.b - b) < 0.24) list.splice(i, 1); }
-    list.push({ k: 'm', path, v: +value.toFixed(4), b });
+    // the gesture being drawn now replaces what earlier passes left on this path, here; its own points all stay
+    const last = this.lastMove?.[path];
+    for (let i = list.length - 1; i >= 0; i--) { const e = list[i]; if (e.k !== 'm' || e.path !== path || e.p === this.pass) continue; const lo = last && last.p === this.pass ? last.b : b - 0.25; if (lo <= b ? e.b >= lo && e.b <= b + 0.01 : e.b >= lo || e.b <= b + 0.01) list.splice(i, 1); }
+    // thin a fast gesture to about 1/32 of a beat
+    if (last && last.p === this.pass && Math.abs(b - last.b) < 0.03) { last.v = +value.toFixed(4); this.emit(); return; }
+    const ev = { k: 'm', path, v: +value.toFixed(4), b, p: this.pass }; list.push(ev); (this.lastMove ??= {})[path] = ev;
     this.emit();
   }
   clear(which = this.cur) { this.vars[which] = []; this.emit(); }
+  clearLane(lane) { this.vars[this.cur] = this.vars[this.cur].filter((e) => (lane === 'm' ? e.k !== 'm' : !(e.k === 'n' && e.slot === lane))); this.emit(); }
+  arm(on) { this.rec = on; if (on) { this.pass = (this.pass || 0) + 1; this.lastMove = {}; } this.emit(); }
   tick() {
     const p = this.s.player; if (!p.playing || !this.on) { this.last = -1; return; }
     const now = p.ctx.currentTime, la = 0.12, B = this.beats;
@@ -214,11 +221,11 @@ export class Sequencer extends EventTarget {
       for (const e of list) {
         const ab = loop * B + e.b; if (ab < from || ab >= to) continue;
         const at = p.bar0 + ab * p.beatDur;
-        if (e.k === 'n') { const ins = this.s.slots[e.slot]; if (!ins) continue; const id = `q${e.slot}:${e.note}:${ab}`; ins.voice.noteOn(id, e.note, e.vel, at); ins.voice.noteOff(id, at + e.d * p.beatDur); this.s.flashNote?.(e.slot, e.note, at, e.d * p.beatDur); }
-        else if (!(this.rec && this.touched.has(e.path))) setTimeout(() => this.s.params.set(e.path, e.v, { by: 'seq' }), Math.max(0, (at - now) * 1000));
+        if (e.k === 'n') { const ins = this.s.slots[e.slot]; if (!ins || this.mute.has(e.slot)) continue; const id = `q${e.slot}:${e.note}:${ab}`; ins.voice.noteOn(id, e.note, e.vel, at); ins.voice.noteOff(id, at + e.d * p.beatDur); this.s.flashNote?.(e.slot, e.note, at, e.d * p.beatDur); }
+        else if (!this.mute.has('m') && !(this.rec && this.touched.has(e.path))) setTimeout(() => this.s.params.set(e.path, e.v, { by: 'seq' }), Math.max(0, (at - now) * 1000));
       }
     }
-    if (loopsTo > loopsFrom) this.touched.clear();
+    if (loopsTo > loopsFrom) { this.touched.clear(); if (this.rec) { this.pass++; this.lastMove = {}; } }
     this.last = to;
   }
   dump() { return { vars: this.vars, cur: this.cur, bars: this.bars, quant: this.quant, chain: this.chain }; }

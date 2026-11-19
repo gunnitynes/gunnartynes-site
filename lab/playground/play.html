@@ -13,37 +13,31 @@
 </head>
 <body>
   <header id="bar">
-    <a class="home" href="/" title="gunnartynes.com">gunnar tynes</a>
-    <span class="crumb">Playground</span>
-    <span class="song" id="song">…</span>
+    <div class="id"><a class="home" href="/" title="gunnartynes.com">gunnar tynes</a><span class="crumb">Playground</span><span class="song" id="song">…</span></div>
     <div class="transport">
-      <button type="button" id="t-rew" aria-label="Back to the start" title="Back to the start (Home)"><svg viewBox="0 0 20 20"><path d="M5 4v12M16 4 8 10l8 6z"/></svg></button>
+      <button type="button" id="t-rew" aria-label="Back to the start" title="Back to the start (Home)"><svg viewBox="0 0 20 20"><path d="M5 4v12" stroke="currentColor" stroke-width="1.8"/><path d="M16 4 8 10l8 6z"/></svg></button>
       <button type="button" id="t-play" aria-label="Play" title="Play or stop (Space)"><svg class="i-play" viewBox="0 0 20 20"><path d="M6 4v12l10-6z"/></svg><svg class="i-stop" viewBox="0 0 20 20"><path d="M5 5h10v10H5z"/></svg></button>
-      <span class="pos mono" id="pos">001.1</span>
-      <span class="part mono" id="part"></span>
+      <div class="where"><span class="pos mono" id="pos">001.1</span><span class="part mono" id="part"></span></div>
     </div>
-    <div class="mastermeter" title="Master level"><i id="master-meter"></i></div>
+    <div class="mixhead">
+      <button type="button" class="bandsw" id="band-sw" title="Switch the band on or off (B)"><i></i>Band</button>
+      <div id="band-knob"></div><div id="inst-knob"></div>
+    </div>
     <nav id="rooms" aria-label="Rooms">
-      <button type="button" data-room="arrange">Re-arrange</button>
-      <button type="button" data-room="cloud">Cloud</button>
-      <button type="button" data-room="forge">Forge</button>
-      <button type="button" data-room="textures">Textures</button>
+      <button type="button" data-room="arrange" title="The band: hold, follow and mix the musicians">Re-arrange</button>
+      <button type="button" data-room="cloud" title="A granular instrument made of the stems">Cloud</button>
+      <button type="button" data-room="forge" title="Instruments built from slices of the band">Forge</button>
+      <button type="button" data-room="textures" title="Effects on everything">Textures</button>
     </nav>
+    <div class="mastermeter" title="Master level"><i id="master-meter"></i></div>
   </header>
 
-  <div id="wrap">
-    <aside id="band" aria-label="The band">
-      <h3>The band</h3>
-      <ul id="band-list"></ul>
-      <div id="band-master"></div>
-    </aside>
-    <main>
-      <section class="room" id="room-arrange" hidden></section>
-      <section class="room" id="room-cloud" hidden></section>
-      <section class="room" id="room-forge" hidden></section>
-      <section class="room" id="room-textures" hidden></section>
-    </main>
-  </div>
+  <main>
+    <section class="room" id="room-arrange" hidden></section>
+    <section class="room" id="room-cloud" hidden></section>
+    <section class="room" id="room-forge" hidden></section>
+    <section class="room" id="room-textures" hidden></section>
+  </main>
 
   <footer id="deck"></footer>
 
@@ -52,11 +46,10 @@
       <p class="eyebrow">Playground</p>
       <h1 id="gate-title">…</h1>
       <p class="meta" id="gate-meta"></p>
-      <p class="lede">The stems of a múm song, to take apart and make into something else: granular clouds, instruments forged from a single moment of the band, a rack of textures, and a sequencer that remembers every move.</p>
+      <p class="lede">The stems of a múm song, to take apart and make into something else.</p>
       <div class="loadbar"><i id="gate-bar"></i></div>
       <p class="mono faint" id="gate-status">loading the band</p>
       <button type="button" id="gate-go" disabled>Enter</button>
-      <p class="mono faint keys">space play · A–L keys play the instrument · R record moves · 1–4 choose the instrument</p>
     </div>
   </div>
   <script type="module" src="js/studio/main.js"></script>

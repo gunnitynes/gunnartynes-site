@@ -43,7 +43,7 @@ export class Wave {
     new ResizeObserver(r).observe(el); r();
     let down = null;
     const pos = (e) => { const b = this.cv.getBoundingClientRect(); return [Math.max(0, Math.min(1, (e.clientX - b.left) / b.width)), Math.max(0, Math.min(1, 1 - (e.clientY - b.top) / b.height))]; };
-    this.cv.addEventListener('pointerdown', (e) => { this.cv.setPointerCapture(e.pointerId); const [x, y] = pos(e); down = x; if (this.sel) { this.sel = [x, x]; } if (this.xy) this.onPoint?.(x, y); });
+    this.cv.addEventListener('pointerdown', (e) => { try { this.cv.setPointerCapture(e.pointerId); } catch { /* synthetic */ } const [x, y] = pos(e); down = x; if (this.sel) { this.sel = [x, x]; } if (this.xy) this.onPoint?.(x, y); });
     this.cv.addEventListener('pointermove', (e) => { if (down === null) return; const [x, y] = pos(e); if (this.sel) this.sel = [down, x]; if (this.xy) this.onPoint?.(x, y); });
     this.cv.addEventListener('pointerup', () => { if (down === null) return; down = null; if (this.sel) { if (Math.abs(this.sel[1] - this.sel[0]) < 0.004) { const c = this.sel[0]; this.sel = [Math.max(0, c - 0.03), Math.min(1, c + 0.03)]; } this.sel.sort((a, b) => a - b); this.onPick?.(...this.sel); } });
   }
@@ -104,3 +104,35 @@ export class Keys {
   }
   paint() { const now = performance.now(); this.el.querySelectorAll('.k').forEach((k) => { const n = +k.dataset.n; k.classList.toggle('on', this.down.has(n) || (this.lit.get(n) || 0) > now); }); }
 }
+
+/** A ring knob bound to a param path: drag up/down (Shift for fine), wheel, arrows; double-click resets. */
+export function knob(P, path, label, { min = 0, max = 1, step = 0, fmt = (v) => Math.round(((v - min) / (max - min)) * 100), bipolar = false } = {}) {
+  const NS = 'http://www.w3.org/2000/svg', R = 15, C = 20;
+  const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 40 40');
+  const arc = (a0, a1) => { const p = (a) => [C + R * Math.cos(a), C + R * Math.sin(a)], [x0, y0] = p(a0), [x1, y1] = p(a1); return `M${x0} ${y0}A${R} ${R} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}`; };
+  const A0 = Math.PI * 0.75, SPAN = Math.PI * 1.5;
+  const mk = (cls) => { const e = document.createElementNS(NS, 'path'); e.setAttribute('class', cls); svg.append(e); return e; };
+  const track = mk('kt'); track.setAttribute('d', arc(A0, A0 + SPAN)); const fill = mk('kf');
+  const cap = document.createElementNS(NS, 'circle'); cap.setAttribute('r', 2.6); cap.setAttribute('class', 'kc'); svg.append(cap);
+  const val = h('span', { class: 'kv' });
+  const el = h('div', { class: 'knob', tabindex: 0, role: 'slider', 'aria-label': label, title: `${label} · drag, or double-click to reset` }, svg, val, h('span', { class: 'kl' }, label));
+  const k = () => (P.get(path) - min) / (max - min);
+  const show = () => {
+    const t = Math.max(0, Math.min(1, k())), a = A0 + t * SPAN, from = bipolar ? A0 + SPAN / 2 : A0;
+    fill.setAttribute('d', Math.abs(a - from) < 0.01 ? '' : a > from ? arc(from, a) : arc(a, from));
+    cap.setAttribute('cx', C + R * Math.cos(a)); cap.setAttribute('cy', C + R * Math.sin(a));
+    val.textContent = fmt(P.get(path)); el.setAttribute('aria-valuenow', P.get(path));
+  };
+  const setK = (t) => { let v = min + Math.max(0, Math.min(1, t)) * (max - min); if (step) v = Math.round(v / step) * step; P.set(path, +v.toFixed(5)); };
+  let y0 = null, k0 = 0;
+  el.addEventListener('pointerdown', (e) => { el.setPointerCapture(e.pointerId); y0 = e.clientY + e.clientX * 0; k0 = k(); el.classList.add('on'); el.x0 = e.clientX; });
+  el.addEventListener('pointermove', (e) => { if (y0 === null) return; const d = (y0 - e.clientY + (e.clientX - el.x0) * 0.5) / (e.shiftKey ? 600 : 160); setK(k0 + d); });
+  const up = () => { y0 = null; el.classList.remove('on'); }; el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  el.addEventListener('dblclick', () => P.reset(path));
+  el.addEventListener('wheel', (e) => { e.preventDefault(); setK(k() - Math.sign(e.deltaY) * (step ? step / (max - min) : 0.03)); }, { passive: false });
+  el.addEventListener('keydown', (e) => { const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key]; if (!d) return; e.preventDefault(); e.stopPropagation(); setK(k() + d * (step ? step / (max - min) : 0.02)); });
+  P.on(({ path: p }) => { if (p === path) show(); }); show();
+  return el;
+}
+/** A labelled group of knobs and switches. */
+export const group = (title, ...kids) => h('div', { class: 'grp' }, h('span', { class: 'gl' }, title), h('div', { class: 'gk' }, ...kids));
