@@ -7,6 +7,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Playground</title>
+  <script>
+    // phones get the pocket version, made for touch and motion (?desktop=1 keeps the full studio)
+    (() => { const q = new URLSearchParams(location.search); if (q.has('desktop')) return; if (matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 600) location.replace('phone.html' + location.search.replace(/([?&])room=[^&]*&?/, '$1')); })();
+  </script>
   <link rel="stylesheet" href="/fonts/fonts.css">
   <link rel="stylesheet" href="css/studio.css">
 </head>
