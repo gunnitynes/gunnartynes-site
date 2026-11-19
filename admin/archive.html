@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Archive Admin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--ground:#11141b;--plate:#1a1e28;--plate2:#242936;--rule:#ffffff1c;--paper:#ece8dc;--dim:#a3a6ad;--faint:#6f747f;--ok:#62b8ab;--bad:#df8a74;
+  --serif:"Newsreader",Georgia,serif;--sans:"Instrument Sans","Helvetica Neue",Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{height:100%;margin:0}body{background:var(--ground);color:var(--paper);font:15px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font:inherit;color:inherit}button{background:none;border:1px solid var(--rule);border-radius:3px;padding:7px 12px;cursor:pointer}button:hover{border-color:#ffffff50}
+button.solid{background:var(--paper);color:var(--ground);border-color:var(--paper)}button.danger{color:var(--bad)}.quiet{border:0;padding:3px 0;color:var(--dim);font-size:14px;text-decoration:none;background:none;cursor:pointer}.quiet:hover{color:var(--paper)}
+input,select,textarea{width:100%;min-width:0;background:var(--ground);border:1px solid var(--rule);border-radius:3px;padding:8px 9px}label{font-size:13px;color:var(--dim);display:block}label input,label select,label textarea{margin-top:4px;color:var(--paper)}
+:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+#gate{max-width:440px;margin:12vh auto;padding:0 20px}#gate h1,#side h1{font:400 26px/1.1 var(--serif);margin:0}#gate p{color:var(--dim)}
+#app{display:grid;grid-template-columns:360px 1fr;height:100%}
+#side{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--rule)}#sideTop{padding:14px 16px;border-bottom:1px solid var(--rule);display:grid;gap:9px}
+.bar{display:flex;align-items:center;gap:14px}.spacer{flex:1}#counts{font:12px var(--mono);color:var(--dim)}
+#list{list-style:none;margin:0;padding:0;overflow:auto;flex:1}#list button{width:100%;text-align:left;border:0;border-bottom:1px solid var(--rule);border-radius:0;padding:8px 16px;display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center}
+#list button.on{background:var(--plate2)}#list img{width:52px;height:52px;object-fit:cover;background:var(--plate2)}#list time{font:12px var(--mono);color:var(--dim);display:block}#list strong{font-weight:500;display:block}#list span{color:var(--dim);font-size:13px}
+#main{overflow:auto;padding:22px 26px 90px}#main h2{font:italic 400 28px/1.15 var(--serif);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;max-width:760px}.full{grid-column:1/-1}.help{font-size:13px;color:var(--faint);margin:6px 0 0;max-width:62ch}
+.drop{border:1px dashed #ffffff40;padding:18px;text-align:center;color:var(--dim);cursor:pointer;display:block;font-size:14px;border-radius:3px}.drop.over{border-color:var(--paper);color:var(--paper)}
+#pic{max-width:340px;max-height:340px;display:block;margin:0 0 12px;box-shadow:0 10px 30px #0008}
+#saveBar{display:flex;gap:10px;align-items:center;margin-top:20px;max-width:760px;flex-wrap:wrap}.back{display:none;margin-bottom:12px}
+#status{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--plate2);padding:9px 14px;border-radius:3px;font-size:14px;display:none;z-index:9;max-width:90vw}#status.show{display:block}#status.ok{color:var(--ok)}#status.bad{color:var(--bad)}
+@media(max-width:760px){#app{grid-template-columns:1fr;height:auto}body.open #side{display:none}body:not(.open) #main{display:none}#side{height:100dvh}.back{display:inline-block}}
+</style></head><body>
+<div id="gate" hidden><h1>Archive admin</h1><p>Sign in on the <a href="./" style="color:var(--paper)">main admin page</a> first. This page uses the same key.</p><div id="gateMsg" role="alert" style="color:var(--bad)"></div></div>
+<div id="app" hidden>
+  <aside id="side"><div id="sideTop">
+    <div class="bar"><h1>Archive</h1><span class="spacer"></span><a class="quiet" href="./">Releases</a><a class="quiet" href="concerts.html">Concerts</a><a class="quiet" href="../archive/" target="_blank" rel="noopener">See the page</a></div>
+    <button id="addBtn">Add something</button><div id="counts"></div></div><ul id="list"></ul></aside>
+  <main id="main"><p id="empty" style="color:var(--dim);max-width:60ch">Add a setlist, poster, ticket, notebook page, studio photo or anything else, with the year it belongs to. Saving publishes it to the Archive page within two minutes. Link it to a release and it also shows in that release's details.</p><form id="form" hidden autocomplete="off"></form></main>
+</div>
+<div id="status" role="status"></div>
+<script>
+'use strict';
+const REPO='gunnitynes/gunnartynes-site',BRANCH='main',FILE='archive.js';
+const KINDS=['Setlist','Poster','Ticket','Notebook','Lyrics','Studio','Photo','Cassette','Letter','Press','Other'];
+const apiParam=new URLSearchParams(location.search).get('api');
+const API=apiParam&&/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?apiParam:'https://api.github.com';
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let token='',data=null,openId=null,isNew=false,saving=false,pic=null,REL=[];
+async function gh(path,opt={}){
+  const r=await fetch(API+path,{method:opt.method||'GET',cache:'no-store',headers:{Authorization:'Bearer '+token,Accept:opt.raw?'application/vnd.github.raw+json':'application/vnd.github+json',...(opt.body?{'Content-Type':'application/json'}:{})},body:opt.body?JSON.stringify(opt.body):undefined});
+  if(!r.ok){const e=new Error('GitHub answered '+r.status);e.status=r.status;throw e}
+  return opt.raw?r.text():r.json();
+}
+const repo=p=>`/repos/${REPO}${p}`;
+function parse(text){const m=text.match(/window\.ARCHIVE\s*=\s*([\s\S]*?);\s*$/);if(!m)throw new Error('The archive file could not be read.');return JSON.parse(m[1])}
+function serialize(d){d.items.sort((a,b)=>(a.d||a.y+'')<(b.d||b.y+'')?-1:1);return '// Edited through /admin/archive.html. Each saved version is in the repository history.\nwindow.ARCHIVE='+JSON.stringify(d)+';\n'}
+/* One save is one commit, re-reading the file first; files with b64:null are removed. */
+async function commit(change,message,files=[],attempt=0){
+  const ref=await gh(repo(`/git/ref/heads/${BRANCH}`)),base=ref.object.sha,baseCommit=await gh(repo(`/git/commits/${base}`));
+  const text=await gh(repo(`/contents/${FILE}?ref=${base}`),{raw:true});
+  const out=serialize(change(parse(text)));const tree=[];
+  for(const f of files){if(f.b64==null){tree.push({path:f.path,mode:'100644',type:'blob',sha:null});continue}const fb=await gh(repo('/git/blobs'),{method:'POST',body:{content:f.b64,encoding:'base64'}});tree.push({path:f.path,mode:'100644',type:'blob',sha:fb.sha})}
+  const b=await gh(repo('/git/blobs'),{method:'POST',body:{content:out,encoding:'utf-8'}});tree.push({path:FILE,mode:'100644',type:'blob',sha:b.sha});
+  const t=await gh(repo('/git/trees'),{method:'POST',body:{base_tree:baseCommit.tree.sha,tree}});
+  const c=await gh(repo('/git/commits'),{method:'POST',body:{message,tree:t.sha,parents:[base]}});
+  try{await gh(repo(`/git/refs/heads/${BRANCH}`),{method:'PATCH',body:{sha:c.sha}})}
+  catch(e){if(attempt<2&&(e.status===422||e.status===409))return commit(change,message,files,attempt+1);throw e}
+  return{text:out,data:parse(out)};
+}
+function friendly(e){
+  if(e.status===401)return 'GitHub rejected the access key. It may have expired, so create a new one on the main admin page.';
+  if(e.status===403||e.status===404)return 'This key can\'t write to the repository. Check that it has Contents set to Read and write.';
+  if(e instanceof TypeError)return 'Couldn\'t reach GitHub. Check your connection and try again. Nothing was saved.';
+  return e.message;
+}
+let statusTimer=0;
+function status(msg,kind,sticky){const s=$('#status');s.textContent=msg;s.className='show '+(kind||'');clearTimeout(statusTimer);if(!sticky)statusTimer=setTimeout(()=>{s.className=''},7000)}
+let watchToken=0;
+async function watchLive(text){
+  const mine=++watchToken,t0=Date.now();status('Saved. Going live, usually within two minutes…','',true);
+  while(Date.now()-t0<300000){await new Promise(r=>setTimeout(r,6000));if(mine!==watchToken)return;try{const live=await (await fetch('../archive.js?t='+Date.now(),{cache:'no-store'})).text();if(live===text){status('Live on the site.','ok');return}}catch(e){}}
+  if(mine===watchToken)status('Saved, but still not live after five minutes. It should appear soon.');
+}
+function renderList(){
+  $('#counts').textContent=`${data.items.length} ${data.items.length===1?'thing':'things'} in the archive`;
+  $('#list').innerHTML=data.items.slice().reverse().map(it=>`<li><button type="button" data-id="${esc(it.id)}" class="${it.id===openId?'on':''}"><img src="../${esc(it.th||it.img)}" alt=""><span><time>${esc(it.d||it.y)}</time><strong>${esc(it.t||it.kind)}</strong><span>${esc(it.kind||'')}${it.rel?' · '+esc(it.rel.t):''}</span></span></button></li>`).join('')||'<li style="padding:16px;color:var(--dim)">Nothing yet.</li>';
+}
+$('#list').addEventListener('click',ev=>{const b=ev.target.closest('[data-id]');if(b)openEditor(b.dataset.id)});
+$('#addBtn').onclick=()=>openEditor(null);
+function fld(label,n,v,o={}){return `<label${o.full?' class="full"':''}>${label}${o.area?`<textarea name="${n}" rows="${o.area}">${esc(v)}</textarea>`:o.select?`<select name="${n}">${o.select.map(([k,l])=>`<option value="${esc(k)}"${k===v?' selected':''}>${esc(l)}</option>`).join('')}</select>`:`<input name="${n}" value="${esc(v==null?'':v)}"${o.ph?` placeholder="${esc(o.ph)}"`:''}${o.req?' required':''}${o.type?` type="${o.type}"`:''}>`}</label>`}
+function openEditor(id){
+  isNew=id==null;openId=id;pic=null;
+  const it=isNew?{y:'',kind:'Setlist'}:data.items.find(x=>x.id===id);if(!it)return;
+  $('#empty').hidden=true;const f=$('#form');f.hidden=false;document.body.classList.add('open');
+  f.innerHTML=`<button type="button" class="back" id="back">← The archive</button><h2>${isNew?'Something new':esc(it.t||it.kind)}</h2>
+  <img id="pic" alt="" ${it.img?`src="../${esc(it.img)}"`:'hidden'}>
+  <label class="drop" id="drop">${isNew?'Drop a photo or scan here, or tap to choose':'Replace the picture: drop one here, or tap to choose'}<input type="file" id="picIn" accept="image/*" hidden></label>
+  <p class="help">Pictures are made smaller in your browser before they are uploaded. Use only pictures you have the right to show.</p>
+  <div class="grid" style="margin-top:14px">
+    ${fld('Year','y',it.y,{req:1,type:'number'})}${fld('Exact date, if known','d',it.d||'',{ph:'YYYY-MM-DD or YYYY-MM'})}
+    ${fld('What it is','kind',it.kind||'Other',{select:KINDS.map(k=>[k,k])})}${fld('Title','t',it.t||'',{ph:'Setlist, Paradiso, Amsterdam'})}
+    ${fld('A line or two about it','cap',it.cap||'',{full:1,area:3})}
+    ${fld('Whose it is, or who took it','by',it.by||'',{full:1,ph:'Optional, e.g. Örvar\'s notebook or Photo: Sam Hiscox'})}
+    ${fld('Belongs to a release','rel',it.rel?it.rel.id:'',{full:1,select:[['','No release'],...REL.map(e=>[e.id,`${e.year} · ${e.title} · ${e.artist}`])]})}
+  </div>
+  <div id="saveBar"><button type="submit" class="solid" id="saveBtn">Save and publish</button><span class="spacer"></span>${isNew?'':'<button type="button" class="danger" id="delBtn">Remove from the archive</button>'}</div>`;
+  $('#back').onclick=()=>{openId=null;f.hidden=true;$('#empty').hidden=false;document.body.classList.remove('open');renderList()};
+  const pi=$('#picIn'),dr=$('#drop');pi.onchange=()=>takePic(pi.files[0]);
+  ['dragenter','dragover'].forEach(n=>dr.addEventListener(n,e=>{e.preventDefault();dr.classList.add('over')}));['dragleave','drop'].forEach(n=>dr.addEventListener(n,e=>{e.preventDefault();dr.classList.remove('over')}));dr.addEventListener('drop',e=>takePic(e.dataTransfer.files[0]));
+  const del=$('#delBtn');if(del)del.onclick=()=>remove(it);
+  renderList();$('#main').scrollTop=0;
+}
+async function scaled(bmp,max,type,q){const k=Math.min(1,max/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(bmp,0,0,c.width,c.height);
+  let u=c.toDataURL(type,q);if(type==='image/webp'&&!u.startsWith('data:image/webp'))u=c.toDataURL('image/jpeg',.8);return{b64:u.split(',')[1],url:u,w:c.width,h:c.height}}
+async function takePic(file){if(!file||!file.type.startsWith('image/'))return;try{const bmp=await createImageBitmap(file);pic={big:await scaled(bmp,1800,'image/jpeg',.86),small:await scaled(bmp,560,'image/webp',.8)};const p=$('#pic');p.src=pic.big.url;p.hidden=false}catch(e){status('That picture could not be read.','bad')}}
+const slug=s=>String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ð/g,'d').replace(/þ/g,'th').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40);
+$('#form').addEventListener('submit',async ev=>{
+  ev.preventDefault();if(saving)return;const f=ev.target,v=n=>f.elements[n].value.trim();
+  if(isNew&&!pic){status('Add a picture first.','bad');return}
+  const y=parseInt(v('y'),10);if(!(y>1950&&y<2100)){status('The year doesn\'t look right.','bad');return}
+  const id=isNew?`${y}-${slug(v('t')||v('kind'))}-${Date.now().toString(36)}`:openId,stamp=Date.now().toString(36);
+  const r=REL.find(e=>e.id===v('rel'));
+  const fields={y,d:v('d')||undefined,kind:v('kind'),t:v('t')||undefined,cap:v('cap')||undefined,by:v('by')||undefined,rel:r?{id:r.id,t:r.title}:undefined};
+  const files=[];
+  if(pic){fields.img=`archive/${id}-${stamp}.jpg`;fields.th=`archive/s/${id}-${stamp}.webp`;fields.w=pic.small.w;fields.h=pic.small.h;files.push({path:fields.img,b64:pic.big.b64},{path:fields.th,b64:pic.small.b64});
+    const old=!isNew&&data.items.find(x=>x.id===id);if(old){files.push({path:old.img,b64:null});if(old.th)files.push({path:old.th,b64:null})}}
+  saving=true;$('#saveBtn').disabled=true;status('Saving…','',true);
+  try{
+    const res=await commit(d=>{if(isNew)d.items.push({id,...fields});else{const i=d.items.findIndex(x=>x.id===id);if(i<0)throw new Error('That item is no longer in the archive. Reload the page.');d.items[i]={...d.items[i],...fields}}return d},
+      `${isNew?'Archive: add':'Archive: edit'} ${fields.t||fields.kind} (${y})`,files);
+    data=res.data;isNew=false;openEditor(id);watchLive(res.text);
+  }catch(e){status(friendly(e),'bad')}finally{saving=false;const b=$('#saveBtn');if(b)b.disabled=false}
+});
+async function remove(it){
+  if(!confirm(`Remove “${it.t||it.kind}” from the archive? You can bring it back from the repository history.`))return;
+  try{status('Removing…','',true);const res=await commit(d=>{d.items=d.items.filter(x=>x.id!==it.id);return d},`Archive: remove ${it.t||it.kind} (${it.y})`,[{path:it.img,b64:null},...(it.th?[{path:it.th,b64:null}]:[])]);
+    data=res.data;openId=null;$('#form').hidden=true;$('#empty').hidden=false;document.body.classList.remove('open');renderList();watchLive(res.text)}catch(e){status(friendly(e),'bad')}
+}
+(async()=>{
+  try{token=localStorage.getItem('gt.key')||''}catch(e){}
+  if(!token){$('#gate').hidden=false;return}
+  try{
+    data=parse(await gh(repo(`/contents/${FILE}?ref=${BRANCH}`),{raw:true}));
+    const cat=await gh(repo(`/contents/catalogue.js?ref=${BRANCH}`),{raw:true});const m=cat.match(/window\.CATALOGUE\s*=\s*([\s\S]*?);\s*$/);REL=m?JSON.parse(m[1]).filter(e=>e.tier==='core'):[];
+    $('#app').hidden=false;renderList();
+  }catch(e){$('#gate').hidden=false;$('#gateMsg').textContent=friendly(e)}
+})();
+window.__admin={get data(){return data}};
+</script>
+</body></html>

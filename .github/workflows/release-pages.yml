@@ -4,7 +4,7 @@ name: Release pages
 on:
   push:
     branches: [main]
-    paths: [catalogue.js, extra.js, .github/build_release_pages.mjs]
+    paths: [catalogue.js, extra.js, archive.js, .github/build_release_pages.mjs]
   workflow_dispatch:
 permissions:
   contents: write

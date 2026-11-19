@@ -71,6 +71,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #panel.open{transform:none}
 #close{position:absolute;top:14px;right:16px;font-size:22px;color:var(--dim);line-height:1;padding:6px}
 #panel h2{font:italic 400 30px/1.1 var(--serif);margin:0 40px 2px 0}#panel .sub{font:12px var(--mono);color:var(--dim);margin-bottom:18px}
+/* recordings of a concert: a button on the show, and a player over the map */
+.recb{display:inline-flex;align-items:center;gap:7px;margin-top:7px;font:12px var(--mono);letter-spacing:.02em;color:#11141b;background:var(--p);border:0;border-radius:14px;padding:5px 11px 5px 9px;cursor:pointer}
+.recb::before{content:"";width:0;height:0;border-left:7px solid currentColor;border-top:4.5px solid transparent;border-bottom:4.5px solid transparent}
+#cap .recb{margin:0 0 0 10px;vertical-align:2px}
+#recView{position:fixed;inset:0;z-index:40;background:#07080bd9;display:grid;place-items:center;padding:16px;backdrop-filter:blur(6px)}
+#recView[hidden]{display:none}
+#recView .rv{width:min(880px,100%)}
+#recView header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:12px}
+#recView time{font:12px var(--mono);color:var(--p);display:block}#recView strong{display:block;font:italic 400 24px/1.2 var(--serif)}#recView small{display:block;color:var(--dim);font-size:13px}
+#rvClose{font-size:28px;line-height:1;color:var(--dim);background:none;border:0;cursor:pointer;padding:0 4px}#rvClose:hover{color:#fff}
+#recView .frame{position:relative;aspect-ratio:16/9;background:#000}#recView .frame.audio{aspect-ratio:auto;height:230px}
+#recView iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#recView .by{margin:10px 0 0;font:11.5px var(--mono);color:var(--faint)}#recView .by a{color:var(--dim)}
 #panel ol{list-style:none;margin:0;padding:0}#panel li{padding:10px 0;border-top:1px solid var(--rule)}
 #panel li time{font:12px var(--mono);color:var(--dim);display:block}#panel li strong{font-weight:500;display:block}
 #panel li small{color:var(--dim);display:block;font-size:12px}#panel li .flag{color:var(--p)}#panel li .faint{color:var(--faint);font:11px var(--mono)}
@@ -84,6 +97,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 #leg .frame{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;background:#0b0d12;cursor:zoom-in;display:block;padding:0;border-radius:1px;box-shadow:0 10px 40px #000a}#leg.on .frame{pointer-events:auto}
 #leg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.4s ease}#leg img.show{opacity:.94}
 #legCap{font:11px var(--mono);color:var(--dim);margin-top:5px;min-height:1.4em;text-align:right;text-shadow:0 1px 6px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.years button.rc::before{content:"";position:absolute;right:3px;top:3px;width:5px;height:5px;border-radius:50%;background:var(--p)}
 .years{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 14px}.years button{font:13px var(--mono);padding:4px 8px;border:1px solid var(--rule);border-radius:2px;color:var(--dim);position:relative}.years button:hover{border-color:#ffffff50;color:var(--paper)}.years button[aria-pressed=true]{background:var(--plate2);color:var(--paper);border-color:#ffffff40}.years sup{font-size:9px;color:var(--faint);margin-left:2px;vertical-align:4px;line-height:0}.years .ph::after{content:"";position:absolute;right:3px;top:3px;width:4px;height:4px;border-radius:50%;background:var(--p)}
 .ask{font:italic 20px var(--serif);color:var(--dim);margin:6px 0 0}
 .fromHere{font:12px var(--mono);color:var(--paper);border:1px solid #ffffff40;border-radius:2px;padding:3px 8px;margin-top:6px}.fromHere:hover{border-color:var(--paper)}
@@ -147,6 +161,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 
 <aside id="rel" aria-live="off"><small></small><img class="cov" alt=""><span class="ph" hidden><i>Cover coming</i></span><em></em><b></b></aside>
 <div id="leg" aria-hidden="true"><button class="frame" type="button" id="legFrame" aria-label="Open this photo"><img alt=""><img alt=""></button><div id="legCap"></div></div>
+<div id="recView" hidden role="dialog" aria-label="Recording"><div class="rv"><header><div><time></time><strong></strong><small></small></div><button id="rvClose" type="button" aria-label="Close the recording">×</button></header><div class="frame"></div><p class="by"></p></div></div>
 <div id="view" hidden role="dialog" aria-label="Photos"><button id="vClose" aria-label="Close photos">×</button><figure><img id="vImg" alt=""></figure><button class="nav" id="vPrev" aria-label="Previous photo">‹</button><button class="nav" id="vNext" aria-label="Next photo">›</button><div class="meta"><em id="vCap"></em><small id="vBy"></small></div></div>
 <aside id="panel" aria-label="Shows in this city"><button id="close" aria-label="Close">×</button><div id="pBody"></div></aside>
 <script src="map.js"></script>
@@ -205,6 +220,20 @@ function viewShow(){
   $('#vPrev').hidden=$('#vNext').hidden=V.list.length<2;
   const nx=V.list[(V.i+1)%V.list.length];if(nx){const pre=new Image();pre.src=nx.src}
 }
+/* a recording opens over the map and holds the journey until it is closed */
+let recResume=null;
+function recEmbed(u){let m=u.match(/youtube\.com\/watch\?v=([\w-]{11})|youtu\.be\/([\w-]{11})/);if(m)return{src:`https://www.youtube-nocookie.com/embed/${m[1]||m[2]}?autoplay=1&rel=0`,video:true};
+  m=u.match(/archive\.org\/details\/([^/?#]+)/);if(m)return{src:`https://archive.org/embed/${m[1]}?playlist=1&autoplay=1`,video:false};return null}
+function openRec(s,k){const r=(s.rec||[])[k];if(!r)return;const e=recEmbed(r.u);if(!e){window.open(r.u,'_blank','noopener');return}
+  recResume=P.playing?{slow:P.slow}:null;if(P.playing)play(false);
+  const v=$('#recView');v.querySelector('time').textContent=fmt(s.d,s.e);v.querySelector('strong').textContent=`${s.c}${known(s.v)?', '+s.v:''}`;v.querySelector('small').textContent=r.t+(s.n&&s.n!==s.v?` · ${s.n}`:'');
+  const f=v.querySelector('.frame');f.className='frame'+(e.video?'':' audio');f.innerHTML=`<iframe src="${e.src}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="${esc(r.t)}"></iframe>`;
+  v.querySelector('.by').innerHTML=`Recorded and shared by ${esc(r.by||'a listener')} · <a href="${esc(r.u)}" target="_blank" rel="noopener">Open the original</a>`;
+  v.hidden=false;$('#rvClose').focus()}
+function closeRec(){const v=$('#recView');if(v.hidden)return;v.hidden=true;v.querySelector('.frame').innerHTML='';if(recResume){const r=recResume;recResume=null;play(true);if(r.slow&&!P.slow)P.slow=true}}
+$('#rvClose').onclick=closeRec;$('#recView').addEventListener('click',ev=>{if(ev.target.id==='recView')closeRec()});
+addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!$('#recView').hidden){ev.stopPropagation();closeRec()}},true);
+document.addEventListener('click',ev=>{const b=ev.target.closest('#pBody .recb');if(!b)return;const [i,k]=b.dataset.rec.split('|').map(Number);const s=S.find(x=>x.i===i);if(s)openRec(s,k)});
 function openPhotos(s,i=0){V.resume=P.playing?{slow:P.slow}:null;if(P.playing)play(false);V.list=photosOf(s).map(p=>({...p,show:`${fmt(s.d)}, ${s.c}`}));V.i=i;$('#view').hidden=false;$('#tip').style.display='none';viewShow();$('#vClose').focus()}
 function closePhotos(){$('#view').hidden=true;$('#vImg').removeAttribute('src');if(V.resume){const r=V.resume;V.resume=null;play(true);if(r.slow)setSlow(true)}}
 function stepPhoto(d){V.i=(V.i+d+V.list.length)%V.list.length;viewShow()}
@@ -564,6 +593,7 @@ function showCaption(){
   em.textContent=s.c;b.textContent=s.k;
   setInfo(showFields(s,'Date'));
   const n=TOUR_PHOTOS?photosOf(s).length:0;
+  if(s.rec&&s.rec.length){const r=document.createElement('button');r.type='button';r.className='recb';r.textContent='Hear this night';r.onclick=()=>openRec(s,0);b.appendChild(r)}
   if(n){const c=document.createElement('button');c.id='cam';c.type='button';c.textContent=n===1?'1 photo':n+' photos';c.onclick=()=>openPhotos(s);b.appendChild(c)}
 }
 
@@ -994,11 +1024,11 @@ function openCity(c,year){
   const years=[...new Set(c.shows.map(s=>s.d.slice(0,4)))].sort();
   selYear=year||(years.length===1?years[0]:null);
   const first=years[0],last=years[years.length-1];
-  const chip=y=>{const list=c.shows.filter(s=>s.d.startsWith(y)),ph=list.some(s=>photosOf(s).length);return `<button type="button" data-year="${y}" aria-pressed="${selYear===y}" class="${ph?'ph':''}" ${ph?'title="Has photos"':''}>${y}${list.length>1?`<sup>${list.length}</sup>`:''}</button>`};
+  const chip=y=>{const list=c.shows.filter(s=>s.d.startsWith(y)),ph=list.some(s=>photosOf(s).length),rc=list.some(s=>s.rec&&s.rec.length);return `<button type="button" data-year="${y}" aria-pressed="${selYear===y}" class="${ph?'ph':''}${rc?' rc':''}" ${rc?'title="There is a recording"':ph?'title="Has photos"':''}>${y}${list.length>1?`<sup>${list.length}</sup>`:''}</button>`};
   const shows=selYear?c.shows.filter(s=>s.d.startsWith(selYear)):[];
   const rows=shows.map(s=>{
     const T=TOURS[s.tour],n=T.b-T.a+1,ph=photosOf(s),few=ph.slice(0,5);
-    return `<li><time>${esc(fmt(s.d,s.e))}</time><strong>${esc(s.v&&!/unknown/i.test(s.v)?s.v:(s.n||'Venue not known'))}</strong>${s.n&&s.v&&s.n!==s.v?`<small>${esc(s.n)}</small>`:''}${s.w?`<small>with ${esc(s.w)}</small>`:''}${s.absent?'<small>Without Gunnar</small>':''}${s.note?`<small>${esc(s.note)}</small>`:''}${n>1?`<span class="run">Show ${s.i-T.a+1} of ${n} on a run from ${esc(fmt(S[T.a].d))} to ${esc(fmt(S[T.b].d))}</span>`:''}${few.length?`<div class="thumbs">${few.map((p,i)=>`<button type="button" data-show="${s.i}" data-ph="${i}" aria-label="Open photo ${i+1} of ${ph.length}"><img loading="lazy" src="${esc(p.src)}" alt="">${i===4&&ph.length>5?`<span class="more">+${ph.length-4}</span>`:''}</button>`).join('')}</div>`:''}<small class="faint">${esc(s.src)}${s.ca?` · <a href="${esc(s.ca)}" target="_blank" rel="noopener">listing</a>`:''}${(s.press||[]).map((u,i)=>` · <a href="${esc(u)}" target="_blank" rel="noopener">newspaper ${i+1}</a>`).join('')}</small><button type="button" class="fromHere" data-from="${s.i}">Play from here</button></li>`;
+    return `<li><time>${esc(fmt(s.d,s.e))}</time><strong>${esc(s.v&&!/unknown/i.test(s.v)?s.v:(s.n||'Venue not known'))}</strong>${s.n&&s.v&&s.n!==s.v?`<small>${esc(s.n)}</small>`:''}${s.w?`<small>with ${esc(s.w)}</small>`:''}${s.absent?'<small>Without Gunnar</small>':''}${s.note?`<small>${esc(s.note)}</small>`:''}${(s.rec||[]).map((r,k)=>`<button type="button" class="recb" data-rec="${s.i}|${k}">${esc(r.t)}</button>`).join('')}${n>1?`<span class="run">Show ${s.i-T.a+1} of ${n} on a run from ${esc(fmt(S[T.a].d))} to ${esc(fmt(S[T.b].d))}</span>`:''}${few.length?`<div class="thumbs">${few.map((p,i)=>`<button type="button" data-show="${s.i}" data-ph="${i}" aria-label="Open photo ${i+1} of ${ph.length}"><img loading="lazy" src="${esc(p.src)}" alt="">${i===4&&ph.length>5?`<span class="more">+${ph.length-4}</span>`:''}</button>`).join('')}</div>`:''}<small class="faint">${esc(s.src)}${s.ca?` · <a href="${esc(s.ca)}" target="_blank" rel="noopener">listing</a>`:''}${(s.press||[]).map((u,i)=>` · <a href="${esc(u)}" target="_blank" rel="noopener">newspaper ${i+1}</a>`).join('')}</small><button type="button" class="fromHere" data-from="${s.i}">Play from here</button></li>`;
   }).join('');
   $('#pBody').innerHTML=`<h2>${esc(c.name)}</h2><div class="sub">${esc(c.k)} · ${c.shows.length} ${c.shows.length===1?'show':'shows'}${years.length>1?`, ${first}–${last}`:`, ${first}`}</div>${years.length>1?`<div class="years">${years.map(chip).join('')}</div>`:''}${selYear?`<ol>${rows}</ol>`:'<p class="ask">Which year?</p>'}`;
   /* the run behind the chosen year lights up on the map */

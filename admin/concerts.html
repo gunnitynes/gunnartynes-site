@@ -37,7 +37,7 @@ input,select,textarea{width:100%;min-width:0;background:var(--ground);border:1px
 <div id="gate" hidden><h1>Concert admin</h1><p>Sign in on the <a href="./" style="color:var(--paper)">main admin page</a> first. This page uses the same key.</p><div id="gateMsg" role="alert" style="color:var(--bad)"></div></div>
 <div id="app" hidden>
   <aside id="side"><div id="sideTop">
-    <div class="bar"><h1>Concerts</h1><span class="spacer"></span><a class="quiet" href="./">Releases</a><a class="quiet" href="../DSP/admin/">Plugins</a><button class="quiet" id="histBtn">History</button><a class="quiet" href="../live/" target="_blank" rel="noopener">View</a></div>
+    <div class="bar"><h1>Concerts</h1><span class="spacer"></span><a class="quiet" href="./">Releases</a><a class="quiet" href="archive.html">Archive</a><a class="quiet" href="../DSP/admin/">Plugins</a><button class="quiet" id="histBtn">History</button><a class="quiet" href="../live/" target="_blank" rel="noopener">View</a></div>
     <input id="q" type="search" placeholder="Search city, venue, year" aria-label="Search concerts">
     <div class="tools"><select id="year" aria-label="Year"></select><button id="addBtn">Add a concert</button></div>
     <div id="counts"></div></div><ul id="list"></ul></aside>
@@ -113,6 +113,7 @@ function openEditor(id){
     ${fld('Venue','v',s.v||'')}${fld('Festival or event','n',s.n||'')}
     ${fld('With','w',s.w||'',{full:1,ph:'Other acts on the bill, separated by commas'})}
     ${fld('Note shown to visitors','note',s.note||'',{full:1,area:2})}
+    ${fld('Recordings of this night, one per line: link | what it is | who shared it','rec',(s.rec||[]).map(r=>[r.u,r.t,r.by].filter(Boolean).join(' | ')).join('\n'),{full:1,area:2,ph:'https://www.youtube.com/watch?v=… | Full concert | Roundhouse'})}
     <label class="check full"><input type="checkbox" name="absent"${s.absent?' checked':''}> I wasn't on stage at this one</label>
     <div class="full"><div class="bar"><button type="button" id="find">Find on the map</button><select id="places" hidden aria-label="Choose the place" style="flex:1"></select></div>
     <p class="help" id="geoMsg">${s.lat!=null?`On the map at ${esc(s.lat)}, ${esc(s.lon)}.`:'Fill in the city and country, then find it on the map. Only those words are sent to the place lookup.'}</p></div>
@@ -179,7 +180,7 @@ $('#form').addEventListener('submit',async ev=>{
   if(!isNew&&moved&&$('#places').hidden&&lat===data.shows.find(x=>x.id===openId).lat){status('You changed the place. Use Find on the map, so the dot moves too.','bad');return}
   const id=isNew?`added|${v('d')}|${v('c').toLowerCase()}|${Date.now().toString(36)}`:openId;
   const before=isNew?null:data.shows.find(x=>x.id===openId),placeChanged=before&&(moved||(before.v||'')!==v('v'));
-  const fields={...(placeChanged?{vlat:undefined,vlon:undefined}:{}),d:v('d'),e:v('e')||undefined,c:v('c'),k:v('k'),v:v('v')||undefined,n:v('n')||undefined,w:v('w')||undefined,note:v('note')||undefined,absent:f.elements.absent.checked||undefined,lat,lon,s:'confirmed by Gunnar'};
+  const fields={...(placeChanged?{vlat:undefined,vlon:undefined}:{}),d:v('d'),e:v('e')||undefined,c:v('c'),k:v('k'),v:v('v')||undefined,n:v('n')||undefined,w:v('w')||undefined,note:v('note')||undefined,rec:(()=>{const r=v('rec').split('\n').map(l=>l.split('|').map(x=>x.trim())).filter(x=>/^https?:\/\//.test(x[0])).map(([u,t,by])=>({u,t:t||'Recording',...(by?{by}:{})}));return r.length?r:undefined})(),absent:f.elements.absent.checked||undefined,lat,lon,s:'confirmed by Gunnar'};
   const slug=(fields.d+'-'+fields.c).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');
   const stamp=Date.now().toString(36);
   const uploads=pending.map((p,i)=>({path:`live/photos/${slug}-${stamp}-${i}.jpg`,src:`photos/${slug}-${stamp}-${i}.jpg`,b64:p.b64}));

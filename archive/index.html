@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Archive · Gunnar Tynes</title>
+<meta name="description" content="Things kept along the way: setlists, posters, tickets, notebook pages and studio photos from Gunnar Tynes and múm, year by year.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gunnar Tynes">
+<meta property="og:title" content="Archive · Gunnar Tynes">
+<meta property="og:description" content="Setlists, posters, tickets, notebook pages and studio photos, year by year.">
+<meta property="og:url" content="https://gunnartynes.com/archive/">
+<meta property="og:image" content="https://gunnartynes.com/og/home.jpg">
+<link rel="canonical" href="https://gunnartynes.com/archive/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="stylesheet" href="/r/release.css">
+<style>
+.arcv{width:min(1180px,100%);margin:0 auto;padding:clamp(24px,6vh,64px) 20px 80px}
+.arcv .lead{margin:16px 0 0;max-width:36em;font:400 clamp(18px,2vw,21px)/1.45 var(--serif);color:var(--dim)}
+.kinds{display:flex;flex-wrap:wrap;gap:6px;margin:26px 0 0}
+.kinds button{font:12px var(--mono);letter-spacing:.04em;color:var(--dim);border:1px solid var(--rule);border-radius:16px;padding:5px 12px}
+.kinds button[aria-pressed=true]{color:#11141b;background:var(--paper);border-color:var(--paper)}
+.yr{display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;margin-top:44px;padding-top:18px;border-top:1px solid var(--rule)}
+.yr h2{margin:0;font:400 44px/1 var(--serif);color:#fff;position:sticky;top:70px;align-self:start}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:26px 20px;align-items:end}
+.it{cursor:zoom-in;display:block;width:100%;text-align:left}
+.it img{max-height:300px;width:auto!important;max-width:100%;margin:0}
+.it img{display:block;width:100%;height:auto;background:#1a1e28;box-shadow:0 14px 34px #0009,0 0 0 1px #ffffff10;transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.it:hover img{transform:translateY(-3px) rotate(-.4deg)}
+.it .k{display:block;margin-top:9px;font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--p)}
+.it .t{display:block;margin-top:3px;font:italic 400 17px/1.3 var(--serif);color:var(--paper)}
+.empty{margin:60px 0 0;color:var(--faint);font:italic 400 22px var(--serif)}
+#lb{position:fixed;inset:0;z-index:30;background:#07080bf2;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:0}
+#lb[hidden]{display:none}
+#lb figure{margin:0;display:grid;place-items:center;padding:24px;min-height:0}
+#lb figure img{max-width:100%;max-height:calc(100vh - 48px);object-fit:contain;box-shadow:0 30px 80px #000}
+#lb aside{padding:28px 24px;border-left:1px solid var(--rule);overflow:auto;background:#0d0f15}
+#lb .k{font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--p)}
+#lb h3{margin:10px 0 0;font:italic 400 28px/1.15 var(--serif);color:#fff}
+#lb p{color:#d6d2c6;line-height:1.6}#lb .by{font:12px var(--mono);color:var(--faint)}
+#lb .rel{display:inline-block;margin-top:12px;font:italic 400 18px var(--serif);text-decoration:none;border-bottom:1px solid var(--rule)}
+#lb .x{position:absolute;top:10px;right:14px;font-size:30px;color:var(--dim);z-index:2}#lb .x:hover{color:#fff}
+#lb .nav{position:absolute;top:50%;font-size:42px;color:var(--dim);padding:10px;transform:translateY(-50%)}#lb .nav:hover{color:#fff}
+#lb .prev{left:6px}#lb .next{right:332px}
+@media (max-width:760px){.yr{grid-template-columns:1fr;gap:12px}.yr h2{position:static;font-size:34px}
+  #lb{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}#lb aside{border-left:0;border-top:1px solid var(--rule);max-height:42vh}#lb .next{right:6px}#lb figure img{max-height:56vh}}
+</style>
+</head>
+<body>
+<header id="bar">
+  <h1><a href="/?start" title="Back to the start">gunnar tynes</a></h1>
+  <nav aria-label="Pages"><a class="quiet" href="/?view=timeline">Timeline</a><a class="quiet" href="/?view=record">Record</a><a class="quiet" href="/live/">Live</a><span class="quiet" aria-current="page" style="color:var(--paper)">Archive</span><a class="quiet" href="/about/">About</a></nav>
+</header>
+<main class="arcv" style="display:block">
+  <p class="eyebrow">Archive</p>
+  <h2 style="font-style:normal">Kept along the way</h2>
+  <p class="lead">Setlists, posters, tickets, notebook pages, studio photos and the other things that gathered around the records and the concerts, year by year.</p>
+  <div class="kinds" id="kinds" hidden></div>
+  <div id="years"></div>
+</main>
+<div id="lb" hidden role="dialog" aria-label="Archive item"><button class="x" type="button" aria-label="Close">×</button><button class="nav prev" type="button" aria-label="Previous">‹</button><figure><img alt=""></figure><button class="nav next" type="button" aria-label="Next">›</button><aside><div class="k"></div><h3></h3><p class="cap"></p><p class="by"></p><a class="rel" hidden></a></aside></div>
+<script>document.write('<script src="/archive.js?t='+Math.floor(Date.now()/6e4)+'"><\/script>')</script>
+<script>
+(function(){
+  const $=s=>document.querySelector(s),H=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const ALL=((window.ARCHIVE||{}).items||[]).slice().sort((a,b)=>(a.d||a.y+'')<(b.d||b.y+'')?-1:1);
+  const MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const when=it=>{const m=String(it.d||'').match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/);return m?[m[3]?+m[3]:'',MON[+m[2]-1],m[1]].filter(Boolean).join(' '):String(it.y)};
+  let kind='',shown=[];
+  function render(){
+    shown=ALL.filter(it=>!kind||it.kind===kind);
+    if(!ALL.length){$('#years').innerHTML='<p class="empty">The first things are on their way.</p>';return}
+    const kinds=[...new Set(ALL.map(it=>it.kind).filter(Boolean))];
+    $('#kinds').hidden=kinds.length<2;$('#kinds').innerHTML=['',...kinds].map(k=>`<button type="button" data-k="${H(k)}" aria-pressed="${k===kind}">${k?H(k):'Everything'}</button>`).join('');
+    const by={};shown.forEach((it,i)=>(by[it.y]=by[it.y]||[]).push([it,i]));
+    $('#years').innerHTML=Object.keys(by).sort().map(y=>`<section class="yr"><h2>${y}</h2><div class="items">${by[y].map(([it,i])=>`<button class="it" type="button" data-i="${i}" id="${H(it.id)}"><img src="/${H(it.th||it.img)}" alt="${H(it.t||it.kind||'')}" loading="lazy"${it.w?` width="${it.w}" height="${it.h}"`:''}><span class="k">${H(it.kind||'')}</span>${it.t?`<span class="t">${H(it.t)}</span>`:''}</button>`).join('')}</div></section>`).join('');
+  }
+  let cur=-1;
+  function open(i){const it=shown[i];if(!it)return;cur=i;const lb=$('#lb');lb.querySelector('img').src='/'+it.img;lb.querySelector('img').alt=it.t||'';
+    lb.querySelector('.k').textContent=[it.kind,when(it)].filter(Boolean).join(' · ');lb.querySelector('h3').textContent=it.t||'';lb.querySelector('.cap').textContent=it.cap||'';
+    lb.querySelector('.by').textContent=it.by?`From ${it.by}`:'';const r=lb.querySelector('.rel');r.hidden=!it.rel;if(it.rel){r.href=`/r/${it.rel.id}/`;r.textContent=`${it.rel.t} →`}
+    lb.hidden=false;history.replaceState(null,'','#'+it.id);lb.querySelector('.x').focus()}
+  function close(){$('#lb').hidden=true;cur=-1;history.replaceState(null,'',location.pathname)}
+  $('#kinds').onclick=ev=>{const b=ev.target.closest('[data-k]');if(!b)return;kind=b.dataset.k;render()};
+  $('#years').onclick=ev=>{const b=ev.target.closest('.it');if(b)open(+b.dataset.i)};
+  $('#lb .x').onclick=close;$('#lb .prev').onclick=()=>open((cur-1+shown.length)%shown.length);$('#lb .next').onclick=()=>open((cur+1)%shown.length);
+  $('#lb').addEventListener('click',ev=>{if(ev.target.id==='lb'||ev.target.tagName==='FIGURE')close()});
+  addEventListener('keydown',ev=>{if($('#lb').hidden)return;if(ev.key==='Escape')close();else if(ev.key==='ArrowLeft')$('#lb .prev').click();else if(ev.key==='ArrowRight')$('#lb .next').click()});
+  render();
+  const h=decodeURIComponent(location.hash.slice(1));if(h){const i=shown.findIndex(it=>it.id===h);if(i>=0)open(i)}
+})();
+</script>
+</body>
+</html>

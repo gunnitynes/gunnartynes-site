@@ -11,6 +11,7 @@ const SITE = 'https://gunnartynes.com';
 const read = (f, k) => { const t = readFileSync(join(ROOT, f), 'utf8'); return JSON.parse(t.slice(t.indexOf(k), t.lastIndexOf(k === '[' ? ']' : '}') + 1)); };
 const ALL = read('catalogue.js', '[');
 const EXTRA = existsSync(join(ROOT, 'extra.js')) ? read('extra.js', '{') : {};
+const ARCH = existsSync(join(ROOT, 'archive.js')) ? (read('archive.js', '{').items || []) : [];
 const list = ALL.filter(e => e.tier === 'core' && !e.hide);   // already in timeline order
 const H = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
@@ -72,7 +73,7 @@ function page(e, i) {
 <body>
 <header id="bar">
   <h1><a href="/?start" title="Back to the start">gunnar tynes</a></h1>
-  <nav aria-label="Pages"><a class="quiet" href="/?view=timeline">Timeline</a><a class="quiet" href="/?view=record">Record</a><a class="quiet" href="/live/">Live</a><a class="quiet" href="/about/">About</a></nav>
+  <nav aria-label="Pages"><a class="quiet" href="/?view=timeline">Timeline</a><a class="quiet" href="/?view=record">Record</a><a class="quiet" href="/live/">Live</a>${ARCH.length ? '<a class="quiet" href="/archive/">Archive</a>' : ''}<a class="quiet" href="/about/">About</a></nav>
 </header>
 <main>
   <figure class="cov">${e.cover ? `<img src="${H(abs(e.cover))}" alt="${H(e.title)} cover" width="600" height="600">` : '<div class="none"></div>'}</figure>
@@ -86,6 +87,7 @@ function page(e, i) {
     ${facts.length ? `<p class="facts">${facts.map(H).join(' · ')}</p>` : ''}
     ${tracks.length ? `<ol class="tracks">${tracks.map(t => `<li${t.p ? ` data-src="${H(t.p)}"` : ''}><span class="n">${H(t.n)}</span><span class="t">${H(t.t)}</span><span class="d">${H(t.d || '')}</span></li>`).join('')}</ol>` : ''}
     ${links.length ? `<p class="links">${links.join('')}</p>` : ''}
+    ${(() => { const a = ARCH.filter(it => it.rel && it.rel.id === e.id); return a.length ? `<section class="arch"><h3>From the archive</h3><div>${a.map(it => `<a href="/archive/#${H(it.id)}"><img src="/${H(it.th || it.img)}" alt="${H(it.t || it.kind)}" loading="lazy"><small>${H(it.kind || '')}</small></a>`).join('')}</div></section>` : ''; })()}
     <p class="open"><a href="/?r=${encodeURIComponent(e.id)}&amp;view=timeline">See it on the timeline →</a></p>
   </article>
 </main>
@@ -106,6 +108,6 @@ for (const d of readdirSync(OUT, { withFileTypes: true })) if (d.isDirectory() &
 list.forEach((e, i) => { mkdirSync(join(OUT, e.id), { recursive: true }); writeFileSync(join(OUT, e.id, 'index.html'), page(e, i)); });
 
 const today = new Date().toISOString().slice(0, 10);
-const urls = [[`${SITE}/`, '1.0'], [`${SITE}/about/`, '0.9'], [`${SITE}/live/`, '0.8'], [`${SITE}/booking/`, '0.6'], ...list.map(e => [`${SITE}/r/${e.id}/`, '0.5'])];
+const urls = [[`${SITE}/`, '1.0'], [`${SITE}/about/`, '0.9'], ...(ARCH.length ? [[`${SITE}/archive/`, '0.8']] : []), [`${SITE}/live/`, '0.8'], [`${SITE}/booking/`, '0.6'], ...list.map(e => [`${SITE}/r/${e.id}/`, '0.5'])];
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, p]) => `  <url><loc>${u}</loc><lastmod>${today}</lastmod><priority>${p}</priority></url>`).join('\n')}\n</urlset>\n`);
 console.log(`${list.length} release pages, sitemap with ${urls.length} addresses`);
