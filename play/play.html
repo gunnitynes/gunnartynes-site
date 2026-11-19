@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta name="description" content="A playground made of múm songs: take them apart, put them back wrong, add yourself to the band.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script>window.PG_STATIC = true;</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Playground</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="css/studio.css">
+</head>
+<body>
+  <header id="bar">
+    <div class="id"><a class="home" href="/" title="gunnartynes.com">gunnar tynes</a><span class="crumb">Playground</span><span class="song" id="song">…</span></div>
+    <div class="transport">
+      <button type="button" id="t-rew" aria-label="Back to the start" title="Back to the start (Home)"><svg viewBox="0 0 20 20"><path d="M5 4v12" stroke="currentColor" stroke-width="1.8"/><path d="M16 4 8 10l8 6z"/></svg></button>
+      <button type="button" id="t-play" aria-label="Play" title="Play or stop (Space)"><svg class="i-play" viewBox="0 0 20 20"><path d="M6 4v12l10-6z"/></svg><svg class="i-stop" viewBox="0 0 20 20"><path d="M5 5h10v10H5z"/></svg></button>
+      <button type="button" id="t-rec" aria-label="Record" title="Record (R): every note, Cloud touch, knob, mix move and Re-arrange click — onto the arrangement, or into the pattern in Pattern mode"><i></i></button>
+      <button type="button" id="t-cap" class="cap-btn" title="Capture: forgot to press Record? This keeps the last thing you played (up to 16 bars) and puts it on the arrangement" disabled>Capture</button>
+      <div class="where"><span class="pos mono" id="pos">001.1</span><span class="part mono" id="part"></span></div>
+      <div class="seg modesw" id="mode" title="Loop a pattern, or play the whole arrangement (Enter)"></div>
+    </div>
+    <div class="mixhead">
+      <button type="button" class="bandsw" id="band-sw" title="Switch all the stems on or off (B)"><i></i>Stems</button>
+      <div id="band-knob"></div><div id="inst-knob"></div>
+    </div>
+    <nav id="rooms" aria-label="Rooms">
+      <button type="button" data-room="song" title="The whole piece on a timeline: arrange, record, edit">Arrangement</button>
+      <button type="button" data-room="arrange" title="Every stem cut into 4-bar blocks: click a block and that stem holds it">Re-arrange</button>
+      <button type="button" data-room="cloud" title="A granular instrument made of the stems">Cloud</button>
+      <button type="button" data-room="forge" title="Instruments built from slices of the stems">Instruments</button>
+      <button type="button" data-room="textures" title="Effects that process everything: gate, filter, echo, tape, resonators, shimmer, ensemble, crush">Process</button>
+      <button type="button" data-room="mix" title="Levels, EQ, sends and pump for every sound">Mix</button>
+    </nav>
+    <div class="mastermeter" title="Master level"><i id="master-meter"></i></div>
+  </header>
+
+  <main>
+    <section class="room" id="room-song" hidden></section>
+    <section class="room" id="room-arrange" hidden></section>
+    <section class="room" id="room-cloud" hidden></section>
+    <section class="room" id="room-forge" hidden></section>
+    <section class="room" id="room-textures" hidden></section>
+    <section class="room" id="room-mix" hidden></section>
+  </main>
+
+  <footer id="deck"></footer>
+
+  <div id="gate">
+    <div class="gate-in">
+      <p class="eyebrow">Playground</p>
+      <h1 id="gate-title">…</h1>
+      <p class="meta" id="gate-meta"></p>
+      <p class="lede">The stems of a múm song, to take apart and make into something else.</p>
+      <div class="loadbar"><i id="gate-bar"></i></div>
+      <p class="mono faint" id="gate-status">loading the stems</p>
+      <button type="button" id="gate-go" disabled>Enter</button>
+    </div>
+  </div>
+  <script type="module" src="js/studio/main.js"></script>
+</body>
+</html>

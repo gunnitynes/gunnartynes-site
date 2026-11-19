@@ -95,7 +95,7 @@ export function buildMixRoom(S, { recBtn }) {
       h('div', { class: 'ch-k' },
         knob(P, `${k}.high`, 'High', bip), knob(P, `${k}.heat`, 'Heat'),
         knob(P, `${k}.mid`, 'Mid', bip), knob(P, `${k}.pump`, 'Pump'),
-        knob(P, `${k}.low`, 'Low', bip), knob(P, `${k}.tex`, 'Textures', { fmt: (v) => `${Math.round(v * 100)}%` }),
+        knob(P, `${k}.low`, 'Low', bip), knob(P, `${k}.tex`, 'Process', { fmt: (v) => `${Math.round(v * 100)}%` }),
         knob(P, `${k}.space`, 'Space'), knob(P, `${k}.echo`, 'Echo')),
       h('div', { class: 'ch-pan' }, knob(P, `${k}.pan`, 'Pan', { min: -1, max: 1, bipolar: true, fmt: (v) => (Math.abs(v) < 0.02 ? 'C' : `${v < 0 ? 'L' : 'R'}${Math.round(Math.abs(v) * 100)}`) })),
       vf,

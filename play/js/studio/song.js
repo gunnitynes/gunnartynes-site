@@ -3,7 +3,7 @@
 // the instrument lanes hold pattern clips; the moves lane holds recorded and drawn knob moves. Below it, the
 // pattern editor: a piano roll for notes (drawn, played in step by step, or recorded live) and a pencil for moves.
 import { $, h } from '../lib/util.js';
-import { PATS, isTake, takeName } from './core.js';
+import { PATS, isTake, takeName, srcBar, shiftSrc } from './core.js';
 
 const NOTE = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 const nn = (m) => `${NOTE[m % 12]}${Math.floor(m / 12) - 1}`;
@@ -12,7 +12,7 @@ function sizer(box, cv, g, on) { new ResizeObserver(() => { const r = box.getBou
 
 export function buildSong(S, { COLORS, NAMES }) {
   const room = $('#room-song'), seq = S.seq, song = S.song, P = S.params, bpb = song.beatsPerBar, cb = song.barsPerCell;
-  const LANE = 34, STEM = 18;
+  const LANE = 34, STEM = 24;
   let expanded = false, sel = null, pxb = 0, x0 = 0, fit = true, W = 0;
   const level = (cell) => (cell ? clamp((cell.rms + 50) / 40, 0.08, 1) : 0);
   const bandAt = (bar) => { const c = Math.floor((((bar % song.numBars) + song.numBars) % song.numBars) / cb); let m = 0; for (const st of song.stems) m = Math.max(m, level(st.cells[c])); return m; };
@@ -25,6 +25,12 @@ export function buildSong(S, { COLORS, NAMES }) {
   };
   let L = lanes();
   const isBandLane = (id) => id === 'band' || String(id).startsWith('stem:');
+  const isOwn = (stemId) => !!seq.arr.own?.[stemId];
+  // a stem that follows the Stems lane shows those pieces on its own lane, faintly ("ghosts"): what it really plays
+  const ghostsOf = (stemId) => (isOwn(stemId) ? [] : seq.arr.clips.filter((c) => c.lane === 'band' && !c.mute?.includes(stemId)));
+  const ghostAt = (lane, bar) => lane.stem && !clipAt(lane.id, bar) && ghostsOf(lane.stem.id).find((c) => bar >= c.start && bar < c.start + c.len);
+  /** Turn a ghost into a real piece on the stem's own lane (the stem stops following the Stems lane). */
+  const realize = (g, bar) => { seq.detach(g.stemId); seq.applyBand(); buildHeads(); return clipAt('stem:' + g.stemId, bar ?? g.at) || null; };
   const laneColor = (id) => (typeof id === 'number' ? COLORS[id] : id === 'm' ? '#a3a6ad' : '#ece8dc');
 
   // ---------------------------------------------------------------- toolbar
@@ -37,7 +43,7 @@ export function buildSong(S, { COLORS, NAMES }) {
   const fileIn = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async (e) => { const f = e.target.files[0]; if (!f) return; try { S.loadProject(JSON.parse(await f.text())); } catch (err) { alert('That file could not be opened: ' + err.message); } e.target.value = ''; } });
   room.append(h('div', { class: 'bar2' },
     h('span', { class: 'cap' }, 'Arrangement'), lenIn, h('span', { class: 'cap' }, 'bars'), cycle,
-    btn('Reset stems', 'Put the original stems back on the Stems lanes', () => { if (!confirm('Reset the stems?\n\nThis puts the original stems back in the arrangement and replaces every change you made on the Stems lanes (moved, repeated or cut parts, and each stem\'s own lane). Your instrument clips and moves stay.\n\nYou can undo this.')) return; seq.snapshot(); seq.fillFromSong(); seq.arr.clips = seq.arr.clips.filter((c) => !String(c.lane).startsWith('stem:')); seq.changed(); }),
+    btn('Reset stems', 'Put the original stems back on the Stems lanes', () => { if (!confirm('Reset the stems?\n\nThis puts the original stems back in the arrangement and replaces every change you made on the Stems lanes (moved, repeated or cut parts, and each stem\'s own lane). Your instrument clips and moves stay.\n\nYou can undo this.')) return; seq.snapshot(); seq.fillFromSong(); seq.arr.clips = seq.arr.clips.filter((c) => !String(c.lane).startsWith('stem:')); seq.arr.own = {}; seq.changed(); buildHeads(); }),
     h('div', { class: 'seg' }, btn('−', 'Zoom out', () => zoom(1 / 1.4), ''), btn('Fit', 'Show the whole song', () => { fit = true; x0 = 0; }, ''), btn('+', 'Zoom in', () => zoom(1.4), '')),
     h('span', { class: 'sp' }), undo, redo,
     btn('Save', 'Save everything as a file on this computer', () => download(new Blob([JSON.stringify(S.projectData())], { type: 'application/json' }), `${song.title} · playground.json`)),
@@ -87,11 +93,17 @@ export function buildSong(S, { COLORS, NAMES }) {
   const xOf = (bar) => (bar - x0) * pxb, barOf = (x) => x0 + x / pxb;
 
   const buildHeads = () => {
-    L = lanes(); box.style.height = L.total + 'px';
+    L = lanes(); box.style.height = L.total + 'px'; room.classList.toggle('stems-open', expanded);
     heads.replaceChildren(...L.map((l) => {
       const row = h('div', { class: 'lh' + (l.stem ? ' stem' : ''), style: { height: l.h + 'px', '--c': l.color } });
       if (l.id === 'band') row.append(h('button', { type: 'button', class: 'exp', title: expanded ? 'Close the stems' : 'Open the stems up: a lane for every stem', onclick: () => { expanded = !expanded; buildHeads(); } }, expanded ? '▾' : '▸'), h('i'), h('span', { class: 'ln' }, 'Stems'), sw2('band.on', 'On', 'All the stems on or off (B)'));
-      else if (l.stem) row.append(h('span', { class: 'ln' }, l.name), ms2(`band.${l.stem.id}.mute`, 'M'));
+      else if (l.stem) {
+        const mine = isOwn(l.stem.id);
+        row.classList.toggle('own', mine);
+        row.append(h('span', { class: 'ln', title: mine ? `${l.name} has its own lane: the Stems lane above no longer moves it` : `${l.name} follows the Stems lane above · drag, cut or change any piece and it gets a lane of its own` }, l.name),
+          mine ? h('button', { type: 'button', class: 'mini', title: `Let ${l.name} follow the Stems lane again (its own pieces go; you can undo)`, onclick: () => { seq.snapshot(); seq.attach(l.stem.id); sel = null; seq.changed(); buildHeads(); showEd(); } }, '↺') : '',
+          ms2(`band.${l.stem.id}.mute`, 'M'));
+      }
       else {
         const m = h('button', { type: 'button', class: 'ms mute', title: 'Mute this lane in the song', onclick: () => { seq.mute.has(l.id) ? seq.mute.delete(l.id) : seq.mute.add(l.id); seq.emit(); } }, 'M');
         m.setAttribute('aria-pressed', seq.mute.has(l.id));
@@ -120,7 +132,14 @@ export function buildSong(S, { COLORS, NAMES }) {
   box.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     const r = box.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, lane = laneAtY(y); if (!lane) return;
-    const bar = barOf(x), c = clipAt(lane.id, bar);
+    const bar = barOf(x), gh = ghostAt(lane, bar);
+    if (gh) {   // a piece the stem plays from the Stems lane: select it; dragging it gives the stem its own lane
+      sel = { ghost: true, stemId: lane.stem.id, band: gh, lane: lane.id, at: bar, name: lane.name }; showEd();
+      const xl = xOf(gh.start), xr = xOf(gh.start + gh.len);
+      act = { mode: x > xr - 7 && xr - xl > 14 ? 'resize' : x < xl + 6 && xr - xl > 14 ? 'trim' : 'move', ghost: sel, bar0: bar, lane0: lane, moved: false };
+      box.setPointerCapture(e.pointerId); return;
+    }
+    const c = clipAt(lane.id, bar);
     if (!c) { sel = null; showEd(); return; }
     let clip = c;
     if (e.altKey) { clip = { ...c, id: undefined }; seq.snapshot(); seq.place(clip); }
@@ -133,19 +152,24 @@ export function buildSong(S, { COLORS, NAMES }) {
   box.addEventListener('pointermove', (e) => {
     const r = box.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     if (!act) { const lane = laneAtY(y), c = lane && clipAt(lane.id, barOf(x)); box.style.cursor = !c ? 'default' : (x > xOf(c.start + c.len) - 7 || x < xOf(c.start) + 6) ? 'ew-resize' : 'grab'; return; }
-    const d = Math.round(barOf(x) - act.bar0), { clip, orig } = act;
-    if (!act.moved && (d !== 0 || laneAtY(y) !== act.lane0)) { act.moved = true; seq.snapshot(); }
+    const d = Math.round(barOf(x) - act.bar0);
+    if (!act.moved && (d !== 0 || laneAtY(y) !== act.lane0)) {
+      act.moved = true; seq.snapshot();
+      if (act.ghost) { const c = realize(act.ghost, act.bar0); if (!c) { act = null; return; } act.clip = c; act.orig = { ...c }; sel = c; showEd(); }
+    }
     if (!act.moved) return;
+    const { clip, orig } = act;
     if (act.mode === 'move') {
       clip.start = Math.max(0, orig.start + d);
       const to = laneAtY(y); if (to && to.id !== clip.lane && isBandLane(to.id) === isBandLane(orig.lane) && (to.id === 'm') === (orig.lane === 'm')) clip.lane = to.id;
     } else if (act.mode === 'resize') clip.len = Math.max(1, orig.len + d);
-    else { const dd = Math.min(orig.len - 1, Math.max(-orig.start, d)); clip.start = orig.start + dd; clip.len = orig.len - dd; if (orig.src !== undefined) { if (!orig.loop) clip.src = ((orig.src + dd) % song.numBars + song.numBars) % song.numBars; } else clip.off = Math.max(0, (orig.off || 0) + dd); }
+    else { const dd = Math.min(orig.len - 1, Math.max(-orig.start, d)); clip.start = orig.start + dd; clip.len = orig.len - dd; if (orig.src !== undefined) { Object.assign(clip, shiftSrc({ ...orig }, dd), { start: clip.start, len: clip.len, id: clip.id, lane: clip.lane }); clip.src = ((clip.src % song.numBars) + song.numBars) % song.numBars; } else clip.off = Math.max(0, (orig.off || 0) + dd); }
   });
   const end = () => { if (act?.moved) { seq.place(act.clip); seq.changed(); } act = null; };
   box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
   box.addEventListener('dblclick', (e) => {
     const r = box.getBoundingClientRect(), x = e.clientX - r.left, lane = laneAtY(e.clientY - r.top); if (!lane) return;
+    if (ghostAt(lane, barOf(x))) return;
     const c = clipAt(lane.id, barOf(x));
     if (c) { if (c.pat) { seq.cur = c.pat; ed.part = c.lane === 'm' ? 'm' : c.part ?? c.lane; if (typeof c.lane === 'number') S.selectSlot(c.lane); } sel = c; showEd(); seq.emit(); return; }
     seq.snapshot(); sel = seq.place(newClip(lane.id, barOf(x))); seq.changed(); showEd();
@@ -220,7 +244,7 @@ export function buildSong(S, { COLORS, NAMES }) {
       const r = P.range?.[p], lab = r?.[2] || p.split('.').pop(), f = /^f(\d)\./.exec(p);
       if (p.startsWith('mix.')) { const k = p.split('.')[1], nm = S.strips[k]?.name || ({ space: 'Space', echo: 'Echo', master: 'Master' })[k] || k; return `Mix · ${String(lab).startsWith(nm) ? lab : `${nm} ${String(lab).toLowerCase()}`}`; }
       if (p.startsWith('band.')) return `Mix · ${p === 'band.level' ? 'all stems' : lab}`;
-      return `${p.startsWith('cloud') ? 'Cloud' : f ? `Inst ${f[1]}` : p.startsWith('fx') ? 'Textures' : p === 'inst.level' ? 'Mix' : 'Other'} · ${lab}`;
+      return `${p.startsWith('cloud') ? 'Cloud' : f ? `Inst ${f[1]}` : p.startsWith('fx') ? 'Process' : p === 'inst.level' ? 'Mix' : 'Other'} · ${lab}`;
     };
     const all = Object.keys(P.range || {}).filter((p) => typeof P.get(p) === 'number' && P.def[p] !== undefined && (!/^f\d\./.test(p) || S.slots[+p[1]])).sort((a, b) => label(a).localeCompare(label(b)));
     pathSel.replaceChildren(...(rec.length ? [h('optgroup', { label: 'Moved in this pattern' }, ...rec.map((p) => h('option', { value: p }, label(p))))] : []), h('optgroup', { label: 'Any knob' }, ...all.filter((p) => !rec.includes(p)).map((p) => h('option', { value: p }, label(p)))));
@@ -228,7 +252,7 @@ export function buildSong(S, { COLORS, NAMES }) {
     pathSel.value = ed.path;
   };
   function showEd() {
-    const band = sel && sel.src !== undefined && seq.arr.clips.includes(sel);
+    const band = sel && (sel.ghost || (sel.src !== undefined && seq.arr.clips.includes(sel)));
     edBody.hidden = !!band; insp.hidden = !band; edHead.querySelectorAll(':scope > :not(.clipbar)').forEach((n) => { n.hidden = !!band; });
     edTabs.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(ed.part) === b.dataset.p));
     const moves = ed.part === 'm';
@@ -248,26 +272,45 @@ export function buildSong(S, { COLORS, NAMES }) {
     }
   }
   function showInspector() {
-    const c = sel, title = h('div', { class: 'insp-t' });
-    const strip = h('div', { class: 'srcmap', title: 'Click or drag: which bars of the original this clip plays' }), scv = h('canvas'), sg = scv.getContext('2d'); strip.append(scv);
+    // a ghost (a piece a stem plays from the Stems lane) shows that piece; changing anything gives the stem its own lane
+    let c = sel.ghost ? sel.band : sel;
+    const ghost = sel.ghost ? sel : null, stemName = ghost ? ghost.name : String(c.lane).startsWith('stem:') ? song.stems.find((st) => 'stem:' + st.id === c.lane)?.name : null;
+    const edit = (f) => { seq.snapshot(); if (ghost) { const r = realize(ghost); if (!r) return; sel = c = r; } f(c); seq.changed(); showInspector(); };
+    const title = h('div', { class: 'insp-t' });
+    const strip = h('div', { class: 'srcmap', title: 'Click or drag: which bars of the original this piece plays' }), scv = h('canvas'), sg = scv.getContext('2d'); strip.append(scv);
     let SW = 0; sizer(strip, scv, sg, (w) => { SW = w; drawMap(); });
+    const stemObj = song.stems.find((st) => st.name === stemName);
+    const lvlAt = (b) => (stemObj ? level(stemObj.cells[Math.floor(b / cb)]) : bandAt(b));
     const drawMap = () => {
       if (!SW) return; const n = song.numBars, bw = SW / n; sg.clearRect(0, 0, SW, 60);
-      for (let b = 0; b < n; b++) { const v = bandAt(b); sg.fillStyle = '#ece8dc'; sg.globalAlpha = 0.15 + v * 0.5; sg.fillRect(b * bw, 60 - 8 - v * 38, Math.max(1, bw - 1), 8 + v * 38); }
+      for (let b = 0; b < n; b++) { const v = lvlAt(b); sg.fillStyle = '#ece8dc'; sg.globalAlpha = 0.15 + v * 0.5; sg.fillRect(b * bw, 60 - 8 - v * 38, Math.max(1, bw - 1), 8 + v * 38); }
       sg.globalAlpha = 1; for (const s of song.sections) { sg.fillStyle = '#6f747f'; sg.font = '10px "IBM Plex Mono", monospace'; sg.fillText(s.name, s.startCell * cb * bw + 3, 10); sg.fillRect(s.startCell * cb * bw, 0, 1, 60); }
-      const span = c.loop || c.len; sg.fillStyle = '#e6b45040'; sg.fillRect(c.src * bw, 0, span * bw, 60); sg.fillStyle = '#e6b450'; sg.fillRect(c.src * bw, 0, 1.5, 60); sg.fillRect((c.src + span) * bw, 0, 1.5, 60);
-      title.textContent = `This clip plays bars ${c.src + 1}–${c.src + span} of the original stems${c.loop ? `, repeated` : ''} · ${c.len} bars long at bar ${c.start + 1}`;
+      const span = c.loop || Math.ceil(c.len * (c.fx?.s || 1)), x0 = Math.floor(c.src); sg.fillStyle = '#e6b45040'; sg.fillRect(x0 * bw, 0, span * bw, 60); sg.fillStyle = '#e6b450'; sg.fillRect(x0 * bw, 0, 1.5, 60); sg.fillRect((x0 + span) * bw, 0, 1.5, 60);
+      const who = stemName || (c.mute?.length ? `${song.stems.length - c.mute.length} of the stems` : 'all the stems');
+      title.textContent = `${who}: bars ${x0 + 1}–${x0 + span} of the original${c.loop ? ', repeated' : ''} · ${c.len} bars at bar ${c.start + 1}${ghost ? ' · following the Stems lane' : ''}`;
     };
     let mdown = false;
     const setSrc = (e) => { const r = strip.getBoundingClientRect(); c.src = clamp(Math.floor((e.clientX - r.left) / r.width * song.numBars), 0, song.numBars - 1); drawMap(); };
-    strip.addEventListener('pointerdown', (e) => { seq.snapshot(); mdown = true; strip.setPointerCapture(e.pointerId); setSrc(e); });
+    strip.addEventListener('pointerdown', (e) => { seq.snapshot(); if (ghost) { const r = realize(ghost); if (!r) return; sel = c = r; } mdown = true; strip.setPointerCapture(e.pointerId); setSrc(e); });
     strip.addEventListener('pointermove', (e) => mdown && setSrc(e));
-    strip.addEventListener('pointerup', () => { mdown = false; seq.changed(); });
-    const loops = h('div', { class: 'seg' }, ...[[0, 'Plays on'], [1, '1'], [2, '2'], [4, '4'], [8, '8']].map(([v, l]) => { const b = h('button', { type: 'button', 'aria-pressed': (c.loop || 0) === v, onclick: () => { seq.snapshot(); c.loop = v || undefined; seq.changed(); showInspector(); } }, l); return b; }));
-    const who = c.lane === 'band' ? h('div', { class: 'who' }, ...song.stems.map((st) => { const b = h('button', { type: 'button', class: 'pchip', 'aria-pressed': !(c.mute || []).includes(st.id), title: `${st.name} plays in this clip`, onclick: () => { seq.snapshot(); const m = new Set(c.mute || []); m.has(st.id) ? m.delete(st.id) : m.add(st.id); c.mute = [...m]; b.setAttribute('aria-pressed', !m.has(st.id)); seq.changed(); } }, st.name); return b; })) : '';
-    insp.replaceChildren(title, strip, h('div', { class: 'bar2' }, h('span', { class: 'cap' }, 'Repeat the first'), loops, h('span', { class: 'cap' }, 'bars'), h('span', { class: 'sp' }), btn('Delete clip', 'Remove this clip (Delete)', () => delSel())), c.lane === 'band' ? h('span', { class: 'cap' }, 'Which stems play in this clip') : '', who);
+    strip.addEventListener('pointerup', () => { if (!mdown) return; mdown = false; seq.changed(); if (ghost) showInspector(); });
+    const segOf = (opts, cur, set, title) => h('div', { class: 'seg', title }, ...opts.map(([v, l]) => h('button', { type: 'button', 'aria-pressed': cur === v, onclick: () => edit((cc) => set(cc, v)) }, l)));
+    const fx = c.fx || {}, setFx = (cc, k, v) => { cc.fx = { ...(cc.fx || {}), [k]: v }; if (!cc.fx.r && (cc.fx.s || 1) === 1 && !cc.fx.u && (cc.fx.g ?? 1) === 1) delete cc.fx; };
+    const loops = segOf([[0, 'Plays on'], [1, '1'], [2, '2'], [4, '4'], [8, '8']], c.loop || 0, (cc, v) => { cc.loop = v || undefined; if (!v) delete cc.off; }, 'Repeat the first bars of this piece');
+    const treat = h('div', { class: 'bar2 treat' },
+      h('span', { class: 'cap' }, 'Treat it'),
+      h('button', { type: 'button', class: 'sw', 'aria-pressed': !!fx.r, title: 'Play every bar of it backwards', onclick: () => edit((cc) => setFx(cc, 'r', fx.r ? 0 : 1)) }, h('i'), 'Reverse'),
+      h('span', { class: 'cap' }, 'speed'), segOf([[0.5, '½ · octave down'], [1, '1'], [2, '2× · octave up']], fx.s || 1, (cc, v) => setFx(cc, 's', v), 'Half speed: slower and an octave down. Double: an octave up, each bar twice'),
+      h('span', { class: 'cap' }, 'stutter'), segOf([[0, 'off'], [2, '½'], [4, '¼'], [8, '⅛'], [16, '1/16']], fx.u || 0, (cc, v) => setFx(cc, 'u', v), 'Repeat the start of every bar: a half, a quarter, an eighth or a sixteenth of it, over and over'),
+      h('span', { class: 'cap' }, 'level'), segOf([[0.35, '−9'], [0.5, '−6'], [0.7, '−3'], [1, '0'], [1.4, '+3']], fx.g ?? 1, (cc, v) => setFx(cc, 'g', v), 'How loud this piece is (dB)'));
+    const who = c.lane === 'band' && !ghost ? h('div', { class: 'who' }, ...song.stems.map((st) => { const b = h('button', { type: 'button', class: 'pchip', 'aria-pressed': !(c.mute || []).includes(st.id), title: `${st.name} plays in this clip`, onclick: () => { seq.snapshot(); const m = new Set(c.mute || []); m.has(st.id) ? m.delete(st.id) : m.add(st.id); c.mute = [...m]; b.setAttribute('aria-pressed', !m.has(st.id)); seq.changed(); } }, st.name); return b; })) : '';
+    const note = ghost ? h('p', { class: 'insp-note' }, `${stemName} plays this piece because it follows the Stems lane. Drag it, cut it or change anything below and ${stemName} gets a lane of its own, which the Stems lane no longer moves (↺ on its name brings it back).`) : '';
+    insp.replaceChildren(title, note, strip,
+      h('div', { class: 'bar2' }, h('span', { class: 'cap' }, 'Repeat the first'), loops, h('span', { class: 'cap' }, 'bars'), h('span', { class: 'sp' }),
+        ghost ? btn('Silence it here', `Take ${stemName} out of this piece`, () => { seq.snapshot(); const r = realize(ghost); if (r) { seq.arr.clips = seq.arr.clips.filter((x) => x !== r); sel = null; seq.changed(); showEd(); } }) : btn('Delete', 'Remove this piece (Delete)', () => delSel())),
+      treat, c.lane === 'band' && !ghost ? h('span', { class: 'cap' }, 'Which stems play in this piece') : '', who);
   }
-  const delSel = () => { if (!sel) return; seq.snapshot(); seq.arr.clips = seq.arr.clips.filter((c) => c !== sel); sel = null; seq.changed(); showEd(); };
+  const delSel = () => { if (!sel || sel.ghost) return; seq.snapshot(); seq.arr.clips = seq.arr.clips.filter((c) => c !== sel); sel = null; seq.changed(); showEd(); };
 
   // piano roll / pencil
   let eact = null;
@@ -323,7 +366,7 @@ export function buildSong(S, { COLORS, NAMES }) {
     if (S.room !== 'song') return;
     if ((e.key === 'Delete' || e.key === 'Backspace') && ed.sel && !sel) { const i = seq.vars[seq.cur].indexOf(ed.sel); if (i >= 0) { seq.snapshot(); seq.vars[seq.cur].splice(i, 1); ed.sel = null; seq.emit(); } e.preventDefault(); return; }
     if ((e.key === 'Delete' || e.key === 'Backspace') && sel) { e.preventDefault(); delSel(); }
-    else if (mod && e.key.toLowerCase() === 'd' && sel) { e.preventDefault(); seq.snapshot(); sel = seq.place({ ...sel, id: undefined, start: sel.start + sel.len }); if (sel.start + sel.len > seq.arr.bars) seq.arr.bars = sel.start + sel.len; seq.changed(); showEd(); }
+    else if (mod && e.key.toLowerCase() === 'd' && sel && !sel.ghost) { e.preventDefault(); seq.snapshot(); sel = seq.place({ ...sel, id: undefined, start: sel.start + sel.len }); if (sel.start + sel.len > seq.arr.bars) seq.arr.bars = sel.start + sel.len; seq.changed(); showEd(); }
     else if (e.key === 'Escape') { sel = null; ed.sel = null; showEd(); }
   });
 
@@ -353,7 +396,8 @@ export function buildSong(S, { COLORS, NAMES }) {
     undo.disabled = !seq.undos.length; redo.disabled = !seq.redos.length;
     fillPats(); patSel.value = seq.cur; lenSel.value = seq.bars; snapSel.value = seq.quant;
     jamNote.hidden = seq.mode === 'song';
-    if (sel && !seq.arr.clips.includes(sel)) { sel = seq.arr.clips.find((c) => c.id === sel.id) || null; }
+    if (sel?.ghost) { if (!seq.arr.clips.includes(sel.band) || isOwn(sel.stemId)) sel = null; }
+    else if (sel && !seq.arr.clips.includes(sel)) { sel = seq.arr.clips.find((c) => c.id === sel.id) || null; }
     showPats();
   };
   seq.addEventListener('change', sync); sync(); showEd();
@@ -376,20 +420,33 @@ export function buildSong(S, { COLORS, NAMES }) {
     for (let b = Math.floor(x0); b <= x0 + W / pxb; b++) { g.fillStyle = b % 4 ? '#ffffff06' : '#ffffff12'; if (pxb > 5 || b % 4 === 0) g.fillRect(xOf(b), 0, 1, H); }
     g.fillStyle = '#0b0d12aa'; g.fillRect(xOf(seq.arr.bars), 0, W, H);
     const c = seq.arr.cycle; if (c) { g.fillStyle = '#e6b45008'; g.fillRect(xOf(c[0]), 0, (c[1] - c[0]) * pxb, H); }
+    // ghosts: on a stem's lane, the pieces it plays from the Stems lane, and how loud it is in each bar
+    if (expanded) for (const l of L) {
+      if (!l.stem || isOwn(l.stem.id)) continue;
+      for (const gc of ghostsOf(l.stem.id)) {
+        const x = xOf(gc.start), w = gc.len * pxb, y = l.y + 2, hh = l.h - 4; if (x > W || x + w < 0) continue;
+        const on = sel?.ghost && sel.band === gc && sel.stemId === l.stem.id;
+        g.fillStyle = on ? '#ece8dc22' : '#ece8dc0a'; g.fillRect(x + 1, y, w - 2, hh);
+        g.fillStyle = '#ece8dc44'; g.fillRect(x + 1, y, 1, hh);
+        for (let k = 0; k < gc.len; k++) { const v = level(l.stem.cells[Math.floor(srcBar(gc, k, song.numBars).bar / cb)]); if (!v) continue; g.fillStyle = '#ece8dc40'; const bh = (hh - 4) * v; g.fillRect(xOf(gc.start + k) + 2, y + hh - 2 - bh, Math.max(1, pxb - 3), bh); }
+        if (on) { g.strokeStyle = '#ece8dc'; g.setLineDash([3, 3]); g.strokeRect(x + 1.5, y + 0.5, w - 3, hh - 1); g.setLineDash([]); }
+      }
+    }
     for (const cl of seq.arr.clips) {
       const l = L.find((x) => x.id === cl.lane); if (!l) continue;
       const x = xOf(cl.start), w = cl.len * pxb, y = l.y + 2, hh = l.h - 4; if (x > W || x + w < 0) continue;
       const col = laneColor(cl.lane), on = cl === sel;
       g.globalAlpha = seq.mute.has(cl.lane) ? 0.35 : 1;
+      if (l.stem) { g.fillStyle = '#151820'; g.fillRect(x + 1, y, w - 2, hh); }
       g.fillStyle = col + (on ? '38' : '1c'); g.fillRect(x + 1, y, w - 2, hh);
       g.fillStyle = col; g.fillRect(x + 1, y, 2, hh);
       if (on) { g.strokeStyle = '#ece8dc'; g.lineWidth = 1; g.strokeRect(x + 1.5, y + 0.5, w - 3, hh - 1); }
       g.save(); g.beginPath(); g.rect(x + 3, y, w - 5, hh); g.clip();
       if (cl.src !== undefined) {
         const st = l.stem;
-        for (let k = 0; k < cl.len; k++) { const sb = cl.src + (cl.loop ? k % cl.loop : k), v = st ? level(st.cells[Math.floor((((sb % song.numBars) + song.numBars) % song.numBars) / cb)]) : bandAt(sb); if (cl.mute?.length === song.stems.length) continue; g.fillStyle = col + '55'; const bh = (hh - 6) * v; g.fillRect(xOf(cl.start + k) + 2, y + hh - 2 - bh, Math.max(1, pxb - 3), bh); }
+        for (let k = 0; k < cl.len; k++) { const sb = srcBar(cl, k, song.numBars).bar, v = st ? level(st.cells[Math.floor(sb / cb)]) : bandAt(sb); if (cl.mute?.length === song.stems.length) continue; g.fillStyle = col + '55'; const bh = (hh - 6) * v; g.fillRect(xOf(cl.start + k) + 2, y + hh - 2 - bh, Math.max(1, pxb - 3), bh); }
         if (cl.loop) { g.fillStyle = col + '88'; for (let k = cl.loop; k < cl.len; k += cl.loop) g.fillRect(xOf(cl.start + k), y + 2, 1, hh - 4); }
-        if (l.h > 20 && w > 40) { g.fillStyle = '#ece8dc'; g.font = '10px "IBM Plex Mono", monospace'; g.textBaseline = 'top'; g.fillText(`${cl.name && !cl.loop ? cl.name + ' · ' : ''}${cl.src + 1}${cl.loop ? `×${cl.loop}` : ''}${cl.mute?.length ? ` · ${song.stems.length - cl.mute.length} play` : ''}`, x + 6, y + 3); }
+        if (l.h > 20 && w > 40) { g.fillStyle = '#ece8dc'; g.font = '10px "IBM Plex Mono", monospace'; g.textBaseline = 'top'; const f = cl.fx || {}, tag = `${f.r ? ' ◂rev' : ''}${f.s === 0.5 ? ' ½' : f.s === 2 ? ' 2×' : ''}${f.u ? ` stut/${f.u}` : ''}${(f.g ?? 1) !== 1 ? ` ${f.g > 1 ? '+3' : f.g >= 0.7 ? '−3' : f.g >= 0.5 ? '−6' : '−9'}dB` : ''}`; g.fillText(`${cl.name && !cl.loop ? cl.name + ' · ' : ''}${Math.floor(cl.src) + 1}${cl.loop ? `×${cl.loop}` : ''}${cl.mute?.length ? ` · ${song.stems.length - cl.mute.length} play` : ''}${tag}`, x + 6, y + 3); }
       } else {
         const pb = seq.pb(cl.pat), ev = seq.vars[cl.pat], base = (cl.start - (cl.off || 0)) * bpb, endB = (cl.start + cl.len) * bpb, part = cl.part ?? cl.lane;
         const notes = ev.filter((e) => (cl.lane === 'm' ? e.k === 'm' : e.k === 'n' && e.slot === part));

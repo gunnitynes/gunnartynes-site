@@ -64,7 +64,9 @@ export class Player extends EventTarget {
       case 'pattern': {
         const p = tr.pattern; if (!p?.length) return null;
         const g = p[((B % p.length) + p.length) % p.length];
-        return g ? pick(g[0], g[1]) : null;
+        const w = g ? pick(g[0], g[1]) : null;
+        if (w && g[2]) w.fx = g[2];   // a treatment on this bar: { r: reverse, s: speed, u: stutter slices, g: gain, o: offset in bars }
+        return w;
       }
       default: return null;
     }
@@ -129,8 +131,8 @@ export class Player extends EventTarget {
       let v = this.voices.get(id), contiguous = false;
       if (v) {
         const ended = v.end <= T + 1e-3;
-        if (!ended && want && v.url === want.url && B - v.base === want.bar) continue; // just the next bar — let it ring
-        contiguous = ended && want && want.bar === 0 && want.cell === v.cell + 1 && Math.abs(v.end - T) < 2e-3;
+        if (!ended && want && !want.fx && !v.fx && v.url === want.url && B - v.base === want.bar) continue; // just the next bar — let it ring
+        contiguous = ended && want && !want.fx && !v.fx && want.bar === 0 && want.cell === v.cell + 1 && Math.abs(v.end - T) < 2e-3;
         if (!ended) this.kill(v, T);
         this.voices.delete(id);
       }
@@ -147,6 +149,7 @@ export class Player extends EventTarget {
   }
 
   startVoice(id, buf, want, B, T, offset, fadeIn) {
+    if (want.fx) return this.startTreated(id, buf, want, B, T, offset - want.bar * this.barDur);
     const src = this.ctx.createBufferSource(); src.buffer = buf;
     const g = this.ctx.createGain();
     if (fadeIn) { g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(1, T + FADE); }
@@ -154,6 +157,28 @@ export class Player extends EventTarget {
     src.start(T, offset);
     src.onended = () => { src.disconnect(); g.disconnect(); };
     const v = { src, g, url: want.url, cell: want.cell, base: B - want.bar, end: T + buf.duration - offset };
+    this.voices.set(id, v);
+    return v;
+  }
+
+  /** One bar of a stem with a treatment: reversed, slowed (an octave down) or doubled (an octave up, the bar
+   *  twice), stuttered (its first slice repeated), louder or softer. Always exactly one bar long, then cut. */
+  startTreated(id, buf0, want, B, T, late = 0) {
+    const fx = want.fx, bd = this.barDur, rate = fx.s || 1, rev = !!fx.r;
+    const buf = rev ? this.loader.reverse(buf0) : buf0, D = buf.duration;
+    const s0 = rev ? D - (want.bar + 1) * bd : want.bar * bd;
+    const at = Math.max(0, s0 + (fx.o || 0) * bd);
+    const src = this.ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
+    const slice = fx.u ? bd / fx.u : rate > 1 ? bd / rate : 0;   // seconds of timeline per repeat
+    if (slice) { src.loop = true; src.loopStart = at; src.loopEnd = Math.min(D, at + slice * rate); }
+    const g = this.ctx.createGain(), lvl = fx.g ?? 1, end = T + bd - late;
+    g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(lvl, T + FADE);
+    g.gain.setValueAtTime(lvl, end - FADE); g.gain.linearRampToValueAtTime(0, end);
+    src.connect(g).connect(this.engine.channel(id).input);
+    const off = slice ? at + ((late * rate) % (slice * rate)) : at + late * rate;
+    src.start(T, Math.min(off, D - 0.01)); src.stop(end + 0.003);
+    src.onended = () => { src.disconnect(); g.disconnect(); };
+    const v = { src, g, url: want.url, cell: want.cell, base: B - want.bar, end, fx };
     this.voices.set(id, v);
     return v;
   }

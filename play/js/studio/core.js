@@ -246,6 +246,18 @@ function makeHall(ctx, seconds) {
 //         pattern clips play one instrument's part (or the moves) of a pattern, looped to the clip's length.
 // Recording in song mode makes a take: a fresh pattern, laid on the timeline as clips when you stop.
 export const PATS = 'ABCDEFGHIJKLMNOP'.split('');
+/** Which bar of the original a stem clip plays, `rel` bars into it, and how (the clip's treatment). */
+export function srcBar(cl, rel, N) {
+  const fx = cl.fx, sp = fx?.s || 1;
+  let pos = ((cl.loop ? cl.off || 0 : 0) + rel) * sp;                 // half speed walks through the source at half the pace
+  if (cl.loop) pos = ((pos % cl.loop) + cl.loop) % cl.loop;
+  const total = cl.src + pos, whole = Math.floor(total + 1e-6), o = total - whole > 1e-3 ? +(total - whole).toFixed(3) : 0;
+  const bar = ((whole % N) + N) % N;
+  if (!o && (!fx || (!fx.r && sp === 1 && !fx.u && (fx.g ?? 1) === 1))) return { bar };
+  return { bar, fx: { r: fx?.r ? 1 : 0, s: sp, u: fx?.u || 0, g: fx?.g ?? 1, o } };
+}
+/** Shift where a stem clip starts in its source by d timeline bars (after a trim or a split). */
+export function shiftSrc(cl, d) { if (cl.loop) cl.off = (cl.off || 0) + d; else cl.src = +(cl.src + d * (cl.fx?.s || 1)).toFixed(3); return cl; }
 export const isTake = (k) => !PATS.includes(k);
 export const takeName = (k) => `take ${String(k).slice(1)}`;
 export class Sequencer extends EventTarget {
@@ -296,12 +308,14 @@ export class Sequencer extends EventTarget {
   q(b) { return this.quant ? (Math.round(b / this.quant) * this.quant) % this.wrap() : b; }
   noteIn(slot, note, vel, on) {
     this.s.noteSeen?.(note, on);
+    if (!this.rec) this.remember({ k: 'n', slot, note, vel, on });
     if (!this.rec || !this.s.player.playing) return;
     const b = this.recBeat(), key = slot + ':' + note;
     if (on) this.held.set(key, { k: 'n', slot, note, vel: +vel.toFixed(2), b: +this.q(b).toFixed(3), d: this.quant || 0.25, start: b, p: this.pass });
     else { const e = this.held.get(key); if (!e) return; this.held.delete(key); let d = b - e.start; if (d <= 0) d += this.wrap() < 1e8 ? this.wrap() : 0; e.d = +Math.max(this.quant || 0.1, this.quant ? Math.round(d / this.quant) * this.quant : d).toFixed(3); delete e.start; this.list.push(e); this.emit(); }
   }
   moveIn(path, value) {
+    if (!this.rec && (typeof value === 'number' || typeof value === 'boolean')) this.remember({ k: 'm', path, v: typeof value === 'number' ? +value.toFixed(4) : value });
     if (!this.rec || !this.s.player.playing || (typeof value !== 'number' && typeof value !== 'boolean')) return;
     const b = +this.recBeat().toFixed(3), list = this.list, val = typeof value === 'number' ? +value.toFixed(4) : value;
     this.touched.add(path);
@@ -348,7 +362,7 @@ export class Sequencer extends EventTarget {
       const a = clip.start, b = clip.start + clip.len, oa = o.start, ob = o.start + o.len;
       if (ob <= a || oa >= b) { out.push(o); continue; }
       if (oa < a) out.push({ ...o, len: a - oa });
-      if (ob > b) { const d = b - oa; out.push({ ...o, id: o.id === undefined || oa < a ? this.uid++ : o.id, start: b, len: ob - b, ...(o.src !== undefined ? { src: o.src + (o.loop ? 0 : d) } : { off: (o.off || 0) + d }) }); }
+      if (ob > b) { const d = b - oa, r = o.src !== undefined ? shiftSrc({ ...o }, d) : { ...o, off: (o.off || 0) + d }; out.push(Object.assign(r, { id: o.id === undefined || oa < a ? this.uid++ : o.id, start: b, len: ob - b })); }
     }
     out.push(clip); this.arr.clips = out; return clip;
   }
@@ -380,20 +394,80 @@ export class Sequencer extends EventTarget {
   bandPatterns() {
     const song = this.s.song, cb = song.barsPerCell, N = song.numBars, c = this.arr.cycle;
     const len = c ? c[1] - c[0] : Math.max(1, this.arr.bars), a = c ? c[0] : 0, out = {};
-    const band = this.arr.clips.filter((x) => x.lane === 'band');
+    const band = this.arr.clips.filter((x) => x.lane === 'band'), detached = this.arr.own || {};
     for (const st of song.stems) {
-      const own = this.arr.clips.filter((x) => x.lane === 'stem:' + st.id), pat = new Array(len).fill(null);
+      const own = this.arr.clips.filter((x) => x.lane === 'stem:' + st.id), pat = new Array(len).fill(null), alone = detached[st.id];
       for (let i = 0; i < len; i++) {
         const T = c ? a + (((i - a) % len) + len) % len : i;
         if (T >= this.arr.bars) continue;
-        const at = (x) => T >= x.start && T < x.start + x.len, cl = own.find(at) || band.find(at);
+        const at = (x) => T >= x.start && T < x.start + x.len, cl = own.find(at) || (alone ? null : band.find(at));
         if (!cl || cl.mute?.includes(st.id)) continue;
-        const rel = T - cl.start; let src = cl.src + (cl.loop ? rel % cl.loop : rel); src = ((src % N) + N) % N;
-        const cell = Math.floor(src / cb); if (st.cells[cell]) pat[i] = [cell, src % cb];
+        const r = srcBar(cl, T - cl.start, N), cell = Math.floor(r.bar / cb);
+        if (st.cells[cell]) pat[i] = r.fx ? [cell, r.bar % cb, r.fx] : [cell, r.bar % cb];
       }
       out[st.id] = { mode: 'pattern', pattern: pat };
     }
     return out;
+  }
+  /** Give a stem its own lane: it stops following the Stems lane, which is copied onto it to start from. */
+  detach(stemId) {
+    const own = (this.arr.own ??= {}); if (own[stemId]) return false;
+    const lane = 'stem:' + stemId, mine = this.arr.clips.filter((c) => c.lane === lane);
+    for (const b of this.arr.clips.filter((c) => c.lane === 'band')) {
+      if (b.mute?.includes(stemId)) continue;
+      // older own clips win where they overlap, as they did when they played
+      let segs = [[b.start, b.start + b.len]];
+      for (const m of mine) segs = segs.flatMap(([x, y]) => (m.start >= y || m.start + m.len <= x ? [[x, y]] : [[x, Math.max(x, m.start)], [Math.min(y, m.start + m.len), y]].filter(([p, q]) => q > p)));
+      for (const [x, y] of segs) { const d = x - b.start; const cl = { id: this.uid++, lane, start: x, len: y - x, src: b.src, name: b.name, loop: b.loop, off: b.off, fx: b.fx ? { ...b.fx } : undefined }; this.arr.clips.push(shiftSrc(cl, d)); }
+    }
+    own[stemId] = true; return true;
+  }
+  /** Let a stem follow the Stems lane again; its own clips go. */
+  attach(stemId) { if (this.arr.own) delete this.arr.own[stemId]; this.arr.clips = this.arr.clips.filter((c) => c.lane !== 'stem:' + stemId); }
+  /** Lay a pattern on the arrangement at a bar: one clip per instrument that has notes in it, and one for its moves. */
+  placePattern(k, bar) {
+    const ev = this.vars[k]; if (!ev?.length) return [];
+    const len = this.lens[k], out = [];
+    for (const lane of new Set(ev.map((e) => (e.k === 'n' ? e.slot : 'm')))) out.push(this.place({ lane, part: lane, start: bar, len, pat: k }));
+    if (bar + len > this.arr.bars) this.arr.bars = bar + len;
+    return out;
+  }
+  /** The first bar after everything on these lanes (where a new idea can go without covering anything). */
+  endOf(lanes) { let e = 0; for (const c of this.arr.clips) if (lanes.includes(c.lane)) e = Math.max(e, c.start + c.len); return e; }
+
+  // ---------------------------------------------------------------- capture: what you played without recording
+  /** Notes and moves are always remembered for the last 32 bars, so a good idea played with Record off can still be kept. */
+  remember(e) {
+    const p = this.s.player; if (!p.playing || this.rec) return;
+    const ab = p.beatNow(), H = (this.hist ??= []);
+    H.push({ ...e, ab }); const cut = ab - 32 * this.bpb; while (H.length && H[0].ab < cut) H.shift();
+    if (H.length > 6000) H.splice(0, H.length - 6000);
+    this.emit();
+  }
+  canCapture() { const H = this.hist || []; return H.some((e) => e.k === 'n' && e.on) || H.some((e) => e.k === 'm'); }
+  /** Turn the last phrase you played (back to the first pause of two bars or more, at most 16 bars) into a take. */
+  capture() {
+    const H = this.hist || [], bpb = this.bpb; if (!H.length) return null;
+    let i = H.length - 1; while (i > 0 && H[i].ab - H[i - 1].ab < 2 * bpb && H[H.length - 1].ab - H[i - 1].ab < 16 * bpb) i--;
+    const part = H.slice(i), startAbs = Math.floor(part[0].ab / bpb) * bpb;
+    const notes = [], open = new Map();
+    for (const e of part) {
+      const b = +(e.ab - startAbs).toFixed(3);
+      if (e.k === 'n') { const key = e.slot + ':' + e.note; if (e.on) open.set(key, { k: 'n', slot: e.slot, note: e.note, vel: +e.vel.toFixed(2), b: this.quant ? Math.round(b / this.quant) * this.quant : b, start: b, p: 0 }); else { const n = open.get(key); if (n) { open.delete(key); n.d = +Math.max(this.quant || 0.1, b - n.start).toFixed(3); delete n.start; notes.push(n); } } }
+      else notes.push({ k: 'm', path: e.path, v: e.v, b, p: 0 });
+    }
+    const lastB = part[part.length - 1].ab - startAbs;
+    for (const n of open.values()) { n.d = +Math.max(0.25, lastB - n.start).toFixed(3); delete n.start; notes.push(n); }
+    if (!notes.length) return null;
+    this.snapshot();
+    let n = 1; while (this.vars['T' + n]) n++;
+    const k = 'T' + n, len = Math.max(1, Math.ceil((lastB + 0.01) / bpb));
+    this.vars[k] = notes; this.lens[k] = len;
+    // where it goes: where it was played if the arrangement was playing, otherwise after what is already there
+    const lanes = [...new Set(notes.map((e) => (e.k === 'n' ? e.slot : 'm')))];
+    const bar = this.mode === 'song' ? Math.floor(this.tl(startAbs) / bpb) : this.endOf(lanes);
+    this.placePattern(k, bar); this.hist = [];
+    this.changed(); return { k, bar, len };
   }
   applyBand() { if (this.mode === 'song') this.s.session.dispatch({ t: 'tracks/set', p: this.bandPatterns() }, { log: false }); }
 

@@ -319,3 +319,24 @@ body.songmode #t-play.on{box-shadow:0 0 0 3px #e6b45033}
 .forge .knobs.tight{row-gap:6px}
 .forge .card>*{flex-shrink:0}
 .forge{grid-auto-rows:max-content}
+
+/* ---------- v3.2: record in the header, capture, stems with their own lanes, treatments */
+#t-rec{border-color:#df8a7488!important}
+#t-rec i{width:12px;height:12px;border-radius:50%;background:var(--rec);display:block}
+#t-rec:hover{border-color:var(--rec)!important}
+#t-rec.on{background:var(--rec);border-color:var(--rec)!important}#t-rec.on i{background:var(--ground);animation:blink 1s steps(2) infinite}
+.transport .cap-btn{width:auto;height:30px;border-radius:15px;padding:0 11px;font:11px var(--mono);letter-spacing:.04em;color:var(--paper)}
+.transport .cap-btn:disabled{opacity:.32;cursor:default}
+.transport .cap-btn:not(:disabled){border-color:#e6b45088}
+#recnote{position:fixed;left:50%;top:62px;transform:translateX(-50%);z-index:20;background:#11141bf2;border:1px solid var(--rec);color:var(--paper);font:11.5px var(--mono);padding:7px 14px;border-radius:16px;pointer-events:none;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}
+#toast{position:fixed;left:50%;bottom:200px;transform:translate(-50%,10px);opacity:0;transition:.25s;z-index:30;background:var(--paper);color:var(--ground);font:12px var(--mono);padding:8px 14px;border-radius:16px;pointer-events:none}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.roomhelp{margin:0 0 8px;font-size:13px;line-height:1.45;color:var(--dim);max-width:72em}.roomhelp b{color:var(--paper);font-weight:500}
+.insp-note{margin:0;font-size:12.5px;line-height:1.45;color:var(--dim);max-width:60em}
+.treat{flex-wrap:wrap;row-gap:6px}
+.lh.stem.own .ln{color:var(--p)}
+.lh.stem .mini{height:15px;padding:0 5px;font-size:10px}
+#room-song.stems-open .tl{flex:3}
+#bar .id{overflow:hidden}#bar .song{overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media (max-width:1600px){#bar .crumb{display:none}#bar{gap:18px}}
+#room-song.stems-open .tl{flex:2.2}#room-song.stems-open .ed{min-height:250px}
