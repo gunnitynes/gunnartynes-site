@@ -177,6 +177,7 @@ export function buildTextures(studio) {
   };
   const sync = () => { gate.port.postMessage({ bar0: player.bar0, beatDur: player.beatDur, playing: player.playing }); restartLfo(); };
   player.on('transport', sync); player.on('seek', sync);
+  player.on('tempo', () => { sync(); P.apply['fx.echo.time']?.(P.get('fx.echo.time')); });
 
   const resFreqs = () => { if (P.get('fx.res.follow') && studio.heard?.length) return studio.heard.map((m) => { let f = midiHz(m); while (f > 700) f /= 2; while (f < 70) f *= 2; return f; }); const root = midiHz(36 + P.get('fx.res.root')), ch = CHORDS[P.get('fx.res.chord')] || CHORDS.fifths; return ch.map((s) => root * 2 ** (s / 12)); };
   const retune = () => res.port.postMessage({ p: { freqs: resFreqs() } });
@@ -275,6 +276,9 @@ export class Sequencer extends EventTarget {
   set bars(v) { this.lens[this.cur] = v; }
   get beats() { return this.bars * this.bpb; }
   pb(k) { return this.lens[k] * this.bpb; }
+  /** The patterns on show: four to begin with, then as many as have been added or used. */
+  shownPats() { let n = Math.max(4, this.npat || 4); PATS.forEach((k, i) => { if (this.used(k) || k === this.cur) n = Math.max(n, i + 1); }); return PATS.slice(0, n); }
+  addPat() { const n = this.shownPats().length; if (n >= PATS.length) return null; this.npat = n + 1; this.cur = PATS[n]; this.emit(); return this.cur; }
   used(k) { return this.vars[k].length > 0 || this.arr.clips.some((c) => c.pat === k); }
   /** Where on the song timeline (in beats) an absolute player beat falls. */
   tl(abs) {
@@ -521,11 +525,11 @@ export class Sequencer extends EventTarget {
       }
     }
   }
-  dump() { return { vars: this.vars, lens: this.lens, cur: this.cur, quant: this.quant, chain: this.chain, mode: this.mode, arr: this.arr, uid: this.uid, jamTracks: this.jamTracks, mute: [...this.mute] }; }
+  dump() { return { vars: this.vars, lens: this.lens, cur: this.cur, quant: this.quant, chain: this.chain, mode: this.mode, npat: this.npat, arr: this.arr, uid: this.uid, jamTracks: this.jamTracks, mute: [...this.mute] }; }
   load(d) {
     if (!d) return;
     const vars = { ...Object.fromEntries(PATS.map((k) => [k, []])), ...(d.vars || {}) }, lens = { ...Object.fromEntries(PATS.map((k) => [k, d.bars || 4])), ...(d.lens || {}) };
-    Object.assign(this, { vars, lens, cur: d.cur || 'A', quant: d.quant ?? 0.25, chain: !!d.chain, arr: d.arr || { bars: 0, clips: [], cycle: null }, uid: d.uid || 1, jamTracks: d.jamTracks || null, mute: new Set(d.mute || []) });
+    Object.assign(this, { vars, lens, cur: d.cur || 'A', quant: d.quant ?? 0.25, chain: !!d.chain, arr: d.arr || { bars: 0, clips: [], cycle: null }, uid: d.uid || 1, jamTracks: d.jamTracks || null, mute: new Set(d.mute || []), npat: d.npat || 4 });
     this.wantMode = d.mode || 'jam';
     this.emit();
   }

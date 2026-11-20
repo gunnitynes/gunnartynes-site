@@ -340,3 +340,30 @@ body.songmode #t-play.on{box-shadow:0 0 0 3px #e6b45033}
 #bar .id{overflow:hidden}#bar .song{overflow:hidden;text-overflow:ellipsis;min-width:0}
 @media (max-width:1600px){#bar .crumb{display:none}#bar{gap:18px}}
 #room-song.stems-open .tl{flex:2.2}#room-song.stems-open .ed{min-height:250px}
+.lh.addlane{border-bottom:1px solid #ffffff0a}
+.addinst{display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 10px 0 7px;border:1px dashed var(--rule2);border-radius:10px;font:10.5px var(--mono);color:var(--dim)}
+.addinst:hover:not(:disabled){border-color:var(--p);color:var(--p)}.addinst:disabled{opacity:.4}
+.vars .addpat{color:var(--p);font-weight:500}
+.pchip.addpat{color:var(--p);min-width:30px;justify-content:center}
+.arr-song{top:8px;left:auto;right:8px;transform:none;pointer-events:none;font-size:11px;padding:6px 12px}
+.legend .lp{background:#ece8dc;width:2px!important}
+.rec.big{padding:8px 16px 8px 12px;font-size:12.5px}
+.recinfo{color:var(--rec)}
+.map.rec{box-shadow:inset 0 0 0 1.5px var(--rec)}
+.roomhelp .r{color:var(--rec)}
+.tempo{display:flex;align-items:center;gap:2px;border:1px solid var(--rule);border-radius:16px;padding:2px 4px;height:32px}
+.transport .tempo button{width:22px;height:22px;border:0;font:14px var(--mono);color:var(--dim)}
+.transport .tempo button:hover{color:var(--paper)}
+.tempo .num{width:38px;background:none;border:0;color:var(--paper);font:13px var(--mono);text-align:right;-moz-appearance:textfield;padding:0}
+.tempo .num::-webkit-inner-spin-button{-webkit-appearance:none}
+.tempo .u{font:10px var(--mono);color:var(--faint);margin-right:2px}
+.tempo.moved .num{color:var(--p)}
+.transport .tempo .warp{width:auto;padding:0 7px;height:20px;border:1px solid var(--rule)!important;border-radius:10px;font:10px var(--mono);letter-spacing:.04em;margin-left:3px}
+.transport .tempo .warp[aria-pressed=true]{color:var(--rec);border-color:#df8a7466!important}
+/* no selecting text by accident: this is an instrument, not a page to read */
+body{-webkit-user-select:none;user-select:none}
+input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text}
+#bar .id{min-width:max-content}
+@media (max-width:1700px){#bar .song{display:none}}
+@media (max-width:1500px){#bar .home{font-size:17px}.mixhead .knob{width:40px}#rooms button{padding-left:10px;padding-right:10px}}
+@media (max-width:1560px){#bar{gap:12px;padding-left:14px;padding-right:14px}.transport{gap:6px}#bar #rooms button{padding-left:9px;padding-right:9px}.modesw button{padding-left:10px;padding-right:10px}}

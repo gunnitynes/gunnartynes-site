@@ -6,7 +6,7 @@ import { CellLoader } from '../engine/loader.js';
 import { Player } from '../engine/player.js';
 import { Session, initialState } from '../state/session.js';
 import { $, h, api } from '../lib/util.js';
-import { Params, loadSource, loudestCells, loudestWindow, sliceOf, CloudVoice, SamplerVoice, StringsVoice, buildTextures, Sequencer, PATS, isTake, takeName } from './core.js';
+import { Params, loadSource, loudestCells, loudestWindow, sliceOf, CloudVoice, SamplerVoice, StringsVoice, buildTextures, Sequencer, PATS, isTake, takeName, srcBar } from './core.js';
 import { Wave, Keys, knob, group } from './ui.js';
 import { buildStrips, buildMixRoom } from './mixer.js';
 import { buildSong } from './song.js';
@@ -16,9 +16,9 @@ const params = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {} };
 window.studio = S;
 const NOTE = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
-const COLORS = ['#e6b450', '#9cc2f4', '#8fd3c5', '#f29ba0', '#c3a6f0', '#f0c08f', '#a8d68a', '#7fc9e8'];
-const NAMES = ['Cloud', 'Instrument 1', 'Instrument 2', 'Instrument 3', 'Instrument 4', 'Instrument 5', 'Instrument 6', 'Instrument 7'];
-const MAX_FORGE = 7;
+const COLORS = ['#e6b450', '#9cc2f4', '#8fd3c5', '#f29ba0', '#c3a6f0', '#f0c08f', '#a8d68a', '#7fc9e8', '#e8a0d0'];
+const NAMES = ['Cloud', 'Instrument 1', 'Instrument 2', 'Instrument 3', 'Instrument 4', 'Instrument 5', 'Instrument 6', 'Instrument 7', 'Instrument 8'];
+const MAX_FORGE = 8;
 const short = (n) => n.replace('Instrument ', 'Inst ');
 const sec = (v) => (v < 1 ? `${Math.round(v * 1000)} ms` : `${v.toFixed(1)} s`);
 
@@ -87,11 +87,22 @@ function buildHeader() {
   $('#inst-knob').append(knob(P, 'inst.level', 'Instruments'));
   $('#t-play').onclick = () => (player.playing ? player.stop() : player.play());
   $('#t-rec').onclick = () => toggleRec();
+  // tempo: the stems are warped to it (pitch kept) or played like tape (pitch follows); saved with everything else
+  const orig = S.song.bpm;
+  P.define('song.bpm', orig, (v) => player.setTempo(v, P.get('song.warp') ?? true));
+  P.define('song.warp', true, (v) => player.setTempo(P.get('song.bpm') ?? orig, v));
+  const bpmIn = h('input', { type: 'number', min: 40, max: 240, step: 1, class: 'num', 'aria-label': 'Tempo in BPM', title: `Tempo · the song is ${orig} BPM · double-click for that`, onchange: (e) => setBpm(+e.target.value), ondblclick: () => setBpm(orig) });
+  const setBpm = (v) => { P.set('song.bpm', Math.max(40, Math.min(240, Math.round(v) || orig)), { by: 'ui' }); };
+  const warpB = h('button', { type: 'button', class: 'warp', title: 'Warp: the stems are stretched to the tempo and keep their pitch · Tape: they play faster or slower, and the pitch goes with them', onclick: () => P.set('song.warp', !P.get('song.warp'), { by: 'ui' }) });
+  const tempo = h('div', { class: 'tempo' }, h('button', { type: 'button', title: 'Slower', onclick: () => setBpm(P.get('song.bpm') - 1) }, '−'), bpmIn, h('span', { class: 'u' }, 'bpm'), h('button', { type: 'button', title: 'Faster', onclick: () => setBpm(P.get('song.bpm') + 1) }, '+'), warpB);
+  $('.transport').append(tempo);
+  const showTempo = () => { const b = P.get('song.bpm'); bpmIn.value = b; tempo.classList.toggle('moved', b !== orig); warpB.textContent = P.get('song.warp') ? 'warp' : 'tape'; warpB.setAttribute('aria-pressed', !P.get('song.warp')); };
+  P.on(({ path }) => (path === 'song.bpm' || path === 'song.warp') && showTempo()); showTempo();
   const cap = $('#t-cap');
   cap.onclick = () => { const r = S.seq.capture(); if (!r) return; flash(`Captured ${r.len} bar${r.len > 1 ? 's' : ''} as ${takeName(r.k)} at bar ${r.bar + 1} of the arrangement`); };
   const recNote = h('div', { id: 'recnote', hidden: true }); document.body.append(recNote);
   const showRec = () => {
-    const q = S.seq; $('#t-rec').classList.toggle('on', q.rec); cap.disabled = q.rec || !q.canCapture();
+    const q = S.seq; $('#t-rec').classList.toggle('on', q.rec && q.mode === 'song'); cap.disabled = q.rec || !q.canCapture();
     recNote.hidden = !q.rec;
     recNote.textContent = q.mode === 'song' ? `● Recording onto the arrangement${q.take ? ` as ${takeName(q.take.pat)}` : ''} · keys, Cloud touches, every knob, the mix and Re-arrange clicks all go in` : `● Recording into Pattern ${q.cur} · it loops, and each pass adds to it`;
   };
@@ -109,11 +120,12 @@ function buildHeader() {
     else if (e.key === 'r' || e.key === 'R') toggleRec();
     else if (e.key === 'b' || e.key === 'B') P.set('band.on', !P.get('band.on'));
     else if (e.key === 'Home') session.dispatch({ t: 'seek', bar: 0 });
-    else if (/^[1-8]$/.test(e.key) && S.slots[+e.key - 1]) S.selectSlot(+e.key - 1);
+    else if (/^[1-9]$/.test(e.key) && S.slots[+e.key - 1]) S.selectSlot(+e.key - 1);
     else if (e.key === 'Enter' && !e.target.closest('button')) S.seq.setMode(S.seq.mode === 'song' ? 'jam' : 'song');
   });
 }
-function toggleRec() { const q = S.seq; q.arm(!q.rec); if (q.rec && !S.player.playing) S.player.play(); }
+/** Record (R, the header's ●, every room's Record) goes onto the arrangement; the deck's "Pattern" button records into a pattern. */
+function toggleRec() { const q = S.seq; if (q.rec) { q.arm(false); return; } q.setMode('song'); q.arm(true); if (!S.player.playing) S.player.play(); }
 function flash(msg) { let t = $('#toast'); if (!t) { t = h('div', { id: 'toast' }); document.body.append(t); } t.textContent = msg; t.classList.add('on'); clearTimeout(flash.t); flash.t = setTimeout(() => t.classList.remove('on'), 3200); }
 
 // ------------------------------------------------------------------------------------------------ small controls
@@ -136,7 +148,7 @@ function sourcePicker(onPick) {
 const seg = (P, path, options, title) => { const b = options.map(([v, l]) => h('button', { type: 'button', onclick: () => P.set(path, v) }, l)); const show = () => b.forEach((x, i) => x.setAttribute('aria-pressed', options[i][0] === P.get(path))); P.on(({ path: p }) => p === path && show()); show(); return h('div', { class: 'seg', title }, ...b); };
 const sw = (P, path, label, title) => { const b = h('button', { type: 'button', class: 'sw', title, onclick: () => P.set(path, !P.get(path)) }, h('i'), label); const show = () => b.setAttribute('aria-pressed', !!P.get(path)); P.on(({ path: p }) => p === path && show()); show(); return b; };
 const pick = (P, path, options, title) => { const s = h('select', { title, 'aria-label': title, onchange: (e) => P.set(path, isNaN(+e.target.value) ? e.target.value : +e.target.value) }, ...options.map(([v, l]) => h('option', { value: v }, l))); const show = () => { s.value = P.get(path); }; P.on(({ path: p }) => p === path && show()); show(); return s; };
-const recBtn = (label) => { const b = h('button', { type: 'button', class: 'rec', title: 'Record every note and move (R) · in Arrangement mode straight onto the timeline, in Pattern mode into the looping pattern', onclick: toggleRec }, h('i'), label); const s = () => b.classList.toggle('on', S.seq.rec); S.seq.addEventListener('change', s); s(); return b; };
+const recBtn = (label) => { const b = h('button', { type: 'button', class: 'rec', title: 'Record every note and move onto the arrangement, where the playhead is (R)', onclick: toggleRec }, h('i'), label); const s = () => b.classList.toggle('on', S.seq.rec && S.seq.mode === 'song'); S.seq.addEventListener('change', s); s(); return b; };
 
 // ------------------------------------------------------------------------------------------------ Re-arrange (the band: map + mixer)
 function buildArrange() {
@@ -159,68 +171,113 @@ function buildArrange() {
     const ms = (k, l, t) => { const b = h('button', { type: 'button', class: `ms ${k}`, title: t, onclick: () => P.set(`band.${id}.${k}`, !P.get(`band.${id}.${k}`)) }, l); const show = () => b.setAttribute('aria-pressed', !!P.get(`band.${id}.${k}`)); P.on(({ path }) => path === `band.${id}.${k}` && show()); show(); return b; };
     mixer.append(h('div', { class: 'strip' }, h('span', { class: 'nm', title: st.name }, st.name), ms('mute', 'M', 'Mute'), ms('solo', 'S', 'Solo'), h('div', { class: 'gw' }, bar, meter)));
   }
-  const jam = () => S.seq.setMode('jam');
-  const help = h('p', { class: 'roomhelp' });
-  const showHelp = () => { help.replaceChildren(...(S.seq.mode === 'song'
-    ? [h('b', {}, 'Arrangement mode: '), 'every stem is cut into 4-bar blocks (left to right is the song). Click a block and from the next bar that stem repeats those 4 bars — written onto its own lane in the Arrangement. With Record on it holds until you click again or stop; with Record off it writes 4 bars. The amber outline is what each stem plays now.']
-    : [h('b', {}, 'Pattern mode, live: '), 'every stem is cut into 4-bar blocks (left to right is the song). Click a block and that stem repeats those 4 bars while the others go on; click it again and it follows the song. Nothing is written down — switch to Arrangement to write these moves onto the timeline.'])); };
-  S.seq.addEventListener('change', showHelp); showHelp();
-  const tools = h('div', { class: 'bar2' },
-    h('button', { type: 'button', class: 'pill', title: 'Let every musician play the song as written', onclick: () => jam() || session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'follow' }])) }) }, 'Everyone follows the song'),
-    h('button', { type: 'button', class: 'pill', title: 'Keep every musician on the four bars playing now', onclick: () => { jam(); const c = Math.floor(Math.max(0, player.barNow()) / song.barsPerCell); session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'loop', cell: c }])) }); } }, 'Hold this moment'),
-    h('span', { class: 'sp' }), h('span', { class: 'legend' }, h('i', { class: 'lf' }), 'plays the song', h('i', { class: 'lh' }), 'held on these 4 bars', h('i', { class: 'lo' }), 'waiting'));
-  room.append(help, tools, h('div', { class: 'arr' }, mixer, box));
+  const jam = () => S.seq.setMode('jam'), cb = song.barsPerCell, bpb = song.beatsPerBar;
+  // Re-arrange is played live. Its own Record button writes what each stem played, bar by bar, into the
+  // Arrangement at the same bars (only where it differs from what the Arrangement already plays there).
+  const help = h('p', { class: 'roomhelp' }, h('b', {}, 'Play the stems live. '), 'Each row is a stem, cut into 4-bar blocks from the start of the song (left) to the end (right). Click a block and that stem loops it while the others carry on; click it again and it goes back to the song. Each stem has its own playhead, so you can see where every one of them is. Press ', h('b', { class: 'r' }, '● Record into the Arrangement'), ' and what you play is written onto the stems’ lanes in the Arrangement when you stop.');
+  const recB = h('button', { type: 'button', class: 'rec big', title: 'Play live and write it into the Arrangement when you stop' }, h('i'), 'Record into the Arrangement');
+  const recInfo = h('span', { class: 'cap recinfo' });
+  const tools = h('div', { class: 'bar2' }, recB, recInfo,
+    h('button', { type: 'button', class: 'pill', title: 'Let every stem play the song as written', onclick: () => { jam(); session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'follow' }])) }); } }, 'Everyone follows the song'),
+    h('button', { type: 'button', class: 'pill', title: 'Keep every stem on the four bars playing now', onclick: () => { jam(); const c = Math.floor(Math.max(0, player.barNow()) / cb) % song.numCells; session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'loop', cell: c }])) }); } }, 'Hold this moment'),
+    h('span', { class: 'sp' }), h('span', { class: 'legend' }, h('i', { class: 'lf' }), 'plays the song', h('i', { class: 'lh' }), 'looping this block', h('i', { class: 'lp' }), 'playhead'));
+  const songNote = h('div', { class: 'arr-song' }, h('span', {}, 'The Arrangement is playing. Click a block, or press Record, to play the stems live here.'));
+  room.append(help, tools, h('div', { class: 'arr' }, mixer, box, songNote));
   const g = cv.getContext('2d'); let W = 0, H = 0;
   new ResizeObserver(() => { const r = box.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }).observe(box);
   const top = 22, geom = () => ({ cols: song.numCells, cw: W / song.numCells, rh: (H - top) / song.stems.length });
   S.arrTop = top;
+  /** Leaving the Arrangement for live play: the live stems start where the Arrangement playhead was. */
+  const goLive = () => { if (S.seq.mode !== 'song') return; const bar = Math.floor(S.seq.tl(S.seq.nowBeat()) / bpb) % song.numBars, was = player.playing; jam(); session.dispatch({ t: 'seek', bar }); if (was && !player.playing) player.play(); };
   cv.addEventListener('pointerdown', (e) => {
     const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, { cw, rh } = geom(), c = Math.floor(x / cw);
-    if (y < top) { session.dispatch({ t: 'seek', bar: c * song.barsPerCell }); return; }
+    if (y < top) { goLive(); session.dispatch({ t: 'seek', bar: c * cb }); return; }
     const st = song.stems[Math.floor((y - top) / rh)]; if (!st || !st.cells[c]) return;
-    if (S.seq.mode === 'song') { writeHold(st, c); return; }
+    if (S.seq.mode === 'song' && S.seq.rec) { writeHold(st, c); return; }   // the Arrangement's own Record also takes clicks
+    goLive();
     const tr = session.state.tracks[st.id];
     session.dispatch({ t: 'track/set', id: st.id, p: tr.mode === 'loop' && tr.cell === c ? { mode: 'follow' } : { mode: 'loop', cell: c } });
   });
-  // Arrangement mode: a click writes a held block onto the stem's own lane (while recording it grows until released)
+
+  // ---- recording live play into the Arrangement: what every stem resolved to, bar by bar
+  let take = null;
+  player.on('bar', ({ bar }) => {
+    if (!take || S.seq.mode !== 'jam') return;
+    for (const st of song.stems) { const tr = session.state.tracks[st.id], w = player.resolve(tr, bar); (take.bars[st.id] ??= {})[bar] = w ? { cell: w.cell, bar: w.bar, loop: tr.mode === 'loop' } : null; }
+    take.last = bar; recInfo.textContent = `recording · bar ${(take.first ?? bar) % song.numBars + 1} to ${bar % song.numBars + 1}`; take.first ??= bar;
+  });
+  const startLive = () => { goLive(); S.seq.mode === 'song' && jam(); take = { bars: {}, first: null, last: null }; recB.classList.add('on'); box.classList.add('rec'); recInfo.textContent = 'recording'; if (!player.playing) player.play(); };
+  const stopLive = () => {
+    const t = take; take = null; recB.classList.remove('on'); box.classList.remove('rec'); recInfo.textContent = '';
+    if (!t || t.first === null) return;
+    const q = S.seq, N = song.numBars, at = (B) => B - t.first + (t.first % N);   // the take lands where it was played in the song
+    const bandSrc = (bar) => { const cl = q.arr.clips.find((c) => c.lane === 'band' && bar >= c.start && bar < c.start + c.len); return cl && !cl.mute?.length ? srcBar(cl, bar - cl.start, N).bar : null; };
+    q.snapshot(); let wrote = 0, endBar = 0;
+    for (const st of song.stems) {
+      const rec = t.bars[st.id] || {}; let run = null;
+      const flush = () => { if (!run) return; q.place(run.clip); wrote++; endBar = Math.max(endBar, run.clip.start + run.clip.len); run = null; };
+      for (let B = t.first; B <= t.last; B++) {
+        const r = rec[B], pos = at(B); if (!r) { flush(); continue; }
+        const src = r.cell * cb + r.bar;
+        // following the song where the Arrangement already plays the same bar: nothing to write
+        if (!r.loop && !q.arr.own?.[st.id] && bandSrc(pos) === src) { flush(); continue; }
+        const same = run && run.next === pos && (r.loop ? run.loop && run.cell === r.cell : !run.loop && run.src === src);
+        if (same) { run.clip.len++; run.next++; run.src = src + 1; continue; }
+        flush();
+        run = r.loop ? { loop: true, cell: r.cell, next: pos + 1, clip: { lane: 'stem:' + st.id, start: pos, len: 1, src: r.cell * cb, loop: cb, off: r.bar, name: `${r.cell * cb + 1}` } }
+          : { loop: false, src: src + 1, next: pos + 1, clip: { lane: 'stem:' + st.id, start: pos, len: 1, src, name: `${src + 1}` } };
+      }
+      flush();
+    }
+    if (endBar > q.arr.bars) q.arr.bars = endBar;
+    q.changed();
+    const a = at(t.first) + 1, z = at(t.last) + 1;
+    flash(wrote ? `Written into the Arrangement: bars ${a}–${z}, ${wrote} piece${wrote > 1 ? 's' : ''} on the stems’ lanes` : `Nothing to write: bars ${a}–${z} already sound like this in the Arrangement`);
+    if (!wrote) q.undos.pop();
+  };
+  recB.onclick = () => (take ? stopLive() : startLive());
+  player.on('transport', ({ playing }) => { if (!playing && take) stopLive(); });
+  S.seq.addEventListener('change', () => { songNote.hidden = S.seq.mode !== 'song' || !!take; if (take && S.seq.mode === 'song') stopLive(); });
+  songNote.hidden = S.seq.mode !== 'song';
+
+  // Arrangement mode with its Record on: a click writes a held block onto the stem's own lane, growing until released
   S.liveHolds = new Map();
   const writeHold = (st, c) => {
-    const q = S.seq, bpb = song.beatsPerBar, cb = song.barsPerCell, lane = 'stem:' + st.id;
+    const q = S.seq, lane = 'stem:' + st.id;
     const now = Math.floor(q.tl(q.nowBeat()) / bpb) + (player.playing ? 1 : 0), cur = S.liveHolds.get(st.id);
     if (cur) { S.liveHolds.delete(st.id); if (cur.src === c * cb) { q.changed(); return; } }
-    if (!q.rec) q.snapshot();
-    const clip = q.place({ lane, start: now, len: q.rec ? 1 : cb, src: c * cb, loop: cb, name: `${c * cb + 1}` });
+    const clip = q.place({ lane, start: now, len: 1, src: c * cb, loop: cb, name: `${c * cb + 1}` });
     if (clip.start + clip.len > q.arr.bars) q.arr.bars = clip.start + clip.len;
-    if (q.rec) S.liveHolds.set(st.id, clip);
+    S.liveHolds.set(st.id, clip);
     q.changed();
   };
   S.growHolds = () => {
     if (!S.liveHolds.size) return; const q = S.seq;
     if (!q.rec || q.mode !== 'song') { S.liveHolds.clear(); return; }
-    const bar = Math.floor(q.tl(q.nowBeat()) / song.beatsPerBar); let grew = false;
+    const bar = Math.floor(q.tl(q.nowBeat()) / bpb); let grew = false;
     for (const [id, cl] of S.liveHolds) { if (!q.arr.clips.includes(cl)) { S.liveHolds.delete(id); continue; } const want = Math.max(cl.len, bar - cl.start + 2); if (want !== cl.len && bar >= cl.start) { cl.len = want; grew = true; } }
     if (grew) { const bars = Math.max(...[...S.liveHolds.values()].map((c) => c.start + c.len)); if (bars > q.arr.bars) q.arr.bars = bars; q.changed(); }
   };
   let hover = null; cv.addEventListener('pointermove', (e) => { const r = cv.getBoundingClientRect(); hover = [e.clientX - r.left, e.clientY - r.top]; }); cv.addEventListener('pointerleave', () => { hover = null; });
   S.rooms.arrange = { draw: () => {
     if (!W) return; const { cols, cw, rh } = geom(); g.clearRect(0, 0, W, H);
-    const now = (Math.max(0, player.beatNow()) / song.beatsPerBar / song.barsPerCell) % cols;
     g.font = '10px "IBM Plex Mono", monospace'; g.textBaseline = 'middle';
-    for (let c = 0; c < cols; c += 4) { g.fillStyle = '#6f747f'; g.fillText(String(c * song.barsPerCell + 1), c * cw + 2, 10); }
-    for (const s of song.sections) { g.fillStyle = '#ffffff22'; g.fillRect(s.startCell * cw, top, 1, H - top); }
+    for (let c = 0; c < cols; c += 4) { g.fillStyle = '#6f747f'; g.fillText(String(c * cb + 1), c * cw + 2, 10); }
+    for (const s of song.sections) { g.fillStyle = '#ffffff22'; g.fillRect(s.startCell * cw, top, 1, H - top); g.fillStyle = '#a3a6ad'; if (s.startCell % 4) g.fillText(s.name, s.startCell * cw + 2, 10); }
+    // no single song playhead: every stem shows where it is, which (looping) may be anywhere in the song
+    const bn = Math.max(0, player.beatNow()), B = Math.floor(bn / bpb), frac = (bn / bpb) - B, live = player.playing || S.seq.mode === 'song';
     song.stems.forEach((st, r) => {
       const tr = session.state.tracks[st.id], y = top + r * rh;
+      const w = live ? player.resolve(tr, B) : null;
       for (let c = 0; c < cols; c++) {
         const cell = st.cells[c]; if (!cell) continue;
         const a = Math.max(0.12, Math.min(1, (cell.rms + 50) / 40)), held = tr.mode === 'loop' && tr.cell === c;
-        g.fillStyle = held ? '#e6b450' : `rgba(236,232,220,${(tr.mode === 'follow' || tr.mode === 'pattern' ? 0.45 : 0.16) * a})`;
+        g.fillStyle = held ? '#e6b450' : `rgba(236,232,220,${(w && w.cell === c ? 0.75 : tr.mode === 'loop' ? 0.12 : 0.4) * a})`;
         g.fillRect(c * cw + 1, y + 1, cw - 2, rh - 2);
       }
-      const w = player.playing || S.seq.mode === 'song' ? player.resolve(tr, Math.max(0, player.barNow())) : null;
-      if (w) { g.strokeStyle = S.liveHolds.has(st.id) ? '#df8a74' : '#e6b450'; g.lineWidth = 1.5; g.strokeRect(w.cell * cw + 1.5, y + 1.5, cw - 3, rh - 3); }
+      if (w) { const x = (w.cell + (w.bar + frac) / cb) * cw; g.fillStyle = take || S.liveHolds.has(st.id) ? '#df8a74' : tr.mode === 'loop' ? '#11141b' : '#ece8dc'; g.fillRect(x - 1, y + 1, 2, rh - 2); }
     });
     if (hover) { const c = Math.floor(hover[0] / cw); g.strokeStyle = '#ece8dc'; g.lineWidth = 1; if (hover[1] > top) { const r = Math.floor((hover[1] - top) / rh); g.strokeRect(c * cw + 0.5, top + r * rh + 0.5, cw - 1, rh - 1); } else { g.strokeRect(c * cw + 0.5, 1, cw - 1, top - 3); } }
-    g.fillStyle = '#e6b450'; g.fillRect(now * cw, top - 3, 1.5, H - top + 3);
   } };
 }
 
@@ -374,6 +431,7 @@ function buildDeck() {
   const midi = h('button', { type: 'button', class: 'pill', title: 'Play with a MIDI keyboard', onclick: async () => { try { const names = await keys.midi(); midi.textContent = names.length ? `MIDI · ${names[0]}` : 'No MIDI found'; } catch { midi.textContent = 'No MIDI here'; } } }, 'MIDI');
   const oct = h('div', { class: 'seg oct' }, h('button', { type: 'button', title: 'Octave down (Z)', onclick: () => keys.shift(-12) }, '−'), octl, h('button', { type: 'button', title: 'Octave up (X)', onclick: () => keys.shift(12) }, '+'));
   const vars = PATS.map((v) => h('button', { type: 'button', title: `Pattern ${v}`, onclick: () => { seq.cur = v; seq.emit(); } }, v));
+  const addPat = h('button', { type: 'button', class: 'addpat', title: 'Add a pattern', onclick: () => { if (!seq.addPat()) flash('Sixteen patterns is the most'); } }, '+');
   const barsSel = h('select', { title: 'Length of the pattern', 'aria-label': 'Pattern length', onchange: (e) => { seq.snapshot(); seq.bars = +e.target.value; seq.emit(); } }, ...[1, 2, 3, 4, 6, 8, 12, 16].map((b) => h('option', { value: b }, `${b} bar${b > 1 ? 's' : ''}`)));
   const quant = h('select', { title: 'Snap notes to the grid', 'aria-label': 'Snap', onchange: (e) => { seq.quant = +e.target.value; seq.emit(); } }, ...[[0, 'free'], [0.125, 'snap 1/32'], [0.25, 'snap 1/16'], [0.5, 'snap 1/8'], [1, 'snap 1/4'], [1 / 3, 'snap 1/8 tri']].map(([v, l]) => h('option', { value: v }, l)));
   const chain = h('button', { type: 'button', class: 'sw', title: 'Loop mode: play the patterns that have something in them, one after another', onclick: () => { seq.chain = !seq.chain; seq.emit(); } }, h('i'), 'Chain');
@@ -390,14 +448,14 @@ function buildDeck() {
   const slotsChanged0 = S.slotsChanged; S.slotsChanged = () => { slotsChanged0?.(); buildChips(); buildLanes(); sync(); };
   const tl = h('div', { class: 'timeline', title: 'Double-click to edit this pattern' }), cv = h('canvas'); tl.append(cv);
   const recTarget = h('span', { class: 'cap rect' });
-  const intoBtns = [['jam', 'Pattern', 'Record into the pattern, looping'], ['song', 'Arrangement', 'Record straight onto the arrangement timeline, where the playhead is']].map(([m, l, t]) => h('button', { type: 'button', title: t, onclick: () => seq.setMode(m) }, l));
-  const into = h('div', { class: 'seg into' }, ...intoBtns);
+  // this button records into the pattern (looping); the header's ● records onto the arrangement
+  const patRec = h('button', { type: 'button', class: 'rec', title: 'Record into this pattern: it loops, and each pass adds to it (R records onto the arrangement instead)', onclick: () => { const on = !(seq.rec && seq.mode === 'jam'); if (seq.rec) seq.arm(false); if (on) { seq.setMode('jam'); seq.arm(true); if (!S.player.playing) S.player.play(); } } }, h('i'), 'Pattern');
   const g = cv.getContext('2d'); let W = 0, H = 0;
   new ResizeObserver(() => { const r = tl.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }).observe(tl);
   const sync = () => {
     vars.forEach((b) => { const v = b.textContent; b.setAttribute('aria-pressed', v === seq.cur); b.classList.toggle('has', seq.vars[v].length > 0); });
-    intoBtns[0].textContent = `Pattern ${isTake(seq.cur) ? (PATS.includes(seq.prevCur) ? seq.prevCur : 'A') : seq.cur}`;
-    intoBtns.forEach((b, i) => b.setAttribute('aria-pressed', ['jam', 'song'][i] === seq.mode));
+    const shown = seq.shownPats(); vars.forEach((b) => { b.hidden = !shown.includes(b.textContent); }); addPat.hidden = shown.length >= PATS.length;
+    patRec.classList.toggle('on', seq.rec && seq.mode === 'jam'); patRec.lastChild.textContent = `Pattern ${isTake(seq.cur) ? (PATS.includes(seq.prevCur) ? seq.prevCur : 'A') : seq.cur}`;
     recTarget.textContent = seq.take ? `recording ${takeName(seq.take.pat)}` : '';
     chain.setAttribute('aria-pressed', seq.chain); barsSel.value = seq.bars; quant.value = seq.quant;
     lanes.querySelectorAll('.lane').forEach((b) => { const l = b.dataset.l === 'm' ? 'm' : +b.dataset.l; b.classList.toggle('muted', seq.mute.has(l)); });
@@ -407,7 +465,7 @@ function buildDeck() {
   $('#deck').append(
     h('div', { class: 'deck-l' }, h('span', { class: 'cap' }, 'The keys play'), chipBox, h('div', { class: 'row' }, oct, midi)),
     keysEl,
-    h('div', { class: 'deck-r' }, h('div', { class: 'row' }, recBtn('Record'), h('span', { class: 'cap' }, 'into'), into, recTarget, h('span', { class: 'sp' }), chain, toArr, editB, clear), h('div', { class: 'row' }, h('span', { class: 'cap' }, 'Pattern'), h('div', { class: 'seg vars' }, ...vars), h('span', { class: 'sp' }), barsSel, quant), h('div', { class: 'seqbox' }, lanes, tl)));
+    h('div', { class: 'deck-r' }, h('div', { class: 'row' }, patRec, recTarget, h('span', { class: 'sp' }), chain, toArr, editB, clear), h('div', { class: 'row' }, h('span', { class: 'cap' }, 'Pattern'), h('div', { class: 'seg vars' }, ...vars, addPat), h('span', { class: 'sp' }), barsSel, quant), h('div', { class: 'seqbox' }, lanes, tl)));
   tl.addEventListener('dblclick', () => { showRoom('song'); S.openEditor?.(slot); });
   buildChips(); buildLanes(); sync();
   showOct();

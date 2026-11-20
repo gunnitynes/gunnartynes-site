@@ -59,7 +59,7 @@ export function buildStrips(S, COLORS, NAMES) {
     for (const s of Object.values(S.strips)) src.connect(s.pumpDepth);
     src.start(Math.max(c.currentTime + 0.01, p.timeOfBeat(Math.ceil(p.beatNow() + 0.02))));
   };
-  p.on('transport', restart); p.on('seek', restart);
+  p.on('transport', restart); p.on('seek', restart); p.on('tempo', () => { restart(); S.params.apply['mix.echo.time']?.(S.params.get('mix.echo.time')); });
   S.mixGates();
 }
 

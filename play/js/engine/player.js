@@ -28,10 +28,39 @@ export class Player extends EventTarget {
     this.beatDur = song.beatDur; this.barDur = song.barDur; this.cellBars = song.barsPerCell; this.bpb = song.beatsPerBar;
     this.stepDur = this.beatDur / 4;
     engine.setTempo(song.bpm);
+    // tempo: r = new bpm / the song's. "warp" stretches every cell to the new tempo (pitch stays, in a worker);
+    // otherwise the cells play faster or slower, like tape (pitch follows)
+    this.bpm = song.bpm; this.r = 1; this.warp = true; this.stretcher = new Stretcher(this.ctx);
     session.clock = () => this.elapsed();
     session.on(({ a, prev, state }) => this.onAction(a, prev, state));
     setInterval(() => this.tick(), TICK);
   }
+
+  // ------------------------------------------------------------ tempo
+  setTempo(bpm, warp = this.warp) {
+    bpm = Math.max(40, Math.min(240, +bpm || this.song.bpm));
+    if (bpm === this.bpm && warp === this.warp) return;
+    const was = this.playing, bn = this.beatNow(), el = this.elapsed();
+    if (warp !== this.warp || Math.abs(bpm / this.song.bpm - this.r) > 1e-9) this.stretcher.reset();
+    this.bpm = bpm; this.r = bpm / this.song.bpm; this.warp = warp;
+    this.beatDur = 60 / bpm; this.barDur = this.beatDur * this.bpb; this.stepDur = this.beatDur / 4;
+    this.engine.setTempo(bpm);
+    if (was) {
+      // keep the beat where it is; every voice is cut and comes back in, in phase, at the new speed
+      const now = this.ctx.currentTime;
+      for (const v of this.voices.values()) this.kill(v, now + 0.01);
+      this.voices.clear();
+      this.bar0 = this.snap(now + 0.02 - bn * this.beatDur); this.clockOrigin = now + 0.02 - el * this.beatDur;
+      this.nextBar = Math.floor(bn / this.bpb) + 1; this.nextStep = Math.floor(bn * 4) + 1;
+    }
+    this.emit('tempo', { bpm, warp });
+  }
+  /** The buffer to play for a cell at the current tempo (null while its warped copy is still being made). */
+  bufFor(url) {
+    const b = this.loader.get(url); if (!b || this.r === 1 || !this.warp) return b;
+    return this.stretcher.get(b, 1 / this.r);
+  }
+  get rateMul() { return this.warp ? 1 : this.r; }
 
   // ------------------------------------------------------------ catalog
   addSource(id, entry) { this.catalog.set(id, entry); this.applyMix(this.session.state); }
@@ -137,12 +166,12 @@ export class Player extends EventTarget {
         this.voices.delete(id);
       }
       if (!want) continue;
-      const buf = this.loader.get(want.url);
-      if (!buf) { this.loader.load(want.url); continue; }
+      if (!this.loader.has(want.url)) { this.loader.load(want.url); continue; }
+      const buf = this.bufFor(want.url); if (!buf) continue;
       this.startVoice(id, buf, want, B, T, want.bar * this.barDur, !contiguous);
     }
     // prefetch the near future and pin it against eviction
-    for (let k = 0; k <= PREFETCH_BARS; k++) for (const id of st.order) { const w = this.resolve(st.tracks[id], B + k); if (w) { wanted.add(w.url); if (k) this.loader.ensure(w.url); } }
+    for (let k = 0; k <= PREFETCH_BARS; k++) for (const id of st.order) { const w = this.resolve(st.tracks[id], B + k); if (w) { wanted.add(w.url); if (k) this.loader.ensure(w.url).then((b) => { if (b && this.warp && this.r !== 1) this.stretcher.get(b, 1 / this.r); }); } }
     const chopUrl = this.chopUrl(); if (chopUrl) wanted.add(chopUrl);
     this.loader.pinned = wanted;
     this.emit('bar', { bar: B, time: T });
@@ -151,12 +180,13 @@ export class Player extends EventTarget {
   startVoice(id, buf, want, B, T, offset, fadeIn) {
     if (want.fx) return this.startTreated(id, buf, want, B, T, offset - want.bar * this.barDur);
     const src = this.ctx.createBufferSource(); src.buffer = buf;
+    const rm = this.rateMul; if (rm !== 1) src.playbackRate.value = rm;
     const g = this.ctx.createGain();
     if (fadeIn) { g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(1, T + FADE); }
     src.connect(g).connect(this.engine.channel(id).input);
-    src.start(T, offset);
+    src.start(T, offset * rm);
     src.onended = () => { src.disconnect(); g.disconnect(); };
-    const v = { src, g, url: want.url, cell: want.cell, base: B - want.bar, end: T + buf.duration - offset };
+    const v = { src, g, url: want.url, cell: want.cell, base: B - want.bar, end: T + (buf.duration - offset * rm) / rm };
     this.voices.set(id, v);
     return v;
   }
@@ -164,12 +194,12 @@ export class Player extends EventTarget {
   /** One bar of a stem with a treatment: reversed, slowed (an octave down) or doubled (an octave up, the bar
    *  twice), stuttered (its first slice repeated), louder or softer. Always exactly one bar long, then cut. */
   startTreated(id, buf0, want, B, T, late = 0) {
-    const fx = want.fx, bd = this.barDur, rate = fx.s || 1, rev = !!fx.r;
+    const fx = want.fx, bd = this.barDur, rm = this.rateMul, rate = (fx.s || 1) * rm, rev = !!fx.r, bb = bd * rm;   // bb: a bar inside the buffer
     const buf = rev ? this.loader.reverse(buf0) : buf0, D = buf.duration;
-    const s0 = rev ? D - (want.bar + 1) * bd : want.bar * bd;
-    const at = Math.max(0, s0 + (fx.o || 0) * bd);
+    const s0 = rev ? D - (want.bar + 1) * bb : want.bar * bb;
+    const at = Math.max(0, s0 + (fx.o || 0) * bb);
     const src = this.ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
-    const slice = fx.u ? bd / fx.u : rate > 1 ? bd / rate : 0;   // seconds of timeline per repeat
+    const slice = fx.u ? bd / fx.u : (fx.s || 1) > 1 ? bd / fx.s : 0;   // seconds of timeline per repeat
     if (slice) { src.loop = true; src.loopStart = at; src.loopEnd = Math.min(D, at + slice * rate); }
     const g = this.ctx.createGain(), lvl = fx.g ?? 1, end = T + bd - late;
     g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(lvl, T + FADE);
@@ -199,7 +229,7 @@ export class Player extends EventTarget {
       const v = this.voices.get(id);
       if (v && v.end > now + 0.01) continue;
       const want = this.resolve(st.tracks[id], B);
-      const buf = want && this.loader.get(want.url);
+      const buf = want && this.bufFor(want.url);
       if (!buf) continue;
       const T = now + 0.03, offset = want.bar * this.barDur + (T - this.timeOfBar(B));
       if (offset < buf.duration - 0.05) this.startVoice(id, buf, want, B, T, offset, true);
@@ -292,4 +322,26 @@ export class Player extends EventTarget {
 
   emit(type, detail) { this.dispatchEvent(new CustomEvent(type, { detail })); }
   on(type, fn) { const h = (e) => fn(e.detail); this.addEventListener(type, h); return () => this.removeEventListener(type, h); }
+}
+
+/** Warped (time-stretched) copies of cells, made in a worker; kept beside the cell, for one tempo at a time. */
+class Stretcher {
+  constructor(ctx) { this.ctx = ctx; this.reset(); }
+  reset() {
+    this.w?.terminate(); this.map = new WeakMap(); this.jobs = new Map(); this.id = 0;
+    this.w = new Worker(new URL('./stretch.js', import.meta.url));
+    this.w.onmessage = ({ data }) => {
+      const j = this.jobs.get(data.id); this.jobs.delete(data.id); if (!j) return;
+      const out = this.ctx.createBuffer(data.chans.length, data.chans[0].length, j.buf.sampleRate);
+      data.chans.forEach((c, i) => out.copyToChannel(c, i));
+      const e = this.map.get(j.buf); if (e && e.alpha === j.alpha) e.out = out;
+    };
+  }
+  get(buf, alpha) {
+    const e = this.map.get(buf); if (e && e.alpha === alpha) return e.out;
+    this.map.set(buf, { alpha, out: null });
+    const id = ++this.id, chans = Array.from({ length: buf.numberOfChannels }, (_, i) => buf.getChannelData(i).slice());
+    this.jobs.set(id, { buf, alpha }); this.w.postMessage({ id, chans, alpha }, chans.map((c) => c.buffer));
+    return null;
+  }
 }
