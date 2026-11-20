@@ -192,11 +192,15 @@ export function buildTextures(studio) {
   P.define('fx.filter.lfo', 0, (v) => lfoG.gain.setTargetAtTime(v * 3600, t(), 0.05));
   P.define('fx.filter.rate', 4, () => restartLfo());
   P.define('fx.filter.shape', 'sine', () => restartLfo());
-  P.define('fx.tape.mix', 0, (v) => { tapeWet.gain.setTargetAtTime(v, t(), 0.05); tapeDry.gain.setTargetAtTime(1 - v, t(), 0.05); });
+  // tape hiss: only on old tape (Age past a quarter), only as much as the Tape amount lets through, only while it rolls —
+  // and recomputed whenever any of those change (it used to follow Age alone, and stayed on with the Tape amount at 0)
+  const hissLevel = () => { const a = Math.max(0, (P.get('fx.tape.age') ?? 0) - 0.25) / 0.75, m = P.get('fx.tape.mix') ?? 0; hissG.gain.setTargetAtTime(player.playing ? a * a * 0.006 * m : 0, t(), 0.05); };
+  player.on('transport', hissLevel);
+  P.define('fx.tape.mix', 0, (v) => { tapeWet.gain.setTargetAtTime(v, t(), 0.05); tapeDry.gain.setTargetAtTime(1 - v, t(), 0.05); hissLevel(); });
   P.define('fx.tape.wow', 0.4, (v) => wowG.gain.setTargetAtTime(v * 0.004, t(), 0.05));
   P.define('fx.tape.flutter', 0.25, (v) => flutG.gain.setTargetAtTime(v * 0.0006, t(), 0.05));
   P.define('fx.tape.drive', 0.35, (v) => { sat.curve = curve(v); });
-  P.define('fx.tape.age', 0, (v) => { age.frequency.setTargetAtTime(18000 * (1 - v) ** 2.2 + 1800, t(), 0.05); hissG.gain.setTargetAtTime(v * v * 0.03 * (P.get('fx.tape.mix') ?? 0), t(), 0.05); });
+  P.define('fx.tape.age', 0, (v) => { age.frequency.setTargetAtTime(18000 * (1 - v) ** 2.2 + 1800, t(), 0.05); hissLevel(); });
   P.define('fx.res.mix', 0, (v) => res.port.postMessage({ p: { mix: v } }));
   P.define('fx.res.decay', 0.6, (v) => res.port.postMessage({ p: { decay: 0.9 + v * 0.0995 } }));
   P.define('fx.res.bright', 0.5, (v) => res.port.postMessage({ p: { bright: v } }));
