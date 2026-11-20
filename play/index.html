@@ -33,8 +33,8 @@
   <header><a href="/">gunnar tynes</a><span>Playground</span></header>
   <main>
     <p class="eyebrow">Playground</p>
-    <h1>Take a song apart</h1>
-    <p class="lede">The separate recordings of each musician in a múm song, opened up for anyone to rearrange, play and transform into sounds the song never had.</p>
+    <h1>Musical playground</h1>
+    <p class="lede">A song opened up into the separate recordings of each musician, for anyone to rearrange, play and turn into sounds it never had. Pick a song and start experimenting.</p>
     <ol id="songs"></ol>
     <div class="rooms">
       <div><b>Arrangement</b><p>The whole song on a timeline. Move its parts, give any stem its own lane, reverse it, slow it, stutter it, and record onto it.</p></div>
@@ -48,7 +48,7 @@
   <script type="module">
     import { api, h } from './js/lib/util.js';
     const songs = await api.get('/api/songs');
-    document.querySelector('#songs').append(...songs.map((s) => h('li', {}, h('a', { href: `play.html?song=${s.id}` }, h('em', {}, s.title), h('span', { class: 'go' }, 'Open the studio →'), h('small', {}, `${s.artist} · ${s.stems} stems · ${s.bpm} bpm · ${s.bars} bars`)))));
+    document.querySelector('#songs').append(...songs.map((s) => h('li', {}, h('a', { href: `play.html?song=${s.id}` }, h('em', {}, s.title), h('span', { class: 'go' }, 'Experiment with song →'), h('small', {}, `${s.artist} · ${s.stems} stems · ${s.bpm} bpm · ${s.bars} bars`)))));
   </script>
 </body>
 </html>

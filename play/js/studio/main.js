@@ -69,9 +69,10 @@ async function boot() {
 
   const first = ids.map((id) => player.resolve(session.state.tracks[id], 0)).filter(Boolean).map((w) => w.url);
   let n = 0; await Promise.all(first.map((u) => loader.load(u).catch(() => {}).finally(() => { $('#gate-bar').style.width = `${(++n / first.length) * 100}%`; })));
-  $('#gate-status').textContent = 'ready';
-  const go = $('#gate-go'); go.disabled = false;
-  go.onclick = async () => { await engine.ctx.resume(); $('#gate').classList.add('gone'); };   // nothing plays until you press play
+  // straight into the studio once the stems are in; sound is unlocked by the first touch or key (nothing plays until you press play)
+  $('#gate').classList.add('gone');
+  const unlock = () => { engine.ctx.resume(); removeEventListener('pointerdown', unlock, true); removeEventListener('keydown', unlock, true); };
+  addEventListener('pointerdown', unlock, true); addEventListener('keydown', unlock, true);
   requestAnimationFrame(frame);
   setInterval(save, 2000);
 }
