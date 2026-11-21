@@ -9,14 +9,19 @@ export class CellLoader {
     this.pinned = new Set();
     this.reversed = new WeakMap();
     this.onload = null;
+    this.own = new Map();     // url → AudioBuffer made in the browser (your voice): never fetched, never evicted
   }
+  /** Keep a buffer that has no file behind it under a url of its own. */
+  put(url, buf) { this.own.set(url, buf); }
   get(url) {
+    if (this.own.has(url)) return this.own.get(url);
     const b = this.cache.get(url);
     if (b) { this.cache.delete(url); this.cache.set(url, b); }
     return b ?? null;
   }
-  has(url) { return this.cache.has(url); }
+  has(url) { return this.own.has(url) || this.cache.has(url); }
   ensure(url, urgent = false) {
+    if (this.own.has(url)) return Promise.resolve(this.own.get(url));
     if (!url || this.cache.has(url)) return Promise.resolve(this.cache.get(url));
     let p = this.pending.get(url);
     if (p) return p;

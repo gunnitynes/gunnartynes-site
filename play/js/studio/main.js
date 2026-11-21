@@ -11,6 +11,8 @@ import { Wave, Keys, knob, group } from './ui.js';
 import { buildStrips, buildMixRoom } from './mixer.js';
 import { buildSong } from './song.js';
 import { buildTexturesRoom } from './textures.js';
+import { addVoiceStem, Voice } from './voice.js';
+import { Mutator } from './mutate.js';
 
 const params = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {} };
@@ -27,9 +29,10 @@ boot().catch((e) => { console.error(e); $('#gate-status').textContent = 'Could n
 async function boot() {
   const songId = params.get('song') || (await api.get('/api/songs'))[0]?.id;
   const song = await api.get(`/api/songs/${songId}`);
+  addVoiceStem(song);   // "You": a stem that is empty until you record into it
   document.title = `${song.title} · Playground · Gunnar Tynes`;
   $('#song').textContent = song.title; $('#gate-title').textContent = song.title;
-  $('#gate-meta').textContent = `${song.artist} · ${song.stems.length} stems · ${song.bpm} bpm`;
+  $('#gate-meta').textContent = `${song.artist} · ${song.stems.length - 1} stems · ${song.bpm} bpm`;
 
   const engine = new AudioEngine(); await engine.ready;
   await engine.ctx.audioWorklet.addModule(new URL('./dsp.js', import.meta.url));
@@ -52,6 +55,7 @@ async function boot() {
   engine.bus.connect(S.bandGate).connect(S.strips.band.input);
   S.seq = new Sequencer(S);
   S.params.recorder = (path, v) => S.seq.moveIn(path, v);
+  S.voice = new Voice(S); S.mutate = new Mutator(S); S.flash = flash;
   S.heard = [];
   let retuneT = 0;
   S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (S.params.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; S.tex.retune(); }, 60); };
@@ -60,6 +64,7 @@ async function boot() {
   buildDeck(); buildHeader(); buildArrange(); buildCloud(); buildForge(savedN);
   buildTexturesRoom(S, { seg, sw, recBtn }); buildMixRoom(S, { recBtn }); buildSong(S, { COLORS, NAMES });
   const had = restore();
+  S.voice.ensureTrack(); S.mutate.drift(true); S.voice.restore();
   if (!S.seq.arr.bars) S.seq.fillFromSong();
   if (!had) S.seq.setMode('song');
   S.seq.emit();
@@ -99,15 +104,25 @@ function buildHeader() {
   $('.transport').append(tempo);
   const showTempo = () => { const b = P.get('song.bpm'); bpmIn.value = b; tempo.classList.toggle('moved', b !== orig); warpB.textContent = P.get('song.warp') ? 'warp' : 'tape'; warpB.setAttribute('aria-pressed', !P.get('song.warp')); };
   P.on(({ path }) => (path === 'song.bpm' || path === 'song.warp') && showTempo()); showTempo();
+  // You: the microphone records onto your own stem while the song plays (voice.js)
+  const mic = $('#t-mic'), V = S.voice;
+  mic.onclick = async (e) => {
+    if (e.shiftKey) { if (V.has && confirm('Take your voice out of the song? (Undo brings it back.)')) V.clear(); return; }
+    if (V.recording) { mic.disabled = true; const r = await V.stop(); mic.disabled = false; flash(r ? `Your voice is in the song: ${r.bars} bar${r.bars > 1 ? 's' : ''} on the stem “You”, from bar ${r.from + 1} of the song · Undo takes it back` : 'Nothing was heard, so nothing was kept'); return; }
+    try { await V.start(); flash('Recording you from the next bar: sing or play along · press again to stop · headphones keep the band out of it'); } catch (err) { flash(err.message); }
+  };
+  const showMic = () => { mic.classList.toggle('on', V.recording); mic.classList.toggle('has', V.has); mic.title = V.recording ? 'Stop recording your voice' : `Record yourself into the song as one more stem, “You” (sing or play along; the bars you fill are kept)${V.has ? ' · shift-click takes your voice out' : ''}`; };
+  V.addEventListener('change', showMic); showMic();
   const cap = $('#t-cap');
   cap.onclick = () => { const r = S.seq.capture(); if (!r) return; flash(`Captured ${r.len} bar${r.len > 1 ? 's' : ''} as ${takeName(r.k)} at bar ${r.bar + 1} of the arrangement`); };
   const recNote = h('div', { id: 'recnote', hidden: true }); document.body.append(recNote);
   const showRec = () => {
     const q = S.seq; $('#t-rec').classList.toggle('on', q.rec && q.mode === 'song'); cap.disabled = q.rec || !q.canCapture();
-    recNote.hidden = !q.rec;
+    recNote.hidden = !q.rec && !S.voice.recording;
+    if (S.voice.recording && !q.rec) { recNote.textContent = `● Recording you · bar ${S.voice.bars + 1} · it lands on the song's own bars, on the stem “You”`; return; }
     recNote.textContent = q.mode === 'song' ? `● Recording onto the arrangement${q.take ? ` as ${takeName(q.take.pat)}` : ''} · keys, Cloud touches, every knob, the mix and Re-arrange clicks all go in` : `● Recording into Pattern ${q.cur} · it loops, and each pass adds to it`;
   };
-  S.seq.addEventListener('change', showRec); showRec();
+  S.seq.addEventListener('change', showRec); S.voice.addEventListener('change', showRec); showRec();
   $('#t-rew').onclick = () => session.dispatch({ t: 'seek', bar: S.seq.mode === 'song' && S.seq.arr.cycle ? S.seq.arr.cycle[0] : 0 });
   const modeBtns = [['jam', 'Pattern', 'Loop one pattern over the stems as they are in Re-arrange · Record goes into the pattern'], ['song', 'Arrangement', 'Play the arrangement timeline · Record goes straight onto it']].map(([m, l, t]) => h('button', { type: 'button', title: t, onclick: () => S.seq.setMode(m) }, l));
   $('#mode').append(...modeBtns);
@@ -120,6 +135,7 @@ function buildHeader() {
     if (e.code === 'Space') { e.preventDefault(); player.playing ? player.stop() : player.play(); }
     else if (e.key === 'r' || e.key === 'R') toggleRec();
     else if (e.key === 'b' || e.key === 'B') P.set('band.on', !P.get('band.on'));
+    else if ((e.key === 'k' || e.key === 'K') && S.mutate.on) { const n = S.mutate.keep(); if (n) flash(`Kept ${n === 1 ? 'that change' : `${n} changes`} in the arrangement`); }
     else if (e.key === 'Home') session.dispatch({ t: 'seek', bar: 0 });
     else if (/^[1-9]$/.test(e.key) && S.slots[+e.key - 1]) S.selectSlot(+e.key - 1);
     else if (e.key === 'Enter' && !e.target.closest('button')) S.seq.setMode(S.seq.mode === 'song' ? 'jam' : 'song');
@@ -505,6 +521,7 @@ function frame() {
   if (songMode) { const c = S.seq.arr.clips.find((x) => x.lane === 'band' && bar >= x.start && bar < x.start + x.len); $('#part').textContent = c ? (c.name && !c.loop ? `part ${c.name}` : `bar ${(c.src + (c.loop ? (bar - c.start) % c.loop : bar - c.start)) % song.numBars + 1} of the song`) : 'no stems here'; }
   else { const s = song.sections.find((x) => bar / song.barsPerCell >= x.startCell && bar / song.barsPerCell < x.endCell); $('#part').textContent = s ? `part ${s.name}` : ''; }
   S.masterLevel = S.engine.meterLevel(mbuf);
+  if (S.voice.recording) $('#t-mic').style.setProperty('--lv', Math.min(1, S.voice.level() * 1.4).toFixed(2));
   $('#master-meter').style.transform = `scaleX(${Math.min(1, S.masterLevel)})`;
   if (S.room === 'arrange') for (const [id, m] of S.meters) { const ch = S.engine.channels.get(id); m.style.transform = `scaleX(${ch ? Math.min(1, ch.readLevel() * 3) : 0})`; }
   S.growHolds?.();

@@ -41,7 +41,6 @@ export class Player extends EventTarget {
     bpm = Math.max(40, Math.min(240, +bpm || this.song.bpm));
     if (bpm === this.bpm && warp === this.warp) return;
     const was = this.playing, bn = this.beatNow(), el = this.elapsed();
-    if (warp !== this.warp || Math.abs(bpm / this.song.bpm - this.r) > 1e-9) this.stretcher.reset();
     this.bpm = bpm; this.r = bpm / this.song.bpm; this.warp = warp;
     this.beatDur = 60 / bpm; this.barDur = this.beatDur * this.bpb; this.stepDur = this.beatDur / 4;
     this.engine.setTempo(bpm);
@@ -58,8 +57,12 @@ export class Player extends EventTarget {
   /** The buffer to play for a cell at the current tempo (null while its warped copy is still being made). */
   bufFor(url) {
     const b = this.loader.get(url); if (!b || this.r === 1 || !this.warp) return b;
-    return this.stretcher.get(b, 1 / this.r);
+    // while the copy for this tempo is being made, the nearest one already made plays, its speed nudged to fit
+    // (a moment of slightly bent pitch instead of a gap: tempo can now follow your walking)
+    return this.stretcher.get(b, 1 / this.r) || this.stretcher.nearest(b, 1 / this.r) || b;
   }
+  /** Playback rate for a buffer at the current tempo: a warped copy made for this tempo plays at 1. */
+  rateFor(buf) { return this.r * (this.stretcher.alphaOf(buf) ?? 1); }
   get rateMul() { return this.warp ? 1 : this.r; }
 
   // ------------------------------------------------------------ catalog
@@ -180,7 +183,7 @@ export class Player extends EventTarget {
   startVoice(id, buf, want, B, T, offset, fadeIn) {
     if (want.fx) return this.startTreated(id, buf, want, B, T, offset - want.bar * this.barDur);
     const src = this.ctx.createBufferSource(); src.buffer = buf;
-    const rm = this.rateMul; if (rm !== 1) src.playbackRate.value = rm;
+    const rm = this.rateFor(buf); if (rm !== 1) src.playbackRate.value = rm;
     const g = this.ctx.createGain();
     if (fadeIn) { g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(1, T + FADE); }
     src.connect(g).connect(this.engine.channel(id).input);
@@ -194,7 +197,7 @@ export class Player extends EventTarget {
   /** One bar of a stem with a treatment: reversed, slowed (an octave down) or doubled (an octave up, the bar
    *  twice), stuttered (its first slice repeated), louder or softer. Always exactly one bar long, then cut. */
   startTreated(id, buf0, want, B, T, late = 0) {
-    const fx = want.fx, bd = this.barDur, rm = this.rateMul, rate = (fx.s || 1) * rm, rev = !!fx.r, bb = bd * rm;   // bb: a bar inside the buffer
+    const fx = want.fx, bd = this.barDur, rm = this.rateFor(buf0), rate = (fx.s || 1) * rm, rev = !!fx.r, bb = bd * rm;   // bb: a bar inside the buffer
     const buf = rev ? this.loader.reverse(buf0) : buf0, D = buf.duration;
     const s0 = rev ? D - (want.bar + 1) * bb : want.bar * bb;
     const at = Math.max(0, s0 + (fx.o || 0) * bb);
@@ -324,24 +327,33 @@ export class Player extends EventTarget {
   on(type, fn) { const h = (e) => fn(e.detail); this.addEventListener(type, h); return () => this.removeEventListener(type, h); }
 }
 
-/** Warped (time-stretched) copies of cells, made in a worker; kept beside the cell, for one tempo at a time. */
+/** Warped (time-stretched) copies of cells, made in a worker; kept beside the cell for the last two tempos, so a
+ *  tempo that keeps moving (walking) always has something close to play while the exact copy is being made. */
 class Stretcher {
-  constructor(ctx) { this.ctx = ctx; this.reset(); }
-  reset() {
-    this.w?.terminate(); this.map = new WeakMap(); this.jobs = new Map(); this.id = 0;
+  constructor(ctx) {
+    this.ctx = ctx; this.map = new WeakMap(); this.alpha = new WeakMap(); this.jobs = new Map(); this.id = 0;
     this.w = new Worker(new URL('./stretch.js', import.meta.url));
     this.w.onmessage = ({ data }) => {
       const j = this.jobs.get(data.id); this.jobs.delete(data.id); if (!j) return;
       const out = this.ctx.createBuffer(data.chans.length, data.chans[0].length, j.buf.sampleRate);
       data.chans.forEach((c, i) => out.copyToChannel(c, i));
-      const e = this.map.get(j.buf); if (e && e.alpha === j.alpha) e.out = out;
+      const e = this.map.get(j.buf)?.get(j.alpha); if (e) { e.out = out; this.alpha.set(out, j.alpha); }
     };
   }
+  reset() { this.map = new WeakMap(); }
+  alphaOf(buf) { return this.alpha.get(buf); }
   get(buf, alpha) {
-    const e = this.map.get(buf); if (e && e.alpha === alpha) return e.out;
-    this.map.set(buf, { alpha, out: null });
+    alpha = Math.round(alpha * 1e4) / 1e4;
+    let m = this.map.get(buf); if (!m) this.map.set(buf, (m = new Map()));
+    const e = m.get(alpha); if (e) { m.delete(alpha); m.set(alpha, e); return e.out; }
+    m.set(alpha, { out: null }); while (m.size > 2) m.delete(m.keys().next().value);
     const id = ++this.id, chans = Array.from({ length: buf.numberOfChannels }, (_, i) => buf.getChannelData(i).slice());
     this.jobs.set(id, { buf, alpha }); this.w.postMessage({ id, chans, alpha }, chans.map((c) => c.buffer));
     return null;
+  }
+  nearest(buf, alpha) {
+    let best = null, bd = Infinity;
+    for (const [a, e] of this.map.get(buf) || []) if (e.out && Math.abs(Math.log(a / alpha)) < bd) { bd = Math.abs(Math.log(a / alpha)); best = e.out; }
+    return best;
   }
 }

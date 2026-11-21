@@ -411,7 +411,7 @@ export class Sequencer extends EventTarget {
         const at = (x) => T >= x.start && T < x.start + x.len, cl = own.find(at) || (alone ? null : band.find(at));
         if (!cl || cl.mute?.includes(st.id)) continue;
         const r = srcBar(cl, T - cl.start, N), cell = Math.floor(r.bar / cb);
-        if (st.cells[cell]) pat[i] = r.fx ? [cell, r.bar % cb, r.fx] : [cell, r.bar % cb];
+        if (st.cells[cell] || st.voice) pat[i] = r.fx ? [cell, r.bar % cb, r.fx] : [cell, r.bar % cb];   // your voice: also where nothing is recorded yet, so a take knows where it lands
       }
       out[st.id] = { mode: 'pattern', pattern: pat };
     }

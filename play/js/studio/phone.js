@@ -9,6 +9,8 @@ import { Session, initialState } from '../state/session.js';
 import { $, h, api } from '../lib/util.js';
 import { Params, loadSource, loudestCells, loudestWindow, sliceOf, CloudVoice, SamplerVoice, StringsVoice, buildTextures, Sequencer, srcBar, isTake, takeName } from './core.js';
 import { buildStrips } from './mixer.js';
+import { addVoiceStem, Voice } from './voice.js';
+import { Walk, Surround } from './move.js';
 
 const query = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {}, phone: true };
@@ -25,9 +27,10 @@ boot().catch((e) => { console.error(e); $('#gate-status').textContent = 'Could n
 async function boot() {
   const songId = query.get('song') || (await api.get('/api/songs'))[0]?.id;
   const song = await api.get(`/api/songs/${songId}`);
+  addVoiceStem(song);   // "You": an empty stem until you record into it
   document.title = `${song.title} · Playground`;
   $('#title').textContent = song.title; $('#gate-title').textContent = song.title;
-  $('#gate-meta').textContent = `${song.artist} · ${song.stems.length} stems · ${song.bpm} bpm`;
+  $('#gate-meta').textContent = `${song.artist} · ${song.stems.length - 1} stems · ${song.bpm} bpm`;
   $('#full').href = `play.html?song=${song.id}&desktop=1`;
 
   const engine = new AudioEngine(); await engine.ready;
@@ -54,17 +57,22 @@ async function boot() {
   for (const st of song.stems) for (const [k, d, f] of [['gain', 0.85, (v) => ({ gain: v })], ['mute', false, (v) => ({ mute: v })], ['solo', false, (v) => ({ solo: v })], ['pan', 0, (v) => ({ pan: v })]]) P.define(`band.${st.id}.${k}`, d, (v) => session.dispatch({ t: 'track/set', id: st.id, p: f(v) }, { log: false }));
   // a held beat-repeat as a number, so it can be recorded and replayed like any other move
   P.define('fx.rep.hold', 0, (v) => tex.repeat(v || 0));
+  // tempo (Walk moves it; warped, so the pitch stays)
+  P.define('song.bpm', song.bpm, (v) => player.setTempo(v, true));
   (P.range ??= {})['fx.rep.hold'] = [0, 0.5, 'Repeat'];
   defineXY(P);
 
   S.seq = new Sequencer(S);
   P.recorder = (path, v) => S.seq.moveIn(path, v);
+  S.voice = new Voice(S); S.walk = new Walk(S); S.surround = new Surround(S);
   S.heard = []; let retuneT = 0;
   S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (P.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; tex.retune(); }, 60); };
 
   buildCloud(); buildSound(1, 'sampler'); buildSound(2, 'strings');
-  buildTop(); buildStems(); buildCloudPage(); buildPlay(); buildProcess(); buildTape(); buildTabs();
+  buildTop(); buildStems(); buildCloudPage(); buildPlay(); buildProcess(); buildTape(); buildMove(); buildTabs();
   restore();
+  S.voice.ensureTrack(); S.voice.restore();
+  P.set('song.bpm', song.bpm, { by: 'load' });   // a walking tempo is not kept: the pocket always starts at the song's
   const q = S.seq;
   if (!q.arr.bars) q.fillFromSong();
   q.mode = 'jam'; q.setMode('song');
@@ -101,13 +109,14 @@ const Motion = {
     if (this.b0 === null) { this.b0 = e.beta; this.g0 = e.gamma; }
     const tx = clamp((e.gamma - this.g0) / 32, -1, 1), ty = clamp((this.b0 - e.beta) / 32, -1, 1);
     this.x += (tx - this.x) * 0.3; this.y += (ty - this.y) * 0.3;
-    this.subs.tilt?.(this.x, this.y);
+    if (!S.walk?.on && !S.surround?.on) this.subs.tilt?.(this.x, this.y);   // walking or turning: the body is busy
   },
   motion(e) {
     if (!this.on) return; const a = e.acceleration; let m = 0;
     if (a && a.x != null) m = Math.hypot(a.x, a.y, a.z);
     else if (e.accelerationIncludingGravity) { const g = e.accelerationIncludingGravity, mm = Math.hypot(g.x, g.y, g.z); m = Math.abs(mm - 9.81) * 1.2; }
     const now = performance.now();
+    if (S.walk?.on) return;
     if (m > 15 && now - this.lastShake > 700) { this.lastShake = now; buzz(20); this.subs.shake?.(); }
   },
 };
@@ -270,10 +279,18 @@ function buildStems() {
     if (at + 4 > q.arr.bars) q.arr.bars = at + 4; q.changed();
     toast(`Shuffled: every stem jumps somewhere else · bars ${at + 1}–${at + 4}`); buzz(25);
   };
+  const V = S.voice;
+  const youB = h('button', { type: 'button', class: 'chip you', onclick: async () => {
+    if (V.recording) { youB.disabled = true; const r = await V.stop(); youB.disabled = false; toast(r ? `You are in the song: ${r.bars} bar${r.bars > 1 ? 's' : ''} on “You” · ↶ undoes` : 'Nothing was heard, so nothing was kept'); buzz(20); return; }
+    try { await V.start(); toast('Recording you from the next bar · sing or play along'); buzz(15); } catch (err) { toast(err.message); }
+  } }, h('i'), h('span', {}, 'Record yourself'));
+  const showYou = () => { youB.classList.toggle('on', V.recording); youB.lastChild.textContent = V.recording ? `Recording you · bar ${V.bars + 1} · stop` : V.has ? 'Record yourself again' : 'Record yourself'; };
+  V.addEventListener('change', showYou); showYou();
   room.append(
     h('div', { class: 'head' }, h('h2', {}, 'Stems'), cap('Tap a stem to mute it, hold to hear it alone. Jump to a part of the song:')),
     parts,
     h('div', { class: 'tiles' }, ...tiles.map((x) => x.t)),
+    h('div', { class: 'row' }, youB), cap('Your voice, or anything near the microphone, becomes one more stem, “You”, on the song’s own bars. Headphones keep the band out of it.'),
     h('div', { class: 'dock' },
       cap('Do something to the next four bars'),
       h('div', { class: 'acts' },
@@ -285,7 +302,7 @@ function buildStems() {
       tiltLine('Shake the phone to shuffle the stems')));
   S.rooms.stems = {
     shake: shuffle,
-    draw: () => { for (const x of tiles) { const ch = S.engine.channels.get(x.st.id); x.lvl.style.transform = `scaleX(${ch ? Math.min(1, ch.readLevel() * 3) : 0})`; } },
+    draw: () => { if (V.recording) youB.style.setProperty('--lv', Math.min(1, V.level() * 1.4).toFixed(2)); for (const x of tiles) { x.t.hidden = x.st.voice && !x.st.cells.some(Boolean); const ch = S.engine.channels.get(x.st.id); x.lvl.style.transform = `scaleX(${ch ? Math.min(1, ch.readLevel() * 3) : 0})`; } },
   };
   void N;
 }
@@ -469,6 +486,68 @@ function buildTape() {
     },
   };
 }
+// ------------------------------------------------------------------------------------------------ page: move (walk, turn)
+/** iPhone asks once for the motion sensors; this asks without switching the tilt controls on. */
+async function askSensors() {
+  try { if (typeof DeviceMotionEvent?.requestPermission === 'function') await DeviceMotionEvent.requestPermission(); } catch { /* tap the steps instead */ }
+  try { if (typeof DeviceOrientationEvent?.requestPermission === 'function') await DeviceOrientationEvent.requestPermission(); } catch { /* drag the ring instead */ }
+}
+function buildMove() {
+  const room = $('#p-move'), W = S.walk, T = S.surround;
+  // walk
+  const walkB = h('button', { type: 'button', class: 'bigsw', onclick: async () => { await askSensors(); await S.ctx.resume(); unlockIOS(); W.set(!W.on); buzz(15); } }, h('i'), h('b', {}, 'Walk'), h('small', {}, 'the song follows your steps'));
+  const spm = h('b', { class: 'num' }, '–'), bpm = h('b', { class: 'num' }, '–'), wst = h('p', { class: 'cap' });
+  const tap = h('button', { type: 'button', class: 'steppad', onpointerdown: (e) => { e.preventDefault(); if (!W.on) return; W.step(); buzz(6); tap.classList.add('hit'); setTimeout(() => tap.classList.remove('hit'), 90); } }, 'tap your steps here');
+  const showWalk = () => {
+    walkB.setAttribute('aria-pressed', W.on); tap.hidden = !W.on;
+    spm.textContent = W.on && W.spm ? Math.round(W.spm) : '–'; bpm.textContent = Math.round(S.params.get('song.bpm'));
+    wst.textContent = !W.on ? 'Put the phone in your pocket or hold it, press Walk and start walking: your pace becomes the tempo (the stems stretch to it, their pitch stays). Stand still and the stems sink back while the Cloud holds a drone.' : W.still ? 'Standing still · the stems wait, the Cloud holds a drone · walk on' : 'Walking · the song follows you';
+  };
+  W.addEventListener('change', showWalk); S.params.on(({ path }) => path === 'song.bpm' && showWalk()); showWalk();
+  // turn
+  const turnB = h('button', { type: 'button', class: 'bigsw', onclick: async () => { await askSensors(); await S.ctx.resume(); unlockIOS(); T.set(!T.on); buzz(15); } }, h('i'), h('b', {}, 'Turn'), h('small', {}, 'stand inside the band'));
+  const ring = h('div', { class: 'ring' }), cv = h('canvas'), g = cv.getContext('2d'); ring.append(cv);
+  let R = 0; new ResizeObserver(() => { const r = ring.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); R = r.width; cv.width = R * d; cv.height = R * d; cv.style.width = cv.style.height = R + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }).observe(ring);
+  const tst = h('p', { class: 'cap' });
+  // no compass (or sitting down): drag round the ring to turn
+  let drag = null;
+  const ang = (e) => { const r = ring.getBoundingClientRect(); return Math.atan2(e.clientX - r.left - r.width / 2, -(e.clientY - r.top - r.height / 2)); };
+  ring.addEventListener('pointerdown', (e) => { if (!T.on) return; e.preventDefault(); try { ring.setPointerCapture(e.pointerId); } catch { /* fine */ } drag = { a: ang(e), h: T.heading }; });
+  ring.addEventListener('pointermove', (e) => { if (drag) T.turn(drag.h + (ang(e) - drag.a)); });
+  const end = () => { drag = null; }; ring.addEventListener('pointerup', end); ring.addEventListener('pointercancel', end);
+  const name = (id) => S.song.stems.find((s) => s.id === id)?.name || '';
+  const showTurn = () => {
+    turnB.setAttribute('aria-pressed', T.on); ring.classList.toggle('off', !T.on);
+    tst.textContent = !T.on ? 'Headphones on, press Turn and stand up: the stems are around you in a circle. Turn your body (or drag the ring) and the band turns; the one you face comes forward, and keep facing it to hear it almost alone.' : T.alone ? `Alone: ${name(T.alone)} · turn away and the band comes back` : `In front of you: ${name(T.face)}`;
+  };
+  T.addEventListener('change', showTurn); showTurn();
+  room.append(
+    h('div', { class: 'head' }, h('h2', {}, 'Move'), cap('Your body is the controller. Both work with ● too: what they do lands on the tape.')),
+    h('section', { class: 'movecard' }, walkB, h('div', { class: 'readout' }, h('span', {}, spm, h('small', {}, 'steps / min')), h('span', {}, bpm, h('small', {}, 'bpm'))), tap, wst),
+    h('section', { class: 'movecard' }, turnB, ring, tst));
+  S.rooms.move = {
+    draw: () => {
+      if (!R) return; const c = R / 2, rr = R / 2 - 58; g.clearRect(0, 0, R, R);
+      g.strokeStyle = '#ffffff22'; g.lineWidth = 1; g.beginPath(); g.arc(c, c, rr, 0, 7); g.stroke();
+      const hd = T.heading;
+      // where you face: a soft wedge, pointing up the screen
+      g.fillStyle = '#e6b4501c'; g.beginPath(); g.moveTo(c, c); g.arc(c, c, rr + 26, -Math.PI / 2 - 0.3, -Math.PI / 2 + 0.3); g.closePath(); g.fill();
+      if (T.on && T.face && !T.alone) { const p = T.progress; g.strokeStyle = '#e6b450'; g.lineWidth = 2; g.beginPath(); g.arc(c, c, 12, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); g.stroke(); }
+      g.fillStyle = '#ece8dc'; g.beginPath(); g.arc(c, c, 5, 0, 7); g.fill();
+      g.font = '10px "IBM Plex Mono", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      const ring2 = T.on && T.az ? [...T.az] : S.song.stems.filter((s) => s.cells.some(Boolean)).map((s, i, a) => [s.id, (i / a.length) * Math.PI * 2]);
+      for (const [id, a] of ring2) {
+        const x = c + Math.sin(a - hd) * rr, y = c - Math.cos(a - hd) * rr, ch = S.engine.channels.get(id), lv = ch ? Math.min(1, ch.readLevel() * 3) : 0;
+        const on = id === T.face, alone = id === T.alone;
+        g.fillStyle = alone ? '#e6b450' : on ? '#ece8dc' : '#a3a6ad'; g.globalAlpha = T.on ? (T.alone && !alone ? 0.3 : 1) : 0.4;
+        g.beginPath(); g.arc(x, y, 4 + lv * 7, 0, 7); g.fill();
+        g.fillText(name(id).slice(0, 10), c + Math.sin(a - hd) * (rr + 20), c - Math.cos(a - hd) * (rr + 20));
+      }
+      g.globalAlpha = 1;
+    },
+  };
+}
+
 let bouncing = null;
 async function bounce(btn) {
   if (bouncing) { bouncing.cancel = true; return; }
@@ -487,7 +566,9 @@ async function bounce(btn) {
 }
 
 // ------------------------------------------------------------------------------------------------ frame, keeping your work
-function frame() {
+let lastF = 0;
+function frame(now) {
+  S.surround?.frame(Math.min(0.1, Math.max(0, (now - lastF) / 1000) || 0)); lastF = now;
   const q = S.seq, raw = Math.max(0, q.tl(q.nowBeat())), bar = Math.floor(raw / bpb());
   $('#pos').textContent = `${String(bar + 1).padStart(3, '0')}.${Math.floor(raw % bpb()) + 1}`;
   S.rooms[S.page]?.draw?.();

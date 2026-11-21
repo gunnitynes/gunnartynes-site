@@ -7,7 +7,7 @@ export const SR = 48000;
 export class Channel {
   constructor(eng, id) {
     const c = eng.ctx;
-    this.id = id;
+    this.id = id; this.eng = eng;
     this.input = c.createGain();
     this.fader = c.createGain();
     this.lp = c.createBiquadFilter(); this.lp.type = 'lowpass'; this.lp.frequency.value = 20000; this.lp.Q.value = 0.5;
@@ -30,6 +30,18 @@ export class Channel {
     go('lp', this.lp.frequency, p.lp === undefined ? undefined : 80 * 250 ** p.lp); // lp 0..1 → 80 Hz..20 kHz
     go('rev', this.revSend.gain, p.rev);
     go('dly', this.dlySend.gain, p.dly);
+  }
+  /** Place the channel in 3D around the listener (az in radians, 0 = straight ahead, clockwise), or back in stereo. */
+  spatial(on, az = 0, dist = 1.6) {
+    const c = this.pan.context, bus = this.eng.bus;
+    if (on && !this.p3) {
+      this.p3 = new PannerNode(c, { panningModel: 'HRTF', distanceModel: 'inverse', refDistance: 1, rolloffFactor: 0.6 });
+      this.focus = c.createGain();
+      this.pan.disconnect(bus); this.pan.connect(this.focus).connect(this.p3).connect(bus);
+    } else if (!on && this.p3) {
+      this.pan.disconnect(this.focus); this.p3.disconnect(); this.focus.disconnect(); this.p3 = this.focus = null; this.pan.connect(bus);
+    }
+    if (this.p3) { const t = c.currentTime; this.p3.positionX.setTargetAtTime(Math.sin(az) * dist, t, 0.05); this.p3.positionZ.setTargetAtTime(-Math.cos(az) * dist, t, 0.05); this.p3.positionY.value = 0; }
   }
   readLevel() {
     this.meter.getFloatTimeDomainData(this.buf);

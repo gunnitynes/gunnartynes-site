@@ -41,8 +41,21 @@ export function buildSong(S, { COLORS, NAMES }) {
   const undo = btn('Undo', 'Undo (⌘Z)', () => seq.undo()), redo = btn('Redo', 'Redo (⇧⌘Z)', () => seq.redo());
   const bounceB = btn('Bounce .wav', 'Play the whole arrangement (or the loop) once and save it as a sound file', () => bounce());
   const fileIn = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async (e) => { const f = e.target.files[0]; if (!f) return; try { S.loadProject(JSON.parse(await f.text())); } catch (err) { alert('That file could not be opened: ' + err.message); } e.target.value = ''; } });
+  // Mutate: the song keeps evolving (mutate.js); Keep (K) holds on to what is changing now
+  const M = S.mutate;
+  const mutB = h('button', { type: 'button', class: 'sw mutsw', title: 'Mutate: every couple of bars one stem does something else for a moment (jumps elsewhere, plays backwards, slower, faster, stutters, drops out) and then goes back. Keep (K) what you like; with Record on it all stays.', onclick: () => M.set(!M.on) }, h('i'), 'Mutate');
+  const amts = [[0.3, 'gentle'], [0.6, 'lively'], [0.95, 'wild']].map(([v, l]) => h('button', { type: 'button', title: `How much changes: ${l}`, onclick: () => { M.amount = v; M.emit(); } }, l));
+  const amtSeg = h('div', { class: 'seg mutamt' }, ...amts);
+  const keepB = btn('Keep', 'Keep what is mutating now: it stays in the arrangement (K)', () => { const n = M.keep(); if (n) S.flash?.(`Kept ${n === 1 ? 'that change' : `${n} changes`} in the arrangement · Undo takes ${n === 1 ? 'it' : 'them'} out`); }, 'pill keep');
+  const mutInfo = h('span', { class: 'cap mutinfo' });
+  const showMut = () => {
+    mutB.setAttribute('aria-pressed', M.on); amtSeg.hidden = keepB.hidden = !M.on; amts.forEach((b, i) => b.setAttribute('aria-pressed', [0.3, 0.6, 0.95][i] === M.amount));
+    keepB.disabled = !M.live.length; const m = M.last; mutInfo.hidden = !M.on; room.querySelector('.hintline')?.toggleAttribute('hidden', M.on);
+    mutInfo.textContent = !M.on ? '' : m ? `${m.name} ${m.what} · bars ${m.start + 1}–${m.start + m.len}${m.kept ? ' · kept (Record is on)' : ''}` : 'listening for the next change…';
+  };
+  M.addEventListener('change', showMut); showMut();
   room.append(h('div', { class: 'bar2' },
-    h('span', { class: 'cap' }, 'Arrangement'), lenIn, h('span', { class: 'cap' }, 'bars'), cycle,
+    h('span', { class: 'cap' }, 'Arrangement'), lenIn, h('span', { class: 'cap' }, 'bars'), cycle, mutB, amtSeg, keepB,
     btn('Reset stems', 'Put the original stems back on the Stems lanes', () => { if (!confirm('Reset the stems?\n\nThis puts the original stems back in the arrangement and replaces every change you made on the Stems lanes (moved, repeated or cut parts, and each stem\'s own lane). Your instrument clips and moves stay.\n\nYou can undo this.')) return; seq.snapshot(); seq.fillFromSong(); seq.arr.clips = seq.arr.clips.filter((c) => !String(c.lane).startsWith('stem:')); seq.arr.own = {}; seq.changed(); buildHeads(); }),
     h('div', { class: 'seg' }, btn('−', 'Zoom out', () => zoom(1 / 1.4), ''), btn('Fit', 'Show the whole song', () => { fit = true; x0 = 0; }, ''), btn('+', 'Zoom in', () => zoom(1.4), '')),
     h('span', { class: 'sp' }), undo, redo,
@@ -64,7 +77,7 @@ export function buildSong(S, { COLORS, NAMES }) {
     }), ...(shown.length < PATS.length ? [h('button', { type: 'button', class: 'pchip pat addpat', title: 'Add a pattern', onclick: () => seq.addPat() }, '+')] : []));
   };
   let drag = null;
-  room.append(h('div', { class: 'palette' }, h('span', { class: 'cap' }, 'Patterns'), pats, h('span', { class: 'sp' }), h('span', { class: 'hintline' }, 'drag a pattern onto a lane · double-click a lane to add · drag edges to resize · ⌥-drag copies')));
+  room.append(h('div', { class: 'palette' }, h('span', { class: 'cap' }, 'Patterns'), pats, h('span', { class: 'sp' }), mutInfo, h('span', { class: 'hintline' }, 'drag a pattern onto a lane · double-click a lane to add · drag edges to resize · ⌥-drag copies')));
 
   // ---------------------------------------------------------------- the timeline
   const ruler = h('div', { class: 'tl-ruler' }), rcv = h('canvas'), rg = rcv.getContext('2d'); ruler.append(rcv);
@@ -465,6 +478,12 @@ export function buildSong(S, { COLORS, NAMES }) {
         if (w > 26) { g.fillStyle = '#ece8dc'; g.font = '500 10px "IBM Plex Mono", monospace'; g.textBaseline = 'top'; g.fillText(`${isTake(cl.pat) ? '● ' + takeName(cl.pat) : cl.pat}${cl.part !== undefined && cl.part !== cl.lane && cl.lane !== 'm' ? `·${cl.part + 1}` : ''}${cl.tr ? ` ${cl.tr > 0 ? '+' : ''}${cl.tr}` : ''}`, x + 6, y + 3); }
       }
       g.restore(); g.globalAlpha = 1;
+    }
+    // passing pieces (Mutate): dashed in amber on the stem's lane; on the Stems lane too while it is closed
+    for (const cl of seq.arr.clips) if (cl.mut) {
+      const l = L.find((x) => x.id === cl.lane), bl = L[0], x = xOf(cl.start), w = cl.len * pxb;
+      if (l) { g.strokeStyle = '#e6b450'; g.setLineDash([3, 3]); g.strokeRect(x + 1.5, l.y + 2.5, w - 3, l.h - 5); g.setLineDash([]); }
+      else { g.fillStyle = '#e6b450'; g.fillRect(x + 1, bl.y + bl.h - 6, w - 2, 3); }
     }
     if (hoverDrop) { const l = L.find((x) => x.id === hoverDrop.lane); if (l) { g.strokeStyle = '#e6b450'; g.setLineDash([4, 3]); g.strokeRect(xOf(hoverDrop.bar) + 0.5, l.y + 1.5, hoverDrop.len * pxb - 1, l.h - 3); g.setLineDash([]); } }
     if (seq.mode === 'song') { const pb = seq.tl(seq.nowBeat()) / bpb; g.fillStyle = seq.rec ? '#df8a74' : '#ece8dc'; g.fillRect(xOf(pb), 0, 1.5, H); }

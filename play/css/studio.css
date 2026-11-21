@@ -367,3 +367,19 @@ input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:tex
 @media (max-width:1700px){#bar .song{display:none}}
 @media (max-width:1500px){#bar .home{font-size:17px}.mixhead .knob{width:40px}#rooms button{padding-left:10px;padding-right:10px}}
 @media (max-width:1560px){#bar{gap:12px;padding-left:14px;padding-right:14px}.transport{gap:6px}#bar #rooms button{padding-left:9px;padding-right:9px}.modesw button{padding-left:10px;padding-right:10px}}
+
+/* You: record yourself as a stem */
+.transport .mic-btn{width:auto;border-radius:17px;padding:0 12px 0 10px;display:flex;gap:6px;align-items:center;font:12px var(--mono);color:var(--dim);position:relative;overflow:hidden}
+.transport .mic-btn svg{width:15px;height:15px}
+.transport .mic-btn.has{color:var(--paper)}
+.transport .mic-btn.on{border-color:var(--rec)!important;color:#fff;background:#df8a7422}
+.transport .mic-btn b{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--rec);transform-origin:left;transform:scaleX(var(--lv,0));opacity:0}
+.transport .mic-btn.on b{opacity:1}
+.transport .mic-btn.on svg{animation:micpulse 1s ease-in-out infinite}
+@keyframes micpulse{50%{opacity:.35}}
+/* Mutate */
+.mutsw[aria-pressed=true]{border-color:#e6b45088;color:var(--paper)}
+.mutsw[aria-pressed=true] i{background:#e6b450!important;box-shadow:0 0 8px #e6b450aa}
+.mutamt button{font-size:11px}
+.mutinfo{color:#e6b450;max-width:520px;font:11px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill.keep:not(:disabled){border-color:#e6b45088;color:#e6b450}
