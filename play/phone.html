@@ -1,12 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta name="description" content="A playground made of múm songs: take them apart, put them back wrong, add yourself to the band.">
+  <meta name="description" content="A musical playground: take songs apart, put them back wrong, add yourself to the band.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script>window.PG_STATIC = true;</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#11141b">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Playground</title>
   <link rel="stylesheet" href="/fonts/fonts.css">
@@ -14,7 +17,7 @@
 </head>
 <body>
   <header id="top">
-    <a class="home" href="/" aria-label="gunnar tynes">gt</a>
+    <button type="button" id="menu" class="ic" aria-label="Menu and help" title="Menu and help"><svg viewBox="0 0 20 20"><path d="M3.5 6h13M3.5 10h13M3.5 14h13" stroke="currentColor" stroke-width="1.6"/></svg></button>
     <div class="where"><span class="title" id="title">…</span><span class="pos mono" id="pos">001.1</span></div>
     <button type="button" id="undo" class="ic" aria-label="Undo" title="Undo"><svg viewBox="0 0 20 20"><path d="M7 5 3 9l4 4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9H12a5 5 0 0 1 0 10H9" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     <button type="button" id="motion" class="ic" aria-label="Motion" title="Use the phone's motion"><svg viewBox="0 0 20 20"><rect x="6" y="2.5" width="8" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 7c-1 2-1 4 0 6M17.5 7c1 2 1 4 0 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
@@ -35,7 +38,7 @@
   <nav id="tabs" aria-label="Pages">
     <button type="button" data-p="stems"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.6"/></svg>Stems</button>
     <button type="button" data-p="cloud"><svg viewBox="0 0 24 24"><g fill="currentColor"><circle cx="6" cy="12" r="1.6"/><circle cx="10" cy="8" r="1.3"/><circle cx="12" cy="14" r="1.8"/><circle cx="16" cy="9" r="1.2"/><circle cx="18" cy="15" r="1.4"/></g></svg>Cloud</button>
-    <button type="button" data-p="play"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></g></svg>Play</button>
+    <button type="button" data-p="play"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></g></svg>Instruments</button>
     <button type="button" data-p="process"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="14" cy="10" r="2.4" fill="currentColor"/></g></svg>Process</button>
     <button type="button" data-p="tape"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7.5" cy="12" r="3.5"/><circle cx="16.5" cy="12" r="3.5"/><path d="M7.5 15.5h9"/></g></svg>Tape</button>
     <button type="button" data-p="move"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="13" cy="4.5" r="1.8"/><path d="M11 21l2-6-3-3 1-4 3 3h3M10 8l-3 2v3M13 15l3 6"/></g></svg>Move</button>
@@ -53,6 +56,7 @@
       <a class="full" href="play.html" id="full">Open the full studio instead</a>
     </div>
   </div>
+  <div id="sheet" hidden><div class="sheet-in" role="dialog" aria-label="Menu and help"></div></div>
   <div id="toast"></div>
   <script type="module" src="js/studio/phone.js"></script>
 </body>

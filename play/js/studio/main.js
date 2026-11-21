@@ -11,7 +11,7 @@ import { Wave, Keys, knob, group } from './ui.js';
 import { buildStrips, buildMixRoom } from './mixer.js';
 import { buildSong } from './song.js';
 import { buildTexturesRoom } from './textures.js';
-import { addVoiceStem, Voice } from './voice.js';
+import { addVoiceStem, Voice, recButton, sourceOf } from './voice.js';
 import { Mutator } from './mutate.js';
 
 const params = new URLSearchParams(location.search);
@@ -104,22 +104,13 @@ function buildHeader() {
   $('.transport').append(tempo);
   const showTempo = () => { const b = P.get('song.bpm'); bpmIn.value = b; tempo.classList.toggle('moved', b !== orig); warpB.textContent = P.get('song.warp') ? 'warp' : 'tape'; warpB.setAttribute('aria-pressed', !P.get('song.warp')); };
   P.on(({ path }) => (path === 'song.bpm' || path === 'song.warp') && showTempo()); showTempo();
-  // You: the microphone records onto your own stem while the song plays (voice.js)
-  const mic = $('#t-mic'), V = S.voice;
-  mic.onclick = async (e) => {
-    if (e.shiftKey) { if (V.has && confirm('Take your voice out of the song? (Undo brings it back.)')) V.clear(); return; }
-    if (V.recording) { mic.disabled = true; const r = await V.stop(); mic.disabled = false; flash(r ? `Your voice is in the song: ${r.bars} bar${r.bars > 1 ? 's' : ''} on the stem “You”, from bar ${r.from + 1} of the song · Undo takes it back` : 'Nothing was heard, so nothing was kept'); return; }
-    try { await V.start(); flash('Recording you from the next bar: sing or play along · press again to stop · headphones keep the band out of it'); } catch (err) { flash(err.message); }
-  };
-  const showMic = () => { mic.classList.toggle('on', V.recording); mic.classList.toggle('has', V.has); mic.title = V.recording ? 'Stop recording your voice' : `Record yourself into the song as one more stem, “You” (sing or play along; the bars you fill are kept)${V.has ? ' · shift-click takes your voice out' : ''}`; };
-  V.addEventListener('change', showMic); showMic();
   const cap = $('#t-cap');
   cap.onclick = () => { const r = S.seq.capture(); if (!r) return; flash(`Captured ${r.len} bar${r.len > 1 ? 's' : ''} as ${takeName(r.k)} at bar ${r.bar + 1} of the arrangement`); };
   const recNote = h('div', { id: 'recnote', hidden: true }); document.body.append(recNote);
   const showRec = () => {
     const q = S.seq; $('#t-rec').classList.toggle('on', q.rec && q.mode === 'song'); cap.disabled = q.rec || !q.canCapture();
     recNote.hidden = !q.rec && !S.voice.recording;
-    if (S.voice.recording && !q.rec) { recNote.textContent = `● Recording you · bar ${S.voice.bars + 1} · it lands on the song's own bars, on the stem “You”`; return; }
+    if (S.voice.recording && !q.rec) { recNote.textContent = `● Recording audio onto the Arrangement · bar ${S.voice.bars + 1} · it lands on the lane “Audio”, on the song's own bars`; return; }
     recNote.textContent = q.mode === 'song' ? `● Recording onto the arrangement${q.take ? ` as ${takeName(q.take.pat)}` : ''} · keys, Cloud touches, every knob, the mix and Re-arrange clicks all go in` : `● Recording into Pattern ${q.cur} · it loops, and each pass adds to it`;
   };
   S.seq.addEventListener('change', showRec); S.voice.addEventListener('change', showRec); showRec();
@@ -320,12 +311,15 @@ function buildCloud() {
   const lift = () => { touching = false; if (voice.held) { voice.noteOff('touch'); voice.held = false; S.seq.noteIn(0, 60, 0, false); } };
   waveBox.addEventListener('pointerup', lift); waveBox.addEventListener('pointercancel', lift);
   const status = h('span', { class: 'src-name' });
-  const picker = sourcePicker(async (stemId, a, b) => { const fresh = !S.cloudSrc || S.cloudSrc.stemId !== stemId || S.cloudSrc.a !== a; S.cloudSrc = { stemId, a, b }; status.textContent = '…'; const src = await loadSource(S, stemId, a, b); voice.setSource(src); wave.setSource(src); if (fresh || !S.cloudPicked) P.set('cloud.pos', +(loudestWindow(src, 0.1) + 0.05).toFixed(4), { by: 'load' }); status.textContent = `${Math.round(src.dur)} s`; });
+  const picker = sourcePicker(async (stemId, a, b) => { const fresh = !S.cloudSrc || S.cloudSrc.stemId !== stemId || S.cloudSrc.a !== a; S.cloudSrc = { stemId, a, b }; status.textContent = '…'; const src = await loadSource(S, stemId, a, b); voice.setSource(src); wave.setSource(src); if (fresh || !S.cloudPicked) P.set('cloud.pos', +(loudestWindow(src, 0.1) + 0.05).toFixed(4), { by: 'load' }); status.textContent = `${Math.round(src.dur)} s`; picker.classList.remove('off'); });
+  // or grains from a sound you record
+  const useRec = (src, fresh = true) => { S.cloudSrc = { rec: src.rec }; voice.setSource(src); wave.setSource(src); if (fresh) P.set('cloud.pos', +(loudestWindow(src, 0.1) + 0.02).toFixed(4), { by: 'load' }); status.textContent = `your recording · ${src.dur.toFixed(1)} s`; picker.classList.add('off'); };
+  const micB = recButton(S, { onDone: (src) => useRec(src), say: flash });
   const hint = h('div', { class: 'wave-hint' }, h('b', {}, 'Touch and drag the sound to play the cloud'), h('span', {}, ' · across: where the grains come from · up and down: ', h('span', { class: 'yname' })));
   waveBox.append(hint);
   const showY = () => { hint.querySelector('.yname').textContent = YAXES[P.get('cloud.yaxis')][0].toLowerCase(); }; P.on(({ path }) => path === 'cloud.yaxis' && showY()); showY();
   room.append(
-    h('div', { class: 'bar2' }, h('span', { class: 'cap' }, 'Grains from'), picker, status, h('span', { class: 'sp' }),
+    h('div', { class: 'bar2' }, h('span', { class: 'cap' }, 'Grains from'), picker, micB, status, h('span', { class: 'sp' }),
       h('span', { class: 'cap' }, 'Up and down'), seg(P, 'cloud.yaxis', Object.entries(YAXES).map(([k, v]) => [k, v[0]]), 'What dragging up and down changes'),
       sw(P, 'cloud.drone', 'Drone', 'Keep the cloud sounding without touching it'), sw(P, 'cloud.freeze', 'Freeze', 'Stop the cloud drifting through the sound'), recBtn('Record')),
     waveBox,
@@ -335,7 +329,7 @@ function buildCloud() {
       group('Pitch', knob(P, 'cloud.pitch', 'Transpose', { min: -24, max: 24, step: 1, bipolar: true, fmt: (v) => `${v > 0 ? '+' : ''}${v}` }), knob(P, 'cloud.jitter', 'Scatter', { max: 12, fmt: (v) => `±${v.toFixed(1)}` }), knob(P, 'cloud.reverse', 'Reverse'), knob(P, 'cloud.width', 'Width')),
       group('Each note', knob(P, 'cloud.attack', 'Attack', { fmt: (v) => sec(0.002 + v * v * 4) }), knob(P, 'cloud.release', 'Release', { fmt: (v) => sec(0.02 + v * v * 8) }), knob(P, 'cloud.level', 'Level'))));
   const st0 = S.song.stems.find((s) => /piano/i.test(s.name)) || S.song.stems[0];
-  S.rooms.cloud = { init: () => { const c = S.cloudSrc || { stemId: st0.id, ...(([a, b]) => ({ a, b }))(loudestCells(st0, 2)) }; picker.set(c.stemId, c.a, c.b); },
+  S.rooms.cloud = { init: () => { if (S.cloudSrc?.rec) { sourceOf(S, S.cloudSrc, loadSource).then((src) => useRec(src, false)).catch(() => { S.cloudSrc = null; S.rooms.cloud.init(); }); return; } const c = S.cloudSrc || { stemId: st0.id, ...(([a, b]) => ({ a, b }))(loudestCells(st0, 2)) }; picker.set(c.stemId, c.a, c.b); },
     draw: () => wave.draw((g, w, hh) => {
       const v = voice.view, pos = v.pos ?? P.get('cloud.pos'), sp = P.get('cloud.spread');
       g.fillStyle = '#e6b45018'; g.fillRect((pos - sp) * w, 0, sp * 2 * w, hh);
@@ -389,7 +383,9 @@ function makeForge(n) {
     status.textContent = `${((b - a) * src.dur).toFixed(2)} s slice`;
   };
   wave.onPick = (a, b) => { slot.picked = true; hint.remove(); P.set(`${k}.sel`, `${a.toFixed(4)}:${b.toFixed(4)}`); S.selectSlot(n); const id = `aud${n}`; slot.voice.noteOn(id, 60, 0.8); setTimeout(() => slot.voice.noteOff(id), 600); };
-  const picker = sourcePicker(async (stemId, a, b) => { const same = slot.src && slot.src.stemId === stemId && slot.src.a === a; slot.src = { stemId, a, b }; status.textContent = '…'; src = await loadSource(S, stemId, a, b); wave.setSource(src);
+  const useRec = (s0, fresh = true) => { slot.src = { rec: s0.rec }; src = s0; wave.setSource(s0); picker.classList.add('off'); if (fresh) { const x = loudestWindow(s0, 0.08); P.set(`${k}.sel`, `${x.toFixed(4)}:${Math.min(1, x + Math.max(0.08, Math.min(0.5, 0.6 / s0.dur))).toFixed(4)}`, { by: 'load' }); } reslice(); };
+  const micB = recButton(S, { onDone: (s0) => { useRec(s0); S.selectSlot(n); }, say: flash, cls: 'small' });
+  const picker = sourcePicker(async (stemId, a, b) => { picker.classList.remove('off'); const same = slot.src && slot.src.stemId === stemId && slot.src.a === a; slot.src = { stemId, a, b }; status.textContent = '…'; src = await loadSource(S, stemId, a, b); wave.setSource(src);
     if (!same || !slot.picked) { const x = loudestWindow(src, 0.06); P.set(`${k}.sel`, `${x.toFixed(4)}:${(x + 0.06).toFixed(4)}`, { by: 'load' }); } reslice(); });
   P.define(`${k}.sel`, '0.2:0.3', reslice);
   const COMP = { sampler: 1, strings: 5, grains: 4.5 }, lvl = () => out.gain.setTargetAtTime((P.get(`${k}.level`) ?? 0.8) * COMP[P.get(`${k}.engine`)], S.ctx.currentTime, 0.03);
@@ -419,10 +415,10 @@ function makeForge(n) {
   const rm = h('button', { type: 'button', class: 'pill rm', title: `Remove ${NAMES[n]}`, onclick: () => S.removeInstrument() }, '×');
   const el = h('section', { class: 'card', style: { '--c': COLORS[n] }, onpointerdown: (e) => { if (!e.target.closest('select,button,.knob,.wave')) S.selectSlot(n); } },
     h('header', {}, h('button', { type: 'button', class: 'slotname', title: `Play ${NAMES[n]} from the keys (${n + 1})`, onclick: () => S.selectSlot(n) }, h('i'), NAMES[n]), h('span', { class: 'sp' }), seg(P, `${k}.engine`, ENGINES, 'What the slice becomes'), rm),
-    h('div', { class: 'srcrow' }, picker, status), waveBox, engineBox);
+    h('div', { class: 'srcrow' }, picker, micB, status), waveBox, engineBox);
   slot.card = el;
   const def = S.song.stems[(n * 5) % S.song.stems.length];
-  return { el, wave, slot, out, rm, init: () => { const c = slot.src || { stemId: def.id, ...(([a, b]) => ({ a, b }))(loudestCells(def, 1)) }; picker.set(c.stemId, c.a, c.b); } };
+  return { el, wave, slot, out, rm, init: () => { if (slot.src?.rec) { sourceOf(S, slot.src, loadSource).then((s0) => useRec(s0, false)).catch(() => { slot.src = null; picker.set(def.id, ...loudestCells(def, 1)); }); return; } const c = slot.src || { stemId: def.id, ...(([a, b]) => ({ a, b }))(loudestCells(def, 1)) }; picker.set(c.stemId, c.a, c.b); } };
 }
 
 // ------------------------------------------------------------------------------------------------ deck: instruments, keys, sequencer
@@ -521,7 +517,7 @@ function frame() {
   if (songMode) { const c = S.seq.arr.clips.find((x) => x.lane === 'band' && bar >= x.start && bar < x.start + x.len); $('#part').textContent = c ? (c.name && !c.loop ? `part ${c.name}` : `bar ${(c.src + (c.loop ? (bar - c.start) % c.loop : bar - c.start)) % song.numBars + 1} of the song`) : 'no stems here'; }
   else { const s = song.sections.find((x) => bar / song.barsPerCell >= x.startCell && bar / song.barsPerCell < x.endCell); $('#part').textContent = s ? `part ${s.name}` : ''; }
   S.masterLevel = S.engine.meterLevel(mbuf);
-  if (S.voice.recording) $('#t-mic').style.setProperty('--lv', Math.min(1, S.voice.level() * 1.4).toFixed(2));
+  S.voiceLevel?.();
   $('#master-meter').style.transform = `scaleX(${Math.min(1, S.masterLevel)})`;
   if (S.room === 'arrange') for (const [id, m] of S.meters) { const ch = S.engine.channels.get(id); m.style.transform = `scaleX(${ch ? Math.min(1, ch.readLevel() * 3) : 0})`; }
   S.growHolds?.();

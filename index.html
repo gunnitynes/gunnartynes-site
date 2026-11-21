@@ -20,6 +20,13 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#11141b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>/* as much screen as a phone allows: where the browser lets a page go full screen (Android), the first touch does it */
+addEventListener('pointerdown',function f(e){if(e.pointerType!=='touch'||/iP(hone|od|ad)/.test(navigator.userAgent)||document.fullscreenElement||!document.documentElement.requestFullscreen)return;removeEventListener('pointerdown',f,true);document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(function(){})},true)</script>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* One surface: every release has a fixed place on a time axis. Browsing moves a camera over it; the talk is one long camera move. */

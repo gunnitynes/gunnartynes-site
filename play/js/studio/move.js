@@ -1,7 +1,7 @@
 // The phone's body modes.
 //  Walk : the motion sensors count your steps; the song's tempo follows your pace (warped, pitch kept). Stand
 //         still and the stems sink back while the Cloud holds a drone; walk on and they come back.
-//  Turn : the stems stand in a circle around you (3D sound for headphones). Turn, and the band turns; the one
+//  Turn : the stems stand in a circle around you (best with headphones). Turn, and the band turns; the one
 //         you face comes forward, and if you keep facing it for a moment you hear it almost alone.
 
 // ------------------------------------------------------------------------------------------------ walk
@@ -46,9 +46,14 @@ export class Walk extends EventTarget {
     const now = performance.now();
     if (!this.still && now - this.lastStep > 2600) { this.rest(true); this.emit(); return; }
     if (this.still || !this.spm) return;
-    const want = Math.round(this.tempoOf(this.spm) / 2) * 2, cur = this.bpm;
-    // follow in steps of 2 BPM, at most every 1.5 s: each change re-cuts the stems on the beat
-    if (Math.abs(want - cur) >= 2 && now - this.lastSet > 1500) { this.lastSet = now; this.S.params.set('song.bpm', cur + Math.sign(want - cur) * Math.min(Math.abs(want - cur), 8), { by: 'ui' }); this.emit(); }
+    // musical before accurate: whole steps of 4 BPM, only once the pace has settled (the same for a second and a
+    // half), at most every two bars, and at most 6 BPM at a time. The player brings it in on the next bar line.
+    const want = Math.round(this.tempoOf(this.spm) / 4) * 4, cur = this.bpm;
+    if (want !== this.want) { this.want = want; this.wantSince = now; }
+    const bars2 = this.S.player.barDur * 2000;
+    if (Math.abs(want - cur) >= 4 && now - this.wantSince > 1500 && now - this.lastSet > bars2) {
+      this.lastSet = now; this.S.params.set('song.bpm', cur + Math.sign(want - cur) * Math.min(Math.abs(want - cur), 6), { by: 'ui' }); this.emit();
+    }
   }
   /** Standing still: the stems sink back and the Cloud holds a drone. Walking: as you had it. */
   rest(still) {
@@ -62,18 +67,18 @@ export class Walk extends EventTarget {
 // ------------------------------------------------------------------------------------------------ turn
 export class Surround extends EventTarget {
   constructor(S) {
-    super(); this.S = S; this.on = false; this.heading = 0; this.h0 = null; this.face = null; this.dwell = 0; this.alone = null; this.t = 0;
+    super(); this.S = S; this.on = false; this.heading = 0; this.target = 0; this.h0 = null; this.face = null; this.dwell = 0; this.alone = null; this.t = 0;
     addEventListener('deviceorientation', (e) => this.orient(e));
   }
   /** The stems in the circle: those with something in them, evenly round. */
   get ring() { return this.S.song.stems.filter((s) => s.cells.some(Boolean)); }
   set(on) {
-    this.on = on; this.h0 = null; this.alone = null; this.face = null;
+    this.on = on; this.h0 = null; this.alone = null; this.face = null; this.heading = this.target = 0;
     const ring = this.ring, eng = this.S.engine;
     this.az = new Map(ring.map((st, i) => [st.id, (i / ring.length) * Math.PI * 2]));
-    for (const st of this.S.song.stems) { const ch = eng.channel(st.id); ch.spatial(on && this.az.has(st.id), this.az.get(st.id) || 0); }
+    for (const st of this.S.song.stems) eng.channel(st.id).spatial(on && this.az.has(st.id));
     if (on && !this.S.player.playing) this.S.player.play();
-    this.turn(this.heading); this.emit();
+    this.emit();
   }
   orient(e) {
     if (!this.on) return;
@@ -81,28 +86,22 @@ export class Surround extends EventTarget {
     if (this.h0 === null) this.h0 = h;
     this.turn(((h - this.h0) * Math.PI) / 180);
   }
-  /** Face this way (radians, clockwise from where you stood when Turn went on). */
-  turn(rad) {
-    this.heading = rad;
-    const L = this.S.ctx.listener, t = this.S.ctx.currentTime, fx = Math.sin(rad), fz = -Math.cos(rad);
-    if (L.forwardX) { L.forwardX.setTargetAtTime(fx, t, 0.03); L.forwardY.setTargetAtTime(0, t, 0.03); L.forwardZ.setTargetAtTime(fz, t, 0.03); L.upX.value = 0; L.upY.value = 1; L.upZ.value = 0; }
-    else L.setOrientation?.(fx, 0, fz, 0, 1, 0);
-  }
-  /** Called every frame: who is in front, how long you have faced them, and the gains that follow. */
+  /** Face this way (radians, clockwise from where you stood when Turn went on); the band follows smoothly. */
+  turn(rad) { const d = Math.atan2(Math.sin(rad - this.target), Math.cos(rad - this.target)); this.target += d; }
+  /** Every frame: ease towards where you face, find who is in front, and place every stem. */
   frame(dt) {
     if (!this.on || !this.az) return;
-    let face = null, fd = Infinity; const d = new Map();
-    for (const [id, a] of this.az) { let x = Math.abs(((a - this.heading) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI); d.set(id, x); if (x < fd) { fd = x; face = id; } }
+    this.heading += (this.target - this.heading) * Math.min(1, dt * 6);   // a slow, smooth turn — never a jump
+    let face = null, fd = Infinity; const rel = new Map();
+    for (const [id, a] of this.az) { const r = Math.atan2(Math.sin(a - this.heading), Math.cos(a - this.heading)); rel.set(id, r); if (Math.abs(r) < fd) { fd = Math.abs(r); face = id; } }
     if (face !== this.face) { this.face = face; this.dwell = 0; this.emit(); }
     this.dwell = fd < 0.3 ? this.dwell + dt : 0;
     if (!this.alone && this.dwell > 2.2) { this.alone = face; this.emit(); try { navigator.vibrate?.(30); } catch { /* none */ } }
-    if (this.alone && (d.get(this.alone) ?? 9) > 0.55) { this.alone = null; this.emit(); }
+    if (this.alone && Math.abs(rel.get(this.alone) ?? 9) > 0.55) { this.alone = null; this.emit(); }
     if ((this.t += dt) < 0.05) return; this.t = 0;
-    const now = this.S.ctx.currentTime;
-    for (const [id, x] of d) {
-      const ch = this.S.engine.channels.get(id); if (!ch?.focus) continue;
-      const g = this.alone ? (id === this.alone ? 1.5 : 0.1) : 0.6 + 0.9 * Math.exp(-((x / 0.55) ** 2));
-      ch.focus.gain.setTargetAtTime(g, now, 0.12);
+    for (const [id, r] of rel) {
+      const g = this.alone ? (id === this.alone ? 1.4 : 0.12) : 0.55 + 0.75 * Math.exp(-((r / 0.6) ** 2));
+      this.S.engine.channels.get(id)?.place(r, g);
     }
   }
   get progress() { return this.alone ? 1 : Math.min(1, this.dwell / 2.2); }

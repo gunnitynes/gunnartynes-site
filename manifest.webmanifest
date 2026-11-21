@@ -1,0 +1,13 @@
+{
+  "name": "Gunnar Tynes",
+  "short_name": "Gunnar Tynes",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "background_color": "#11141b",
+  "theme_color": "#11141b",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

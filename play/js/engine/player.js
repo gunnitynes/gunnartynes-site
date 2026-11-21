@@ -7,6 +7,7 @@
 const LOOKAHEAD = 0.2;   // seconds scheduled ahead
 const TICK = 25;         // ms
 const FADE = 0.004;      // seconds — splice fade between discontinuous cells
+const XFADE = 0.03;      // seconds — the crossfade where the tempo changes (on a bar line)
 const PREFETCH_BARS = 8;
 
 export class Player extends EventTarget {
@@ -39,19 +40,28 @@ export class Player extends EventTarget {
   // ------------------------------------------------------------ tempo
   setTempo(bpm, warp = this.warp) {
     bpm = Math.max(40, Math.min(240, +bpm || this.song.bpm));
-    if (bpm === this.bpm && warp === this.warp) return;
-    const was = this.playing, bn = this.beatNow(), el = this.elapsed();
+    const cur = this.pendingTempo || { bpm: this.bpm, warp: this.warp };
+    if (bpm === cur.bpm && warp === cur.warp) return;
+    if (!this.playing) { this.pendingTempo = null; this.retime(bpm, warp); this.emit('tempo', { bpm, warp }); return; }
+    // while playing, a new tempo waits for the next bar line and comes in there with a crossfade (no clicks,
+    // and in time); meanwhile the warped copies for it are started, so they are usually ready by then
+    this.pendingTempo = { bpm, warp };
+    if (warp) for (const v of this.voices.values()) { const b = this.loader.get(v.url); if (b && bpm !== this.song.bpm) this.stretcher.get(b, this.song.bpm / bpm); }
+  }
+  retime(bpm, warp) {
     this.bpm = bpm; this.r = bpm / this.song.bpm; this.warp = warp;
     this.beatDur = 60 / bpm; this.barDur = this.beatDur * this.bpb; this.stepDur = this.beatDur / 4;
     this.engine.setTempo(bpm);
-    if (was) {
-      // keep the beat where it is; every voice is cut and comes back in, in phase, at the new speed
-      const now = this.ctx.currentTime;
-      for (const v of this.voices.values()) this.kill(v, now + 0.01);
-      this.voices.clear();
-      this.bar0 = this.snap(now + 0.02 - bn * this.beatDur); this.clockOrigin = now + 0.02 - el * this.beatDur;
-      this.nextBar = Math.floor(bn / this.bpb) + 1; this.nextStep = Math.floor(bn * 4) + 1;
-    }
+  }
+  /** The tempo change itself, at bar B (called just before B is scheduled). */
+  applyTempo(B) {
+    const { bpm, warp } = this.pendingTempo; this.pendingTempo = null;
+    const T = this.timeOfBar(B), elT = (T - this.clockOrigin) / this.beatDur;
+    this.retime(bpm, warp);
+    for (const v of this.voices.values()) this.kill(v, T, XFADE);
+    this.voices.clear();
+    this.bar0 = this.snap(T - B * this.barDur); this.clockOrigin = T - elT * this.beatDur;
+    this.nextBar = B; this.nextStep = B * this.bpb * 4; this.xfadeBar = B;
     this.emit('tempo', { bpm, warp });
   }
   /** The buffer to play for a cell at the current tempo (null while its warped copy is still being made). */
@@ -131,6 +141,7 @@ export class Player extends EventTarget {
       }
     } else for (const v of all) this.kill(v, t);
     this.voices.clear(); this.chopVoices = [];
+    if (this.pendingTempo) { const { bpm, warp } = this.pendingTempo; this.pendingTempo = null; this.retime(bpm, warp); this.emit('tempo', { bpm, warp }); }
     this.emit('transport', { playing: false, tape });
   }
   seek(bar) {
@@ -148,6 +159,7 @@ export class Player extends EventTarget {
   tick() {
     if (!this.playing) return;
     const now = this.ctx.currentTime, horizon = now + LOOKAHEAD;
+    if (this.pendingTempo && this.timeOfBar(this.nextBar) < horizon + 0.06) this.applyTempo(this.nextBar);
     while (this.timeOfBar(this.nextBar) < horizon) { this.scheduleBar(this.nextBar, this.timeOfBar(this.nextBar)); this.nextBar++; }
     while (this.bar0 + this.nextStep * this.stepDur < horizon) { this.scheduleStep(this.nextStep, this.bar0 + this.nextStep * this.stepDur); this.nextStep++; }
     this.lateJoin(now);
@@ -185,7 +197,7 @@ export class Player extends EventTarget {
     const src = this.ctx.createBufferSource(); src.buffer = buf;
     const rm = this.rateFor(buf); if (rm !== 1) src.playbackRate.value = rm;
     const g = this.ctx.createGain();
-    if (fadeIn) { g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(1, T + FADE); }
+    if (fadeIn) { const f = B === this.xfadeBar ? XFADE : FADE; g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(1, T + f); }
     src.connect(g).connect(this.engine.channel(id).input);
     src.start(T, offset * rm);
     src.onended = () => { src.disconnect(); g.disconnect(); };
@@ -216,10 +228,10 @@ export class Player extends EventTarget {
     return v;
   }
 
-  kill(v, t) {
+  kill(v, t, fade = FADE) {
     try {
-      v.g.gain.cancelScheduledValues(t); v.g.gain.setValueAtTime(v.g.gain.value, t);
-      v.g.gain.linearRampToValueAtTime(0, t + FADE); v.src.stop(t + FADE + 0.002);
+      v.g.gain.cancelScheduledValues(t); v.g.gain.setValueAtTime(t > this.ctx.currentTime + 0.005 ? (v.fx?.g ?? 1) : v.g.gain.value, t);
+      v.g.gain.linearRampToValueAtTime(0, t + fade); v.src.stop(t + fade + 0.002);
     } catch { /* already stopped */ }
   }
 

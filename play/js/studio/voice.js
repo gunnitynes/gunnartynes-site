@@ -1,15 +1,19 @@
-// You, as one more stem. What the microphone hears while the song plays is cut into the song's own bars and kept
-// as a stem called "You": it plays along wherever the song's bars go (moved, looped, reversed in the Arrangement),
+// Record audio. Two ways:
+//  · onto the ARRANGEMENT: what the microphone hears while the song plays is cut into the song's own bars and kept
+//    as one more stem, "Audio": it plays along wherever the song's bars go (moved, looped, reversed in the Arrangement),
 // gets a lane and a mixer row like every musician, and can be grains in the Cloud or the slice of an instrument.
 //
 // Where a take lands: for every bar you played over, the bar of the SONG that was sounding then (so you sing with
 // the song, not at a clock time). Which cells hold your voice is part of the arrangement (arr.voice), so Undo
 // takes a take back; the audio itself is kept in the browser (IndexedDB), never sent anywhere.
+//  · as a SOUND (recordFree): a few seconds, free of the beat, that become the Cloud's grains or an instrument's
+//    source. Kept in the same storage as "recordings", and a source can name one: { rec: id }.
 import { defaultTrack } from '../state/session.js';
+import { h } from '../lib/util.js';
 
 export const VOICE = 'you';
 export function addVoiceStem(song) {
-  if (!song.stems.some((s) => s.id === VOICE)) song.stems.push({ id: VOICE, name: 'You', voice: true, gain: 1, cells: new Array(song.numCells).fill(null) });
+  if (!song.stems.some((s) => s.id === VOICE)) song.stems.push({ id: VOICE, name: 'Audio', voice: true, gain: 1, cells: new Array(song.numCells).fill(null) });
 }
 
 // ---- the browser's own storage for the audio
@@ -120,4 +124,59 @@ export class Voice extends EventTarget {
 function resample(x, r) { const n = Math.round(x.length * r), o = new Float32Array(n); for (let i = 0; i < n; i++) { const p = i / r, j = Math.floor(p), f = p - j; o[i] = (x[j] || 0) * (1 - f) + (x[j + 1] || 0) * f; } return o; }
 function stretch(x, alpha) {
   return new Promise((res) => { const w = new Worker(new URL('../engine/stretch.js', import.meta.url)); w.onmessage = ({ data }) => { w.terminate(); res(data.chans[0]); }; w.postMessage({ id: 1, chans: [x], alpha }, [x.buffer]); });
+}
+
+// ------------------------------------------------------------------------------------------------ free recordings
+/** Start recording a sound now (not on the beat). Returns { stop() → Promise<source|null>, seconds, level() }. */
+export async function recordFree(S, { max = 20 } = {}) {
+  let mic; try { mic = await S.engine.openMic(); } catch (e) { throw new Error(e?.name === 'NotAllowedError' ? 'The microphone was not allowed' : 'No microphone here'); }
+  await S.ctx.resume();
+  const sr = S.ctx.sampleRate, t0 = S.ctx.currentTime, rec = mic.record(Math.round((t0 + 0.02) * sr));
+  const lb = new Float32Array(1024);
+  let done = null;
+  const ctl = {
+    label: mic.label,
+    get seconds() { return S.ctx.currentTime - t0; },
+    level() { mic.monitor.getFloatTimeDomainData(lb); let pk = 0; for (const x of lb) pk = Math.max(pk, Math.abs(x)); return pk; },
+    stop: () => (done ??= (async () => {
+      clearTimeout(timer);
+      const out = await rec.stop(Math.round(S.ctx.currentTime * sr));
+      const x = new Float32Array(out.L.length); for (let i = 0; i < x.length; i++) x[i] = (out.L[i] + out.R[i]) * 0.5;
+      // trim the silence before and after; nothing heard → nothing kept
+      let pk = 0; for (const v of x) pk = Math.max(pk, Math.abs(v)); if (pk < 0.003) return null;
+      const th = pk * 0.03; let a = 0, b = x.length; while (a < b && Math.abs(x[a]) < th) a++; while (b > a && Math.abs(x[b - 1]) < th) b--;
+      a = Math.max(0, a - Math.round(sr * 0.01)); b = Math.min(x.length, b + Math.round(sr * 0.05));
+      const y = x.slice(a, b), g = Math.min(8, 0.8 / pk); for (let i = 0; i < y.length; i++) y[i] *= g;
+      const F = Math.min(240, y.length >> 3); for (let i = 0; i < F; i++) { y[i] *= i / F; y[y.length - 1 - i] *= i / F; }
+      if (y.length < sr * 0.05) return null;
+      const id = `${Date.now().toString(36)}`;
+      await idbPut(`rec:${S.song.id}:${id}`, y);
+      return asSource(S, id, y);
+    })()),
+  };
+  const timer = setTimeout(() => ctl.stop(), max * 1000);
+  return ctl;
+}
+function asSource(S, id, y) { return { stemId: 'rec:' + id, rec: id, name: 'your recording', L: y, R: y, sr: S.ctx.sampleRate, dur: y.length / S.ctx.sampleRate }; }
+/** A source by reference: a stretch of a stem ({ stemId, a, b }) or one of your recordings ({ rec }). */
+export async function sourceOf(S, ref, loadSource) {
+  if (ref?.rec) { const y = await idbGet(`rec:${S.song.id}:${ref.rec}`); if (!y) throw new Error('That recording is gone'); return asSource(S, ref.rec, y); }
+  return loadSource(S, ref.stemId, ref.a, ref.b);
+}
+
+/** A "Record audio" button: press to record a sound, press again to stop; the sound goes to onDone(source). */
+export function recButton(S, { onDone, say = () => {}, label = 'Record audio', cls = '' } = {}) {
+  let ctl = null, raf = 0;
+  const txt = h('span', {}, label), b = h('button', { type: 'button', class: `recaudio ${cls}`, title: 'Record a sound from the microphone (up to 20 seconds); press again to stop' }, h('i'), txt);
+  const tick = () => { if (!ctl) return; txt.textContent = `Stop · ${ctl.seconds.toFixed(1)} s`; b.style.setProperty('--lv', Math.min(1, ctl.level() * 1.4).toFixed(2)); raf = requestAnimationFrame(tick); };
+  b.onclick = async () => {
+    if (ctl) {
+      const c = ctl; ctl = null; cancelAnimationFrame(raf); b.classList.remove('on'); txt.textContent = '…'; b.disabled = true;
+      const src = await c.stop().catch(() => null); b.disabled = false; txt.textContent = label;
+      if (src) { await onDone(src); say(`Recorded ${src.dur.toFixed(1)} s`); } else say('Nothing was heard, so nothing was kept');
+      return;
+    }
+    try { ctl = await recordFree(S); b.classList.add('on'); say(`Recording from “${ctl.label}” · press again to stop`); tick(); setTimeout(() => { if (ctl) b.click(); }, 20000); } catch (e) { say(e.message); }
+  };
+  return b;
 }

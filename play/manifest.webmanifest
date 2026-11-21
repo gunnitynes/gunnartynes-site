@@ -1,0 +1,10 @@
+{
+  "name": "Playground",
+  "short_name": "Playground",
+  "start_url": "./phone.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#11141b",
+  "theme_color": "#11141b"
+}

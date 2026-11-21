@@ -31,17 +31,24 @@ export class Channel {
     go('rev', this.revSend.gain, p.rev);
     go('dly', this.dlySend.gain, p.dly);
   }
-  /** Place the channel in 3D around the listener (az in radians, 0 = straight ahead, clockwise), or back in stereo. */
-  spatial(on, az = 0, dist = 1.6) {
+  /** Turn: the channel gets its own place around the listener — a gain (who is in front), a pan (left/right)
+   *  and a low-pass (behind you is darker). Plain nodes moved with slow ramps: no clicks, unlike HRTF panners. */
+  spatial(on) {
     const c = this.pan.context, bus = this.eng.bus;
-    if (on && !this.p3) {
-      this.p3 = new PannerNode(c, { panningModel: 'HRTF', distanceModel: 'inverse', refDistance: 1, rolloffFactor: 0.6 });
-      this.focus = c.createGain();
-      this.pan.disconnect(bus); this.pan.connect(this.focus).connect(this.p3).connect(bus);
-    } else if (!on && this.p3) {
-      this.pan.disconnect(this.focus); this.p3.disconnect(); this.focus.disconnect(); this.p3 = this.focus = null; this.pan.connect(bus);
+    if (on && !this.focus) {
+      this.focus = c.createGain(); this.sp = c.createStereoPanner(); this.behind = c.createBiquadFilter(); this.behind.type = 'lowpass'; this.behind.frequency.value = 20000; this.behind.Q.value = 0.5;
+      this.pan.disconnect(bus); this.pan.connect(this.focus).connect(this.sp).connect(this.behind).connect(bus);
+    } else if (!on && this.focus) {
+      const t = c.currentTime; this.focus.gain.setTargetAtTime(1, t, 0.05); this.sp.pan.setTargetAtTime(0, t, 0.05); this.behind.frequency.setTargetAtTime(20000, t, 0.05);
+      const [f, sp, bh] = [this.focus, this.sp, this.behind]; this.focus = this.sp = this.behind = null;
+      setTimeout(() => { this.pan.connect(bus); this.pan.disconnect(f); bh.disconnect(); sp.disconnect(); f.disconnect(); }, 300);
     }
-    if (this.p3) { const t = c.currentTime; this.p3.positionX.setTargetAtTime(Math.sin(az) * dist, t, 0.05); this.p3.positionZ.setTargetAtTime(-Math.cos(az) * dist, t, 0.05); this.p3.positionY.value = 0; }
+  }
+  /** Where it sits now: rel = its angle from where you face (radians), g = how much it comes forward. */
+  place(rel, g) {
+    if (!this.focus) return; const t = this.pan.context.currentTime, back = Math.max(0, -Math.cos(rel));
+    this.focus.gain.setTargetAtTime(g, t, 0.15); this.sp.pan.setTargetAtTime(Math.sin(rel) * 0.85, t, 0.12);
+    this.behind.frequency.setTargetAtTime(20000 * (1 - back) ** 2 + 1400 * back + 600, t, 0.15);
   }
   readLevel() {
     this.meter.getFloatTimeDomainData(this.buf);
@@ -175,16 +182,27 @@ export class AudioEngine {
   recordMaster(startFrame) { return recordTap(this.tap, startFrame); }
 
   /** Microphone in → its own tap. Resolves to the same recorder interface. */
-  async openMic() {
-    if (this.mic) return this.mic;
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  async openMic(deviceId = this.micDevice || '') {
+    if (this.mic && this.mic.deviceId === deviceId) return this.mic;
+    this.mic?.close();
+    // phones: echo cancellation on, so the band coming out of the phone's own speaker is not recorded with you;
+    // computers: off (headphones or an interface), and the input can be chosen (a virtual input carries the
+    // computer's own sound, not a microphone)
+    const phone = matchMedia('(pointer:coarse)').matches;
+    const audio = { echoCancellation: phone, noiseSuppression: false, autoGainControl: false, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) };
+    const stream = await navigator.mediaDevices.getUserMedia({ audio });
     const src = this.ctx.createMediaStreamSource(stream);
-    const tap = new AudioWorkletNode(this.ctx, 'tap', { numberOfInputs: 1, numberOfOutputs: 0 });
+    // the tap needs an output that leads somewhere, or some browsers (Safari) never run it
+    const tap = new AudioWorkletNode(this.ctx, 'tap', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+    const mute = this.ctx.createGain(); mute.gain.value = 0; tap.connect(mute).connect(this.ctx.destination);
     const monitor = this.ctx.createAnalyser(); monitor.fftSize = 1024;
     src.connect(tap); src.connect(monitor);
-    this.mic = { stream, tap, monitor, record: (f) => recordTap(tap, f), close: () => { stream.getTracks().forEach((t) => t.stop()); src.disconnect(); this.mic = null; } };
+    const label = stream.getAudioTracks()[0]?.label || 'microphone';
+    this.mic = { stream, tap, monitor, deviceId, label, record: (f) => recordTap(tap, f), close: () => { stream.getTracks().forEach((t) => t.stop()); src.disconnect(); tap.disconnect(); this.mic = null; } };
     return this.mic;
   }
+  /** The audio inputs there are (names appear once the microphone has been allowed). */
+  async inputs() { try { return (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput'); } catch { return []; } }
 
   /** Input + output latency estimate, used to line mic takes up with what the player heard. */
   roundTrip() { return (this.ctx.baseLatency || 0) + (this.ctx.outputLatency || 0.02) + 0.01; }

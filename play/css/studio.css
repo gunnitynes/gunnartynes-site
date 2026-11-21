@@ -383,3 +383,13 @@ input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:tex
 .mutamt button{font-size:11px}
 .mutinfo{color:#e6b450;max-width:520px;font:11px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill.keep:not(:disabled){border-color:#e6b45088;color:#e6b450}
+/* Record audio */
+.recaudio{display:inline-flex;align-items:center;gap:7px;font:11.5px var(--mono);padding:5px 12px 5px 9px;border:1px solid #df8a7466;border-radius:14px;color:var(--paper);position:relative;overflow:hidden;white-space:nowrap}
+.recaudio i{width:9px;height:9px;border-radius:50%;background:var(--rec)}
+.recaudio.small{padding:3px 9px 3px 7px;font-size:10.5px}
+.recaudio.on{background:#df8a7426;border-color:var(--rec)}
+.recaudio.on i{animation:micpulse 1s steps(2) infinite}
+.recaudio::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--rec);transform-origin:left;transform:scaleX(var(--lv,0));opacity:0}
+.recaudio.on::after{opacity:1}
+.insel{max-width:130px;font:11px var(--mono)}
+.picker.off select{opacity:.45}

@@ -42,6 +42,20 @@ export function buildSong(S, { COLORS, NAMES }) {
   const bounceB = btn('Bounce .wav', 'Play the whole arrangement (or the loop) once and save it as a sound file', () => bounce());
   const fileIn = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async (e) => { const f = e.target.files[0]; if (!f) return; try { S.loadProject(JSON.parse(await f.text())); } catch (err) { alert('That file could not be opened: ' + err.message); } e.target.value = ''; } });
   // Mutate: the song keeps evolving (mutate.js); Keep (K) holds on to what is changing now
+  // Record audio onto the arrangement: the lane "Audio" (voice.js), from the input chosen here
+  const V = S.voice, eng = S.engine;
+  const inSel = h('select', { class: 'insel', title: 'Which input to record from', 'aria-label': 'Input', onchange: (e) => { eng.micDevice = e.target.value; } });
+  const fillInputs = async () => { const ins = await eng.inputs(); inSel.replaceChildren(h('option', { value: '' }, 'default input'), ...ins.filter((d) => d.deviceId && d.deviceId !== 'default').map((d, i) => h('option', { value: d.deviceId }, d.label || `input ${i + 1}`))); inSel.value = eng.micDevice || ''; };
+  navigator.mediaDevices?.addEventListener?.('devicechange', fillInputs); fillInputs();
+  const recA = h('button', { type: 'button', class: 'recaudio', title: 'Record audio onto the arrangement from the next bar: it lands on the lane “Audio”, on the song’s own bars (shift-click takes it all out)' }, h('i'), h('span', {}, 'Record audio'));
+  recA.onclick = async (e) => {
+    if (e.shiftKey) { if (V.has && confirm('Take the recorded audio out of the arrangement? (Undo brings it back.)')) V.clear(); return; }
+    if (V.recording) { recA.disabled = true; const r = await V.stop(); recA.disabled = false; S.flash?.(r ? `Recorded ${r.bars} bar${r.bars > 1 ? 's' : ''} onto the lane “Audio” · Undo takes it back` : 'Nothing was heard, so nothing was kept'); return; }
+    try { await V.start(); fillInputs(); S.flash?.(`Recording from “${eng.mic?.label || 'the microphone'}” from the next bar · press again to stop`); } catch (err) { S.flash?.(err.message); }
+  };
+  const showRecA = () => { recA.classList.toggle('on', V.recording); recA.lastChild.textContent = V.recording ? `Stop · bar ${V.bars + 1}` : 'Record audio'; };
+  V.addEventListener('change', showRecA); showRecA();
+  S.voiceLevel = () => { if (V.recording) recA.style.setProperty('--lv', Math.min(1, V.level() * 1.4).toFixed(2)); };
   const M = S.mutate;
   const mutB = h('button', { type: 'button', class: 'sw mutsw', title: 'Mutate: every couple of bars one stem does something else for a moment (jumps elsewhere, plays backwards, slower, faster, stutters, drops out) and then goes back. Keep (K) what you like; with Record on it all stays.', onclick: () => M.set(!M.on) }, h('i'), 'Mutate');
   const amts = [[0.3, 'gentle'], [0.6, 'lively'], [0.95, 'wild']].map(([v, l]) => h('button', { type: 'button', title: `How much changes: ${l}`, onclick: () => { M.amount = v; M.emit(); } }, l));
@@ -55,7 +69,7 @@ export function buildSong(S, { COLORS, NAMES }) {
   };
   M.addEventListener('change', showMut); showMut();
   room.append(h('div', { class: 'bar2' },
-    h('span', { class: 'cap' }, 'Arrangement'), lenIn, h('span', { class: 'cap' }, 'bars'), cycle, mutB, amtSeg, keepB,
+    h('span', { class: 'cap' }, 'Arrangement'), lenIn, h('span', { class: 'cap' }, 'bars'), cycle, recA, inSel, mutB, amtSeg, keepB,
     btn('Reset stems', 'Put the original stems back on the Stems lanes', () => { if (!confirm('Reset the stems?\n\nThis puts the original stems back in the arrangement and replaces every change you made on the Stems lanes (moved, repeated or cut parts, and each stem\'s own lane). Your instrument clips and moves stay.\n\nYou can undo this.')) return; seq.snapshot(); seq.fillFromSong(); seq.arr.clips = seq.arr.clips.filter((c) => !String(c.lane).startsWith('stem:')); seq.arr.own = {}; seq.changed(); buildHeads(); }),
     h('div', { class: 'seg' }, btn('−', 'Zoom out', () => zoom(1 / 1.4), ''), btn('Fit', 'Show the whole song', () => { fit = true; x0 = 0; }, ''), btn('+', 'Zoom in', () => zoom(1.4), '')),
     h('span', { class: 'sp' }), undo, redo,
