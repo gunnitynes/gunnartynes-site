@@ -391,5 +391,13 @@ input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:tex
 .recaudio.on i{animation:micpulse 1s steps(2) infinite}
 .recaudio::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--rec);transform-origin:left;transform:scaleX(var(--lv,0));opacity:0}
 .recaudio.on::after{opacity:1}
-.insel{max-width:130px;font:11px var(--mono)}
+.insel{max-width:112px;font:11px var(--mono)}
 .picker.off select{opacity:.45}
+
+/* menu items in capitals: every button and menu (names, titles and longer text stay as they are) */
+button,select,.addinst{text-transform:uppercase;letter-spacing:.02em}
+#song,.roomhelp,.hintline,.wave-hint{text-transform:none}
+.tl-heads .ln{text-transform:uppercase;letter-spacing:.02em}
+#rooms button{font:500 11px var(--mono);letter-spacing:.03em;padding:6px 6px}
+/* a knob's value sits in the middle of its ring, however wide its label */
+.knob{grid-template-columns:minmax(0,1fr)}.knob svg,.knob .kl{justify-self:center}

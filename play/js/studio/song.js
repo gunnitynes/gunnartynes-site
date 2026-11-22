@@ -39,13 +39,13 @@ export function buildSong(S, { COLORS, NAMES }) {
   const lenIn = h('input', { type: 'number', min: 1, max: 999, class: 'num', title: 'Length of the arrangement in bars', onchange: (e) => { seq.snapshot(); seq.arr.bars = clamp(Math.round(+e.target.value || 1), 1, 999); seq.changed(); } });
   const zoom = (f, at) => { const ph = seq.tl(seq.nowBeat()) / bpb, ox = at ?? (xOf(ph) >= 0 && xOf(ph) <= W ? xOf(ph) : 0), bar = x0 + ox / pxb; fit = false; pxb = clamp(pxb * f, 2, 160); x0 = Math.max(0, bar - ox / pxb); };
   const undo = btn('Undo', 'Undo (⌘Z)', () => seq.undo()), redo = btn('Redo', 'Redo (⇧⌘Z)', () => seq.redo());
-  const bounceB = btn('Bounce .wav', 'Play the whole arrangement (or the loop) once and save it as a sound file', () => bounce());
+  const bounceB = btn('Bounce', 'Play the whole arrangement (or the loop) once and save it as a sound file', () => bounce());
   const fileIn = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async (e) => { const f = e.target.files[0]; if (!f) return; try { S.loadProject(JSON.parse(await f.text())); } catch (err) { alert('That file could not be opened: ' + err.message); } e.target.value = ''; } });
   // Mutate: the song keeps evolving (mutate.js); Keep (K) holds on to what is changing now
   // Record audio onto the arrangement: the lane "Audio" (voice.js), from the input chosen here
   const V = S.voice, eng = S.engine;
   const inSel = h('select', { class: 'insel', title: 'Which input to record from', 'aria-label': 'Input', onchange: (e) => { eng.micDevice = e.target.value; } });
-  const fillInputs = async () => { const ins = await eng.inputs(); inSel.replaceChildren(h('option', { value: '' }, 'default input'), ...ins.filter((d) => d.deviceId && d.deviceId !== 'default').map((d, i) => h('option', { value: d.deviceId }, d.label || `input ${i + 1}`))); inSel.value = eng.micDevice || ''; };
+  const fillInputs = async () => { const ins = await eng.inputs(); inSel.replaceChildren(h('option', { value: '' }, 'Default mic'), ...ins.filter((d) => d.deviceId && d.deviceId !== 'default').map((d, i) => h('option', { value: d.deviceId }, d.label || `input ${i + 1}`))); inSel.value = eng.micDevice || ''; };
   navigator.mediaDevices?.addEventListener?.('devicechange', fillInputs); fillInputs();
   const recA = h('button', { type: 'button', class: 'recaudio', title: 'Record audio onto the arrangement from the next bar: it lands on the lane “Audio”, on the song’s own bars (shift-click takes it all out)' }, h('i'), h('span', {}, 'Record audio'));
   recA.onclick = async (e) => {

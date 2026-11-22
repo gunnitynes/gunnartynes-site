@@ -81,9 +81,11 @@ async function boot() {
 
   const first = ids.map((id) => player.resolve(session.state.tracks[id], 0)).filter(Boolean).map((w) => w.url);
   let n = 0; await Promise.all(first.map((u) => loader.load(u).catch(() => {}).finally(() => { $('#gate-bar').style.width = `${(++n / first.length) * 100}%`; })));
-  $('#gate-status').textContent = 'ready';
-  const go = $('#gate-go'); go.disabled = false;
-  go.onclick = async () => { goFull(); await engine.ctx.resume(); unlockIOS(); await Motion.ask(); $('#gate').classList.add('gone'); };
+  // straight into the studio once the stems are in: the first touch unlocks the sound (and full screen, and on an
+  // iPhone the question about motion), nothing plays until you press play
+  $('#gate').classList.add('gone');
+  const touch1 = () => { removeEventListener('pointerdown', touch1, true); goFull(); engine.ctx.resume(); unlockIOS(); Motion.ask(); };
+  addEventListener('pointerdown', touch1, true);
   requestAnimationFrame(frame);
   setInterval(save, 2000);
 }

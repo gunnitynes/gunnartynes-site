@@ -203,3 +203,7 @@ body{display:block;min-height:100lvh;overflow-x:hidden;padding-bottom:calc(58px 
 .mitem{text-align:left;min-height:50px;border-bottom:1px solid var(--rule);font:15px var(--sans);color:var(--paper)}
 .mitem.faint{color:var(--dim)}
 @media (min-width:700px){.sheet-in{left:50%;right:auto;width:560px;transform:translate(-50%,24px)}#sheet.on .sheet-in{transform:translate(-50%,0)}}
+
+/* menu items in capitals (stem names, titles and text stay as they are) */
+button,select{text-transform:uppercase;letter-spacing:.04em}
+.tile,.tile *,.take .go{text-transform:none;letter-spacing:0}

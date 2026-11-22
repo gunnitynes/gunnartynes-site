@@ -128,6 +128,10 @@ body.mini #now.dock{visibility:hidden}
 .quiet:hover{color:var(--paper)}
 .quiet[aria-pressed=true],.quiet[aria-expanded=true],.quiet.on{color:var(--paper);border-color:var(--paper)}
 .quiet.talk{color:var(--paper)}
+/* menu items in capitals (names, titles and text stay as they are) */
+.quiet,#welcome .book,#recView,#mini .more,#menu .seg button,.mlinks a{text-transform:uppercase;letter-spacing:.08em}
+.quiet{font-size:12px}
+#vPlay{text-decoration:none}
 #bar h1{cursor:pointer}
 #homeLink{text-decoration:none;white-space:nowrap}
 #views{display:flex;gap:12px}
@@ -423,6 +427,7 @@ body.wall #welcome .eyebrow,body.wall #welcome .book{text-shadow:0 0 12px #0b0d1
     <button class="quiet" id="vOrient" aria-pressed="false" hidden>Vertical</button>
     <button class="quiet" id="vDisc" aria-pressed="false">Record</button>
     <a class="quiet live" id="vLive" href="live/" title="Every concert, tour by tour, on a map"><i aria-hidden="true"></i>Live<span class="arr" aria-hidden="true">→</span></a>
+    <a class="quiet" id="vPlay" href="play/" title="A musical playground: take a song apart">Play</a>
   </div>
   <div id="right">
     <a class="quiet" id="bookLink" href="booking/" hidden>Booking</a>
