@@ -2,7 +2,7 @@
 // as written, or jumps to another phrase of the song that follows well from here (the band's notes, rhythm and
 // colour, measured bar by bar), Mutate adds a few changes of its own, and the colours of the Process rack drift
 // slowly. Nothing is lost: switch it off and the arrangement is as it was — except what you kept on the way
-// (Keep, K, or Record on), which stays where it was played.
+// (Keep, Q, or Record on), which stays where it was played.
 import { srcBar } from './core.js';
 import { bandBar, cos } from './features.js';
 

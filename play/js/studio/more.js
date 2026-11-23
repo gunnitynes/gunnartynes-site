@@ -16,7 +16,7 @@ export function buildMore(S, { button, names }) {
   const ansB = sw('Answer me', 'Play a phrase and leave a bar of quiet: a musician answers with the bar of theirs closest to it', () => A.on, (v) => { A.set(v); if (v && !S.player.playing) S.player.play(); });
   const micB = sw('Listen to me', 'Sing or play into the microphone: your notes count as the phrase', () => A.listening, (v) => A.listen(v));
   const ansInfo = h('p', { class: 'more-info' });
-  const showAns = () => { ansB.sync(); micB.sync(); micB.disabled = !A.on; ansInfo.textContent = !A.on ? '' : A.notes.length ? `hearing you · ${A.notes.length} note${A.notes.length > 1 ? 's' : ''}` : A.last ? `${A.last.name} answered with bar ${A.last.bar} · K keeps it` : 'play a phrase, then leave a bar of quiet'; };
+  const showAns = () => { ansB.sync(); micB.sync(); micB.disabled = !A.on; ansInfo.textContent = !A.on ? '' : A.notes.length ? `hearing you · ${A.notes.length} note${A.notes.length > 1 ? 's' : ''}` : A.last ? `${A.last.name} answered with bar ${A.last.bar} · Q keeps it` : 'play a phrase, then leave a bar of quiet'; };
   A.addEventListener('change', showAns); showAns();
 
   // endless
@@ -70,7 +70,7 @@ export function buildMore(S, { button, names }) {
   const panel = h('div', { id: 'more', hidden: true },
     sec('The band answers you', 'Play a phrase on the keys (or sing it), then leave a bar of quiet. A musician answers with the bar of theirs closest to what you played, in time.', h('div', { class: 'more-row' }, ansB, micB), ansInfo),
     sec('Atlas', 'Every bar of every stem as a dot on one map, by how it sounds. Sweep across it to play a path through the song; draw it onto the tape.', h('div', { class: 'more-row' }, h('button', { type: 'button', class: 'pill strong', onclick: () => { close(); openAtlas(S, { say }); } }, 'Open the Atlas'))),
-    sec('Endless version', 'The song keeps going and never repeats: phrases that follow well from each other, a few changes, colours that drift. K keeps what you hear.', h('div', { class: 'more-row' }, endB)),
+    sec('Endless version', 'The song keeps going and never repeats: phrases that follow well from each other, a few changes, colours that drift. Q keeps what you hear.', h('div', { class: 'more-row' }, endB)),
     sec('Key', 'Move the whole song, or one stem, up or down. The change comes in on the next bar line.', h('div', { class: 'more-row' }, keySel, h('div', { class: 'seg' }, h('button', { type: 'button', onclick: () => step(-1) }, '−'), h('button', { type: 'button', onclick: () => { P.set(keyPath(), 0); } }, '0'), h('button', { type: 'button', onclick: () => step(1) }, '+')), keyOut)),
     sec('Conduct with your hands', 'Height is how loud, left to right is darker to brighter, the more you move the more the Cloud sprays. The camera picture stays on this computer.', h('div', { class: 'more-row' }, conB, tempoB), cam, conInfo),
     sec('Versions', 'Every few minutes your work is put aside as a version. Listen to an earlier one in place, then keep it or go back.', h('div', { class: 'more-row' }, h('button', { type: 'button', class: 'pill', onclick: async () => { await V.save('saved by hand'); say('Version saved'); } }, 'Save a version now')), vlist),

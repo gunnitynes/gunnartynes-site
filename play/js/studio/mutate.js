@@ -2,7 +2,7 @@
 // few bars — jumps to another place in the song, plays backwards, at half or double speed, stutters, repeats a bar,
 // answers with what it played a moment ago, or drops out — using the same treatments as the Arrangement's pieces.
 // A mutation is a real piece on that stem's lane, marked as passing: when it has played it drifts away again,
-// unless you Keep it (K) or Record is on, and then it stays in the arrangement like anything you placed yourself.
+// unless you Keep it (Q) or Record is on, and then it stays in the arrangement like anything you placed yourself.
 import { srcBar } from './core.js';
 
 const KINDS = [

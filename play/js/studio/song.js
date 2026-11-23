@@ -41,7 +41,7 @@ export function buildSong(S, { COLORS, NAMES }) {
   const undo = btn('Undo', 'Undo (⌘Z)', () => seq.undo()), redo = btn('Redo', 'Redo (⇧⌘Z)', () => seq.redo());
   const bounceB = btn('Bounce', 'Play the whole arrangement (or the loop) once and save it as a sound file', () => bounce());
   const fileIn = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async (e) => { const f = e.target.files[0]; if (!f) return; try { S.loadProject(JSON.parse(await f.text())); } catch (err) { alert('That file could not be opened: ' + err.message); } e.target.value = ''; } });
-  // Mutate: the song keeps evolving (mutate.js); Keep (K) holds on to what is changing now
+  // Mutate: the song keeps evolving (mutate.js); Keep (Q) holds on to what is changing now
   // Record audio onto the arrangement: the lane "Audio" (voice.js), from the input chosen here
   const V = S.voice, eng = S.engine;
   const inSel = h('select', { class: 'insel', title: 'Which input to record from', 'aria-label': 'Input', onchange: (e) => { eng.micDevice = e.target.value; } });
@@ -57,10 +57,10 @@ export function buildSong(S, { COLORS, NAMES }) {
   V.addEventListener('change', showRecA); showRecA();
   S.voiceLevel = () => { if (V.recording) recA.style.setProperty('--lv', Math.min(1, V.level() * 1.4).toFixed(2)); };
   const M = S.mutate;
-  const mutB = h('button', { type: 'button', class: 'sw mutsw', title: 'Mutate: every couple of bars one stem does something else for a moment (jumps elsewhere, plays backwards, slower, faster, stutters, drops out) and then goes back. Keep (K) what you like; with Record on it all stays.', onclick: () => M.set(!M.on) }, h('i'), 'Mutate');
+  const mutB = h('button', { type: 'button', class: 'sw mutsw', title: 'Mutate: every couple of bars one stem does something else for a moment (jumps elsewhere, plays backwards, slower, faster, stutters, drops out) and then goes back. Keep (Q) what you like; with Record on it all stays.', onclick: () => M.set(!M.on) }, h('i'), 'Mutate');
   const amts = [[0.3, 'gentle'], [0.6, 'lively'], [0.95, 'wild']].map(([v, l]) => h('button', { type: 'button', title: `How much changes: ${l}`, onclick: () => { M.amount = v; M.emit(); } }, l));
   const amtSeg = h('div', { class: 'seg mutamt' }, ...amts);
-  const keepB = btn('Keep', 'Keep what is mutating now: it stays in the arrangement (K)', () => { const n = M.keep(); if (n) S.flash?.(`Kept ${n === 1 ? 'that change' : `${n} changes`} in the arrangement · Undo takes ${n === 1 ? 'it' : 'them'} out`); }, 'pill keep');
+  const keepB = btn('Keep', 'Keep what is mutating now: it stays in the arrangement (Q)', () => { const n = M.keep(); if (n) S.flash?.(`Kept ${n === 1 ? 'that change' : `${n} changes`} in the arrangement · Undo takes ${n === 1 ? 'it' : 'them'} out`); }, 'pill keep');
   const mutInfo = h('span', { class: 'cap mutinfo' });
   const showMut = () => {
     mutB.setAttribute('aria-pressed', M.on); amtSeg.hidden = keepB.hidden = !M.on; amts.forEach((b, i) => b.setAttribute('aria-pressed', [0.3, 0.6, 0.95][i] === M.amount));

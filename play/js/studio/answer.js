@@ -1,7 +1,7 @@
 // The band answers you. Play a phrase (keys, pads, a MIDI keyboard, or sing it with "listen to me" on) and leave
 // a bar of quiet: the playground looks through every bar every musician played for the one closest to what you
 // played — the same notes, the same rhythm — and that musician answers with it, in time, from the next bar line.
-// The answer is a real piece on the musician's lane (dashed): it drifts away again, unless you Keep it (K), or
+// The answer is a real piece on the musician's lane (dashed): it drifts away again, unless you Keep it (Q), or
 // Record is on.
 import { cos } from './features.js';
 
@@ -53,7 +53,7 @@ export class Answer extends EventTarget {
     if (!q.rec) S.mutate.adopt(clip, p.barNow() + (start - Tnow) + len + 1);
     q.changed();
     this.lastStem = best.st.id; this.last = { name: best.st.name, bar: best.b + 1, len, start, kept: q.rec };
-    S.say?.(`${best.st.name} answers with bar ${best.b + 1} of the song${q.rec ? ' (kept: Record is on)' : ' · K keeps it'}`);
+    S.say?.(`${best.st.name} answers with bar ${best.b + 1} of the song${q.rec ? ' (kept: Record is on)' : (S.phone ? ' · ☰ keeps it' : ' · Q keeps it')}`);
     this.emit();
   }
 

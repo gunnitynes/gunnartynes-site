@@ -441,3 +441,26 @@ button,select,.addinst{text-transform:uppercase;letter-spacing:.02em}
 .transport .more-btn{width:30px;padding:0;font-size:14px;letter-spacing:0}
 .transport .modesw button{padding:7px 9px}
 #bar #rooms button{padding:6px 6px;letter-spacing:.02em}
+/* More: prominent, amber; Keep appears while something is passing */
+.transport .more-btn{width:auto;padding:0 12px 0 10px;display:inline-flex;align-items:center;gap:6px;background:var(--p);color:var(--ground)!important;border-color:var(--p)!important;font:600 11px var(--mono);letter-spacing:.06em}
+.transport .more-btn i{font-style:normal;font-size:13px}
+.transport .more-btn:hover{background:#f0c56a}
+.transport .more-btn[aria-expanded=true]{background:var(--paper);border-color:var(--paper)!important}
+.transport .keep-btn{width:auto;padding:0 11px 0 9px;display:inline-flex;align-items:center;gap:6px;border-color:var(--p)!important;color:var(--p);animation:keepglow 1.6s ease-in-out infinite}
+.transport .keep-btn i{font-style:normal;font-size:9px}
+.transport .keep-btn[hidden]{display:none}
+@keyframes keepglow{50%{box-shadow:0 0 0 4px #e6b45026}}
+/* Re-arrange snapshots */
+.snaps{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.snaps .cap{margin-right:4px}
+.snap{min-width:74px;height:40px;display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:7px;padding:0 10px;border:1px dashed var(--rule2);border-radius:8px;text-align:left;color:var(--faint)}
+.snap b{font:500 15px var(--mono)}.snap small{font:9.5px var(--mono);letter-spacing:.02em;text-transform:none;white-space:nowrap}
+.snap:hover{border-color:#ffffff55;color:var(--dim)}
+.snap.full{border:1px solid #e6b45066;background:#e6b45012;color:var(--paper)}.snap.full b{color:var(--p)}
+.snap.last{background:var(--p);border-color:var(--p);color:var(--ground)}.snap.last b{color:var(--ground)}
+.tempo .u{display:none}
+.keep-float{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;display:inline-flex;align-items:center;gap:9px;padding:10px 16px 10px 14px;border-radius:24px;background:var(--p);color:var(--ground);font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;box-shadow:0 10px 30px #000a;animation:keepglow 1.6s ease-in-out infinite}
+.keep-float[hidden]{display:none}
+.keep-float i{font-style:normal;font-size:10px}
+.keep-float kbd{font:500 10px var(--mono);padding:1px 5px;border:1px solid #11141b55;border-radius:4px}
+@keyframes keepglow{50%{box-shadow:0 10px 30px #000a,0 0 0 6px #e6b45033}}

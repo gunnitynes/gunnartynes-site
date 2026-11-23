@@ -62,6 +62,11 @@ async function boot() {
   S.seq = new Sequencer(S);
   S.params.recorder = (path, v) => S.seq.moveIn(path, v);
   S.voice = new Voice(S); S.mutate = new Mutator(S); S.flash = S.say = flash;
+  // Keep: in the header whenever something is passing (a mutation, an answer, the endless version) — or press Q
+  const keepB = $('#t-keep');
+  keepB.onclick = () => { const n = S.mutate.keep(); if (n) flash(`Kept ${n === 1 ? 'that change' : `${n} changes`} in the arrangement · Undo takes ${n === 1 ? 'it' : 'them'} out`); };
+  const showKeep = () => { const n = S.mutate.live.length; keepB.hidden = !n; keepB.querySelector('span').textContent = n > 1 ? `Keep these ${n}` : 'Keep this'; };
+  S.mutate.addEventListener('change', showKeep); S.seq.addEventListener('change', showKeep); showKeep();
   // add-ons (the More panel): they only add, nothing above depends on them
   S.answer = new Answer(S); S.endless = new Endless(S); S.conduct = new Conduct(S);
   const featP = loadFeatures(S);
@@ -135,12 +140,13 @@ function buildHeader() {
   S.seq.addEventListener('change', showMode); showMode();
   player.on('transport', ({ playing }) => { $('#t-play').classList.toggle('on', playing); $('#t-play').setAttribute('aria-label', playing ? 'Stop' : 'Play'); });
   document.querySelectorAll('#rooms button').forEach((b) => { b.onclick = () => showRoom(b.dataset.room); });
+  // Q keeps what is passing (K plays a note on the keys)
   addEventListener('keydown', (e) => {
     if (e.target.closest('input,select,textarea') || e.metaKey || e.ctrlKey) return;
     if (e.code === 'Space') { e.preventDefault(); player.playing ? player.stop() : player.play(); }
     else if (e.key === 'r' || e.key === 'R') toggleRec();
     else if (e.key === 'b' || e.key === 'B') P.set('band.on', !P.get('band.on'));
-    else if ((e.key === 'k' || e.key === 'K') && S.mutate.live.length) { const n = S.mutate.keep(); if (n) flash(`Kept ${n === 1 ? 'that change' : `${n} changes`} in the arrangement`); }
+    else if ((e.key === 'q' || e.key === 'Q') && S.mutate.live.length) { const n = S.mutate.keep(); if (n) flash(`Kept ${n === 1 ? 'that change' : `${n} changes`} in the arrangement`); }
     else if (e.key === 'Home') session.dispatch({ t: 'seek', bar: 0 });
     else if (/^[1-9]$/.test(e.key) && S.slots[+e.key - 1]) S.selectSlot(+e.key - 1);
     else if (e.key === 'Enter' && !e.target.closest('button')) S.seq.setMode(S.seq.mode === 'song' ? 'jam' : 'song');
@@ -196,7 +202,56 @@ function buildArrange() {
   const jam = () => S.seq.setMode('jam'), cb = song.barsPerCell, bpb = song.beatsPerBar;
   // Re-arrange is played live. Its own Record button writes what each stem played, bar by bar, into the
   // Arrangement at the same bars (only where it differs from what the Arrangement already plays there).
-  const help = h('p', { class: 'roomhelp' }, h('b', {}, 'Play the stems live. '), 'Each row is a stem, cut into 4-bar blocks from the start of the song (left) to the end (right). Click a block and that stem loops it while the others carry on; click it again and it goes back to the song. Each stem has its own playhead, so you can see where every one of them is. Press ', h('b', { class: 'r' }, '● Record into the Arrangement'), ' and what you play is written onto the stems’ lanes in the Arrangement when you stop.');
+  // Snapshots: eight slots for re-arrangements you like. An empty slot keeps what the stems do now (which block
+  // each one loops, which are muted or alone); a full one brings it back on the next bar line, live. "On the
+  // Arrangement" writes the last one you brought back onto the stems' lanes at the Arrangement's playhead.
+  S.snaps ??= new Array(8).fill(null);
+  let lastSnap = -1;
+  const takeSnap = () => {
+    const st = session.state, live = S.seq.mode === 'jam' ? null : S.seq.jamTracks;
+    const tracks = Object.fromEntries(song.stems.map((x) => { const t = live?.[x.id] || st.tracks[x.id] || {}; return [x.id, t.mode === 'loop' ? { mode: 'loop', cell: t.cell } : { mode: 'follow' }]; }));
+    const mutes = song.stems.filter((x) => P.get(`band.${x.id}.mute`)).map((x) => x.id), solos = song.stems.filter((x) => P.get(`band.${x.id}.solo`)).map((x) => x.id);
+    return { tracks, mutes, solos, ts: Date.now() };
+  };
+  const recall = (i) => {
+    const sn = S.snaps[i]; if (!sn) return; goLive(); jam(); lastSnap = i;
+    session.dispatch({ t: 'tracks/set', p: Object.fromEntries(Object.entries(sn.tracks).filter(([id]) => session.state.tracks[id])) });
+    for (const x of song.stems) { P.set(`band.${x.id}.mute`, sn.mutes.includes(x.id)); P.set(`band.${x.id}.solo`, sn.solos.includes(x.id)); }
+    if (!player.playing) player.play(); showSnaps();
+  };
+  const snapBtns = S.snaps.map((_, i) => {
+    const b = h('button', { type: 'button', class: 'snap' });
+    b.addEventListener('click', (e) => {
+      if (!S.snaps[i] || e.altKey) { S.snaps[i] = takeSnap(); lastSnap = i; showSnaps(); flash(`Snapshot ${i + 1} kept · click it to bring it back`); }
+      else recall(i);
+    });
+    b.addEventListener('contextmenu', (e) => { e.preventDefault(); if (S.snaps[i] && confirm(`Empty snapshot ${i + 1}?`)) { S.snaps[i] = null; if (lastSnap === i) lastSnap = -1; showSnaps(); } });
+    return b;
+  });
+  const toArrB = h('button', { type: 'button', class: 'pill', title: 'Write the snapshot you brought back last onto the stems’ lanes in the Arrangement, four bars from its playhead' }, 'On the Arrangement');
+  toArrB.onclick = () => {
+    const sn = S.snaps[lastSnap]; if (!sn) return; const q = S.seq, at = Math.floor(Math.max(0, player.beatNow()) / bpb) % song.numBars, len = 4;   // live, the stems are at this bar of the song q.snapshot(); let n = 0;
+    for (const x of song.stems) {
+      const t = sn.tracks[x.id], mute = sn.mutes.includes(x.id) || (sn.solos.length && !sn.solos.includes(x.id));
+      if (mute) { q.place({ lane: 'stem:' + x.id, start: at, len, src: at % song.numBars, fx: { g: 0 }, name: 'rest' }); n++; }
+      else if (t?.mode === 'loop' && x.cells[t.cell]) { q.place({ lane: 'stem:' + x.id, start: at, len, src: t.cell * cb, loop: cb, name: `${t.cell * cb + 1}` }); n++; }
+    }
+    if (at + len > q.arr.bars) q.arr.bars = at + len; q.changed();
+    flash(n ? `Snapshot ${lastSnap + 1} is on the Arrangement at bars ${at + 1}–${at + len}` : `Snapshot ${lastSnap + 1} is the song as written: nothing to write`);
+    if (!n) q.undos.pop();
+  };
+  function showSnaps() {
+    snapBtns.forEach((b, i) => {
+      const sn = S.snaps[i], held = sn ? Object.values(sn.tracks).filter((t) => t.mode === 'loop').length : 0;
+      b.classList.toggle('full', !!sn); b.classList.toggle('last', i === lastSnap);
+      b.replaceChildren(h('b', {}, String(i + 1)), h('small', {}, sn ? (held ? `${held} held` : 'the song') + (sn.mutes.length ? ` · ${sn.mutes.length} off` : '') : '+ keep'));
+      b.title = sn ? `Snapshot ${i + 1}: click to bring it back · alt-click to keep what plays now instead · right-click to empty it` : `Keep what the stems do now as snapshot ${i + 1}`;
+    });
+    toArrB.disabled = !S.snaps[lastSnap];
+  }
+  S.showSnaps = showSnaps;
+  const snapsRow = h('div', { class: 'snaps' }, h('span', { class: 'cap' }, 'Snapshots'), ...snapBtns, toArrB);
+  showSnaps();
   const recB = h('button', { type: 'button', class: 'rec big', title: 'Play live and write it into the Arrangement when you stop' }, h('i'), 'Record into the Arrangement');
   const recInfo = h('span', { class: 'cap recinfo' });
   const tools = h('div', { class: 'bar2' }, recB, recInfo,
@@ -204,7 +259,7 @@ function buildArrange() {
     h('button', { type: 'button', class: 'pill', title: 'Keep every stem on the four bars playing now', onclick: () => { jam(); const c = Math.floor(Math.max(0, player.barNow()) / cb) % song.numCells; session.dispatch({ t: 'tracks/set', p: Object.fromEntries(session.state.order.map((id) => [id, { mode: 'loop', cell: c }])) }); } }, 'Hold this moment'),
     h('span', { class: 'sp' }), h('span', { class: 'legend' }, h('i', { class: 'lf' }), 'plays the song', h('i', { class: 'lh' }), 'looping this block', h('i', { class: 'lp' }), 'playhead'));
   const songNote = h('div', { class: 'arr-song' }, h('span', {}, 'The Arrangement is playing. Click a block, or press Record, to play the stems live here.'));
-  room.append(help, tools, h('div', { class: 'arr' }, mixer, box, songNote));
+  room.append(snapsRow, tools, h('div', { class: 'arr' }, mixer, box, songNote));
   const g = cv.getContext('2d'); let W = 0, H = 0;
   new ResizeObserver(() => { const r = box.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }).observe(box);
   const top = 22, geom = () => ({ cols: song.numCells, cw: W / song.numCells, rh: (H - top) / song.stems.length });
@@ -541,7 +596,7 @@ function frame() {
 
 // ------------------------------------------------------------------------------------------------ keeping your work
 const KEY = () => `playground.studio.${S.song.id}`;
-S.projectData = () => ({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.forges.map((f) => f.slot.src || null), band: S.session.state, morph: S.morph, mixMem: S.mixMem });
+S.projectData = () => ({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.forges.map((f) => f.slot.src || null), band: S.session.state, morph: S.morph, mixMem: S.mixMem, snaps: S.snaps });
 function save() { try { localStorage.setItem(KEY(), JSON.stringify(S.projectData())); } catch { /* full or private */ } }
 function applyProject(d) {
   if (!d || (d.v !== 1 && d.v !== 2)) return false;
@@ -549,6 +604,7 @@ function applyProject(d) {
   if (d.cloud) S.cloudSrc = d.cloud;
   d.forges?.forEach((src, i) => { if (src) S.forges[i].slot.src = src; });
   if (d.morph) S.morph = d.morph; if (d.mixMem) S.mixMem = d.mixMem;
+  if (d.snaps) { S.snaps = d.snaps; S.showSnaps?.(); }
   if (d.band?.songId === S.song.id) S.session.dispatch({ t: 'state/load', state: d.band }, { log: false });
   return true;
 }
