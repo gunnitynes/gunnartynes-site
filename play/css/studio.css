@@ -402,3 +402,42 @@ button,select,.addinst{text-transform:uppercase;letter-spacing:.02em}
 #rooms button{font:500 11px var(--mono);letter-spacing:.03em;padding:6px 6px}
 /* a knob's value sits in the middle of its ring, however wide its label */
 .knob{grid-template-columns:minmax(0,1fr)}.knob svg,.knob .kl{justify-self:center}
+
+/* the Atlas (an overlay on top of everything) */
+#atlas{position:fixed;inset:0;z-index:80;background:radial-gradient(120% 90% at 50% 0%,#151927,#0a0c11 70%);display:flex;flex-direction:column;padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px));gap:10px;color:var(--paper)}
+#atlas[hidden]{display:none}
+.atlas-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.atlas-t{font:italic 400 30px/1 var(--serif);color:#fff}
+.atlas-leg{display:flex;gap:12px;flex-wrap:wrap;font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.atlas-leg span{display:inline-flex;align-items:center;gap:6px}.atlas-leg i{width:7px;height:7px;border-radius:50%}
+.atlas-top .sp{flex:1}
+.atlas-draw{display:inline-flex;align-items:center;gap:8px;font:11.5px var(--mono);letter-spacing:.04em;padding:7px 13px 7px 10px;border:1px solid #df8a7466;border-radius:16px;color:var(--paper);text-transform:uppercase}
+.atlas-draw i{width:9px;height:9px;border-radius:50%;background:var(--rec)}.atlas-draw.on{background:#df8a7430;border-color:var(--rec)}
+.atlas-x{width:40px;height:40px;border-radius:50%;border:1px solid #ffffff2e;font-size:22px;color:var(--paper)}
+.atlas-map{position:relative;flex:1;min-height:0;border:1px solid #ffffff1c;border-radius:12px;overflow:hidden;touch-action:none;cursor:crosshair}
+.atlas-map canvas{position:absolute;inset:0}
+.atlas-map .ax{position:absolute;font:10px var(--mono);letter-spacing:.1em;color:#6f747f;pointer-events:none;text-transform:uppercase}
+.atlas-map .ax-x{left:50%;bottom:8px;transform:translateX(-50%)}.atlas-map .ax-y{left:8px;top:50%;transform:rotate(-90deg) translateX(50%);transform-origin:left top}
+.atlas-now{font:12px var(--mono);color:var(--dim);min-height:16px}
+/* More: the add-ons panel */
+.transport .more-btn{border-color:#e6b45088!important;color:var(--p)}
+.transport .more-btn[aria-expanded=true]{background:var(--p);color:var(--ground)}
+#more{position:fixed;top:64px;right:18px;z-index:70;width:400px;max-height:calc(100vh - 84px);overflow:auto;background:#161a24;border:1px solid var(--rule2);border-radius:12px;box-shadow:0 24px 60px #000a;padding:6px 16px 14px}
+#more[hidden]{display:none}
+.more-sec{padding:12px 0;border-bottom:1px solid var(--rule)}.more-sec:last-child{border-bottom:0}
+.more-sec h4{margin:0 0 4px;font:italic 400 20px/1.1 var(--serif);color:#fff}
+.more-lede{margin:0 0 9px;font-size:12.5px;line-height:1.45;color:var(--dim)}
+.more-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.more-info{margin:7px 0 0;font:11px var(--mono);color:var(--p);min-height:0}.more-info:empty{display:none}
+.more-key{font:11.5px var(--mono);color:var(--paper)}
+.pill.strong{border-color:#e6b45088;color:var(--paper)}
+.more-cam{display:block;width:256px;height:192px;margin-top:9px;border:1px solid var(--rule);border-radius:6px;background:#0b0d12;transition:border-color .1s}
+.more-cam.beat{border-color:var(--p)}
+.more-versions{display:flex;flex-direction:column;margin-top:8px}
+.more-v{display:grid;grid-template-columns:78px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--rule);font:11px var(--mono)}
+.more-v .when{color:var(--paper)}.more-v .what{color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.more-v.on .when{color:var(--p)}.more-v .btns{display:flex;gap:4px}
+.transport{gap:6px}
+.transport .more-btn{width:30px;padding:0;font-size:14px;letter-spacing:0}
+.transport .modesw button{padding:7px 9px}
+#bar #rooms button{padding:6px 6px;letter-spacing:.02em}

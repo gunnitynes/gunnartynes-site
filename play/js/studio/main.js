@@ -13,6 +13,12 @@ import { buildSong } from './song.js';
 import { buildTexturesRoom } from './textures.js';
 import { addVoiceStem, Voice, recButton, sourceOf } from './voice.js';
 import { Mutator } from './mutate.js';
+import { loadFeatures } from './features.js';
+import { Answer } from './answer.js';
+import { Endless } from './endless.js';
+import { Conduct } from './conduct.js';
+import { Versions } from './versions.js';
+import { buildMore } from './more.js';
 
 const params = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {} };
@@ -55,7 +61,10 @@ async function boot() {
   engine.bus.connect(S.bandGate).connect(S.strips.band.input);
   S.seq = new Sequencer(S);
   S.params.recorder = (path, v) => S.seq.moveIn(path, v);
-  S.voice = new Voice(S); S.mutate = new Mutator(S); S.flash = flash;
+  S.voice = new Voice(S); S.mutate = new Mutator(S); S.flash = S.say = flash;
+  // add-ons (the More panel): they only add, nothing above depends on them
+  S.answer = new Answer(S); S.endless = new Endless(S); S.conduct = new Conduct(S);
+  const featP = loadFeatures(S);
   S.heard = [];
   let retuneT = 0;
   S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (S.params.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; S.tex.retune(); }, 60); };
@@ -63,8 +72,13 @@ async function boot() {
   let savedN = 3; try { savedN = Math.max(3, Math.min(MAX_FORGE, JSON.parse(localStorage.getItem(KEY()))?.forges?.length || 3)); } catch { /* none */ }
   buildDeck(); buildHeader(); buildArrange(); buildCloud(); buildForge(savedN);
   buildTexturesRoom(S, { seg, sw, recBtn }); buildMixRoom(S, { recBtn }); buildSong(S, { COLORS, NAMES });
+  // key: the whole song, and each stem on top (the player shifts the warped copies)
+  S.params.define('song.key', 0, (v) => player.setKey(v));
+  for (const st of song.stems) S.params.define(`band.${st.id}.key`, 0, (v) => player.setKey(v, st.id));
   const had = restore();
   S.voice.ensureTrack(); S.mutate.drift(true); S.voice.restore();
+  S.versions = new Versions(S);
+  featP.then(() => buildMore(S, { button: $('#t-more'), names: NAMES }));
   if (!S.seq.arr.bars) S.seq.fillFromSong();
   if (!had) S.seq.setMode('song');
   S.seq.emit();
@@ -126,7 +140,7 @@ function buildHeader() {
     if (e.code === 'Space') { e.preventDefault(); player.playing ? player.stop() : player.play(); }
     else if (e.key === 'r' || e.key === 'R') toggleRec();
     else if (e.key === 'b' || e.key === 'B') P.set('band.on', !P.get('band.on'));
-    else if ((e.key === 'k' || e.key === 'K') && S.mutate.on) { const n = S.mutate.keep(); if (n) flash(`Kept ${n === 1 ? 'that change' : `${n} changes`} in the arrangement`); }
+    else if ((e.key === 'k' || e.key === 'K') && S.mutate.live.length) { const n = S.mutate.keep(); if (n) flash(`Kept ${n === 1 ? 'that change' : `${n} changes`} in the arrangement`); }
     else if (e.key === 'Home') session.dispatch({ t: 'seek', bar: 0 });
     else if (/^[1-9]$/.test(e.key) && S.slots[+e.key - 1]) S.selectSlot(+e.key - 1);
     else if (e.key === 'Enter' && !e.target.closest('button')) S.seq.setMode(S.seq.mode === 'song' ? 'jam' : 'song');
@@ -538,6 +552,13 @@ function applyProject(d) {
   if (d.band?.songId === S.song.id) S.session.dispatch({ t: 'state/load', state: d.band }, { log: false });
   return true;
 }
+/** Put a whole project in place while the studio runs (Versions): the arrangement, patterns, every setting. */
+S.applyLive = (d) => {
+  S.params.load(d.params); S.seq.load(d.seq);
+  if (d.band?.songId === S.song.id) S.session.dispatch({ t: 'state/load', state: d.band }, { log: false });
+  const want = S.seq.wantMode, jt = S.seq.jamTracks; S.seq.mode = 'jam'; if (want === 'song') { S.seq.setMode('song'); if (jt) S.seq.jamTracks = jt; }
+  S.voice.ensureTrack(); S.voice.restore(); S.seq.changed();
+};
 function restore() {
   let d; try { d = JSON.parse(localStorage.getItem(KEY())); } catch { return false; }
   if (!applyProject(d)) return false;

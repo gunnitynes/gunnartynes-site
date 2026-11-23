@@ -37,15 +37,18 @@ export class Mutator extends EventTarget {
     q.snapshot(); for (const m of ms) { delete m.clip.mut; m.clip.name = m.clip.name.replace(/^~ /, ''); }
     this.live = []; q.changed(); this.emit(); return ms.length;
   }
+  /** A passing piece made elsewhere (an answer, the endless version): it drifts away after player bar `until`. */
+  adopt(clip, until) { clip.mut = true; this.live.push({ clip, until }); this.emit(); }
   onBar(B) {
     const q = this.S.seq;
-    if (!this.on || q.mode !== 'song') { if (this.live.length) this.drift(true); return; }
+    if (q.mode !== 'song') { if (this.live.length) this.drift(true); return; }
     this.drift(false, B);
+    if (!this.on && !this.also) return;   // `also`: the endless version asks for a few changes of its own
     const bpb = this.S.song.beatsPerBar, T = Math.floor(q.tl(B * bpb) / bpb), start = T + 1;   // B is being scheduled now: changes start on the next bar
     const end = q.arr.cycle ? q.arr.cycle[1] : q.arr.bars;
     if (start % 2 || start >= end) return;
-    const max = 1 + Math.floor(this.amount * 3);
-    if (this.live.length >= max || Math.random() > 0.25 + this.amount * 0.65) return;
+    const amt = this.on ? this.amount : 0.3, max = 1 + Math.floor(amt * 3);
+    if (this.live.filter((m) => m.clip.lane !== 'band').length >= max || Math.random() > 0.25 + amt * 0.65) return;
     const m = this.make(start, Math.min(end - start, Math.random() < 0.5 ? 2 : 4));
     if (!m) return;
     m.clip.mut = true; q.place(m.clip);
@@ -59,7 +62,7 @@ export class Mutator extends EventTarget {
     const band = (bar) => q.arr.clips.find((c) => c.lane === 'band' && bar >= c.start && bar < c.start + c.len);
     const b0 = band(start); if (!b0) return null;
     const free = (id) => !q.arr.clips.some((c) => c.lane === 'stem:' + id && c.start < start + len && c.start + c.len > start);
-    const busy = new Set(this.live.map((m) => m.clip.lane));
+    const busy = new Set(this.live.map((m) => m.clip.lane));   // one passing piece per lane at a time
     const stems = song.stems.filter((st) => st.cells.some(Boolean) && !P.get(`band.${st.id}.mute`) && !b0.mute?.includes(st.id) && !busy.has('stem:' + st.id) && free(st.id));
     if (!stems.length) return null;
     const st = stems[Math.floor(Math.random() * stems.length)], now = srcBar(b0, start - b0.start, N).bar;

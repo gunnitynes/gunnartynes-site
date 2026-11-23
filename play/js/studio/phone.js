@@ -11,6 +11,11 @@ import { Params, loadSource, loudestCells, loudestWindow, sliceOf, CloudVoice, S
 import { buildStrips } from './mixer.js';
 import { addVoiceStem, Voice, recButton, sourceOf } from './voice.js';
 import { Walk, Surround } from './move.js';
+import { Mutator } from './mutate.js';
+import { loadFeatures } from './features.js';
+import { Answer } from './answer.js';
+import { Endless } from './endless.js';
+import { openAtlas } from './atlas.js';
 
 const query = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {}, phone: true };
@@ -65,6 +70,9 @@ async function boot() {
   S.seq = new Sequencer(S);
   P.recorder = (path, v) => S.seq.moveIn(path, v);
   S.voice = new Voice(S); S.walk = new Walk(S); S.surround = new Surround(S);
+  // add-ons from the menu: the band answers you, the endless version, the Atlas
+  S.mutate = new Mutator(S); S.answer = new Answer(S); S.endless = new Endless(S); S.say = (m) => toast(m);
+  loadFeatures(S);
   S.heard = []; let retuneT = 0;
   S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (P.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; tex.retune(); }, 60); };
 
@@ -255,6 +263,12 @@ function openMenu() {
     h('h3', {}, titles[page] || ''),
     h('ul', { class: 'help' }, ...(HELP[page] || []).map((t) => h('li', {}, t))),
     h('div', { class: 'mlist' },
+      ...(S.feat ? [
+        item(S.answer.on ? 'The band answers you: on' : 'The band answers you', () => { S.answer.set(!S.answer.on); if (S.answer.on && !S.player.playing) S.player.play(); toast(S.answer.on ? 'Play a phrase on Instruments, then leave a bar of quiet' : 'Answers off'); }, S.answer.on ? 'on' : ''),
+        item(S.endless.on ? 'Endless version: on' : 'Endless version', () => { S.endless.set(!S.endless.on); toast(S.endless.on ? 'The song keeps going and never repeats' : 'Back to your arrangement'); }, S.endless.on ? 'on' : ''),
+        ...(S.mutate.live.length ? [item('Keep what is changing now', () => { const n = S.mutate.keep(); toast(n ? `Kept ${n} on the tape` : 'Nothing to keep'); })] : []),
+        item('Open the Atlas', () => openAtlas(S, { say: toast })),
+      ] : []),
       item(Motion.on ? 'Motion off' : 'Motion on (tilt and shake)', () => $('#motion').click()),
       bounceB,
       item('Open the full studio', () => { location.href = `play.html?song=${S.song.id}&desktop=1`; }),

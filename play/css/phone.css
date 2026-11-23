@@ -207,3 +207,22 @@ body{display:block;min-height:100lvh;overflow-x:hidden;padding-bottom:calc(58px 
 /* menu items in capitals (stem names, titles and text stay as they are) */
 button,select{text-transform:uppercase;letter-spacing:.04em}
 .tile,.tile *,.take .go{text-transform:none;letter-spacing:0}
+
+/* the Atlas (an overlay on top of everything) */
+#atlas{position:fixed;inset:0;z-index:80;background:radial-gradient(120% 90% at 50% 0%,#151927,#0a0c11 70%);display:flex;flex-direction:column;padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px));gap:10px;color:var(--paper)}
+#atlas[hidden]{display:none}
+.atlas-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.atlas-t{font:italic 400 30px/1 var(--serif);color:#fff}
+.atlas-leg{display:flex;gap:12px;flex-wrap:wrap;font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.atlas-leg span{display:inline-flex;align-items:center;gap:6px}.atlas-leg i{width:7px;height:7px;border-radius:50%}
+.atlas-top .sp{flex:1}
+.atlas-draw{display:inline-flex;align-items:center;gap:8px;font:11.5px var(--mono);letter-spacing:.04em;padding:7px 13px 7px 10px;border:1px solid #df8a7466;border-radius:16px;color:var(--paper);text-transform:uppercase}
+.atlas-draw i{width:9px;height:9px;border-radius:50%;background:var(--rec)}.atlas-draw.on{background:#df8a7430;border-color:var(--rec)}
+.atlas-x{width:40px;height:40px;border-radius:50%;border:1px solid #ffffff2e;font-size:22px;color:var(--paper)}
+.atlas-map{position:relative;flex:1;min-height:0;border:1px solid #ffffff1c;border-radius:12px;overflow:hidden;touch-action:none;cursor:crosshair}
+.atlas-map canvas{position:absolute;inset:0}
+.atlas-map .ax{position:absolute;font:10px var(--mono);letter-spacing:.1em;color:#6f747f;pointer-events:none;text-transform:uppercase}
+.atlas-map .ax-x{left:50%;bottom:8px;transform:translateX(-50%)}.atlas-map .ax-y{left:8px;top:50%;transform:rotate(-90deg) translateX(50%);transform-origin:left top}
+.atlas-now{font:12px var(--mono);color:var(--dim);min-height:16px}
+.mitem.on{color:var(--p)}
+#atlas .atlas-leg{display:none}

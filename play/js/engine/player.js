@@ -32,6 +32,8 @@ export class Player extends EventTarget {
     // tempo: r = new bpm / the song's. "warp" stretches every cell to the new tempo (pitch stays, in a worker);
     // otherwise the cells play faster or slower, like tape (pitch follows)
     this.bpm = song.bpm; this.r = 1; this.warp = true; this.stretcher = new Stretcher(this.ctx);
+    // key: semitones for the whole song, and per stem on top (warped copies carry the pitch shift too)
+    this.semis = 0; this.stemSemis = {};
     session.clock = () => this.elapsed();
     session.on(({ a, prev, state }) => this.onAction(a, prev, state));
     setInterval(() => this.tick(), TICK);
@@ -46,7 +48,7 @@ export class Player extends EventTarget {
     // while playing, a new tempo waits for the next bar line and comes in there with a crossfade (no clicks,
     // and in time); meanwhile the warped copies for it are started, so they are usually ready by then
     this.pendingTempo = { bpm, warp };
-    if (warp) for (const v of this.voices.values()) { const b = this.loader.get(v.url); if (b && bpm !== this.song.bpm) this.stretcher.get(b, this.song.bpm / bpm); }
+    for (const [id, v] of this.voices) { const b = this.loader.get(v.url), a = this.alphaFor(id, bpm, warp); if (b && a !== 1) this.stretcher.get(b, a); }
   }
   retime(bpm, warp) {
     this.bpm = bpm; this.r = bpm / this.song.bpm; this.warp = warp;
@@ -65,11 +67,22 @@ export class Player extends EventTarget {
     this.emit('tempo', { bpm, warp });
   }
   /** The buffer to play for a cell at the current tempo (null while its warped copy is still being made). */
-  bufFor(url) {
-    const b = this.loader.get(url); if (!b || this.r === 1 || !this.warp) return b;
-    // while the copy for this tempo is being made, the nearest one already made plays, its speed nudged to fit
-    // (a moment of slightly bent pitch instead of a gap: tempo can now follow your walking)
-    return this.stretcher.get(b, 1 / this.r) || this.stretcher.nearest(b, 1 / this.r) || b;
+  bufFor(url, id) {
+    const b = this.loader.get(url), a = this.alphaFor(id); if (!b || a === 1) return b;
+    // while the copy for this tempo (and key) is being made, the nearest one already made plays, its speed nudged
+    // to fit (a moment of slightly bent pitch instead of a gap: tempo can follow your walking)
+    return this.stretcher.get(b, a) || this.stretcher.nearest(b, a) || b;
+  }
+  /** How much longer a cell's warped copy is: the tempo (with warp) and the key (stretched, then sped back up). */
+  alphaFor(id, bpm = this.bpm, warp = this.warp) {
+    const p = 2 ** ((this.semis + (this.stemSemis[id] || 0)) / 12), r = bpm / this.song.bpm;
+    return Math.round((warp ? p / r : p) * 1e4) / 1e4;
+  }
+  /** A new key: it comes in on the next bar line, like a tempo change. */
+  setKey(semis, id) {
+    if (id) { if (semis) this.stemSemis[id] = semis; else delete this.stemSemis[id]; } else this.semis = semis;
+    if (this.playing) this.pendingTempo = this.pendingTempo || { bpm: this.bpm, warp: this.warp };
+    this.emit('key', { semis, id });
   }
   /** Playback rate for a buffer at the current tempo: a warped copy made for this tempo plays at 1. */
   rateFor(buf) { return this.r * (this.stretcher.alphaOf(buf) ?? 1); }
@@ -182,11 +195,11 @@ export class Player extends EventTarget {
       }
       if (!want) continue;
       if (!this.loader.has(want.url)) { this.loader.load(want.url); continue; }
-      const buf = this.bufFor(want.url); if (!buf) continue;
+      const buf = this.bufFor(want.url, id); if (!buf) continue;
       this.startVoice(id, buf, want, B, T, want.bar * this.barDur, !contiguous);
     }
     // prefetch the near future and pin it against eviction
-    for (let k = 0; k <= PREFETCH_BARS; k++) for (const id of st.order) { const w = this.resolve(st.tracks[id], B + k); if (w) { wanted.add(w.url); if (k) this.loader.ensure(w.url).then((b) => { if (b && this.warp && this.r !== 1) this.stretcher.get(b, 1 / this.r); }); } }
+    for (let k = 0; k <= PREFETCH_BARS; k++) for (const id of st.order) { const w = this.resolve(st.tracks[id], B + k); if (w) { wanted.add(w.url); if (k) this.loader.ensure(w.url).then((b) => { const a = this.alphaFor(id); if (b && a !== 1) this.stretcher.get(b, a); }); } }
     const chopUrl = this.chopUrl(); if (chopUrl) wanted.add(chopUrl);
     this.loader.pinned = wanted;
     this.emit('bar', { bar: B, time: T });
@@ -244,7 +257,7 @@ export class Player extends EventTarget {
       const v = this.voices.get(id);
       if (v && v.end > now + 0.01) continue;
       const want = this.resolve(st.tracks[id], B);
-      const buf = want && this.bufFor(want.url);
+      const buf = want && this.bufFor(want.url, id);
       if (!buf) continue;
       const T = now + 0.03, offset = want.bar * this.barDur + (T - this.timeOfBar(B));
       if (offset < buf.duration - 0.05) this.startVoice(id, buf, want, B, T, offset, true);
