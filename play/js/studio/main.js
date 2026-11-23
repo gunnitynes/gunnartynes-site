@@ -22,7 +22,7 @@ const COLORS = ['#e6b450', '#9cc2f4', '#8fd3c5', '#f29ba0', '#c3a6f0', '#f0c08f'
 const NAMES = ['Cloud', 'Instrument 1', 'Instrument 2', 'Instrument 3', 'Instrument 4', 'Instrument 5', 'Instrument 6', 'Instrument 7', 'Instrument 8'];
 const MAX_FORGE = 8;
 const short = (n) => n.replace('Instrument ', 'Inst ');
-const sec = (v) => (v < 1 ? `${Math.round(v * 1000)} ms` : `${v.toFixed(1)} s`);
+const sec = (v) => (v < 0.9995 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(1)}s`);   // short enough to sit inside the ring; never "1000ms"
 
 boot().catch((e) => { console.error(e); $('#gate-status').textContent = 'Could not load: ' + e.message; });
 

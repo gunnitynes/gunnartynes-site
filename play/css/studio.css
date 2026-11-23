@@ -26,6 +26,7 @@ select:hover{border-color:#ffffff40}
 .where{display:grid;line-height:1.15;margin-left:4px}.pos{font-size:16px;letter-spacing:.06em}.part{font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase}
 .mixhead{display:flex;align-items:center;gap:12px}
 .mixhead .knob{width:44px}.mixhead .knob .kl{font-size:8.5px}
+.mixhead .knob svg{width:40px;height:40px}.mixhead .knob .kv{top:15px;font-size:9.5px}
 .bandsw{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 9px;border:1px solid var(--rule2);border-radius:16px;font:12px var(--mono);letter-spacing:.06em;color:var(--dim)}
 .bandsw i{width:22px;height:12px;border-radius:7px;background:var(--plate2);position:relative;transition:background .2s}
 .bandsw i::after{content:"";position:absolute;left:2px;top:2px;width:8px;height:8px;border-radius:50%;background:var(--faint);transition:transform .2s,background .2s}
@@ -72,12 +73,12 @@ main{min-height:0;overflow:hidden;padding:14px 18px}
 .grp{border:1px solid var(--rule);padding:8px 12px 8px;display:grid;gap:4px;background:#ffffff03}
 .gl{font:500 9.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
 .gk{display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap}
-.knob{width:54px;display:grid;justify-items:center;position:relative;cursor:ns-resize;user-select:none;touch-action:none;padding-top:2px}
-.knob svg{width:40px;height:40px;overflow:visible}
+.knob{width:66px;display:grid;justify-items:center;position:relative;cursor:ns-resize;user-select:none;touch-action:none;padding-top:2px}
+.knob svg{width:52px;height:52px;overflow:visible}
 .knob .kt{fill:none;stroke:#ffffff1f;stroke-width:2.5;stroke-linecap:round}
 .knob .kf{fill:none;stroke:var(--p);stroke-width:2.5;stroke-linecap:round}
 .knob .kc{fill:var(--paper)}
-.knob .kv{position:absolute;top:15px;left:0;right:0;text-align:center;font:9.5px var(--mono);color:var(--dim);pointer-events:none}
+.knob .kv{position:absolute;top:21px;left:0;right:0;text-align:center;font:10px var(--mono);color:var(--dim);pointer-events:none}
 .knob .kl{font:500 9px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:center;margin-top:1px;white-space:nowrap}
 .knob:hover .kc,.knob.on .kc{fill:var(--p)}.knob:hover .kv,.knob.on .kv{color:var(--paper)}.knob:hover .kl{color:var(--dim)}
 .knobs.tight{gap:2px}
@@ -245,7 +246,7 @@ body.songmode #t-play.on{box-shadow:0 0 0 3px #e6b45033}
 .ch header i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--faint));flex:none}
 .ch-k{display:grid;grid-template-columns:repeat(2,50px);gap:2px 4px}
 .ch-k.one{grid-template-columns:50px;justify-items:center}
-.ch .knob{width:50px}.ch .knob svg{width:34px;height:34px}.ch .knob .kv{top:12px;font-size:8.5px}.ch .knob .kl{font-size:8px;letter-spacing:.06em}
+.ch .knob{width:54px}.ch .knob svg{width:40px;height:40px}.ch .knob .kv{top:15px;font-size:9px}.ch .knob .kl{font-size:8px;letter-spacing:.06em}
 .ch-ms{display:flex;gap:4px}
 .ch.ret{width:84px}.ch.master{width:92px;border-color:#e6b45055}
 .ch select{max-width:70px;font-size:11px;padding:3px}
@@ -261,7 +262,7 @@ body.songmode #t-play.on{box-shadow:0 0 0 3px #e6b45033}
 .musicians{flex:1;min-height:0;display:flex;gap:2px;overflow-x:auto}
 .mu{flex:1 0 46px;min-width:46px;display:flex;flex-direction:column;align-items:center;gap:3px;border-right:1px solid #ffffff08;padding-bottom:2px}
 .mu-n{font:10px var(--sans);color:var(--dim);writing-mode:vertical-rl;transform:rotate(180deg);height:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mu .knob{width:44px}.mu .knob svg{width:28px;height:28px}.mu .knob .kv{top:9px;font-size:8px}.mu .knob .kl{font-size:7.5px;letter-spacing:.04em}
+.mu .knob{width:46px}.mu .knob svg{width:34px;height:34px}.mu .knob .kv{top:12px;font-size:8.5px}.mu .knob .kl{font-size:7.5px;letter-spacing:.04em}
 .mu .vf-track{width:18px}.mu .ms{width:17px;font-size:9px}
 .mems button{min-width:34px;position:relative}.mems button.has::after{content:"";position:absolute;top:3px;right:4px;width:4px;height:4px;border-radius:50%;background:var(--p)}
 .mems button.hit{background:var(--p);color:var(--ground)}
@@ -281,7 +282,7 @@ body.songmode #t-play.on{box-shadow:0 0 0 3px #e6b45033}
 .mod.idle h3{color:var(--faint)}.mod:not(.idle){border-color:#e6b45040}
 .dice{font-size:17px;line-height:1;color:var(--faint);padding:0 2px}.dice:hover{color:var(--p)}
 .mod .gk{justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:0}
-.mod .knob{width:auto;flex:1 1 0;min-width:40px}.mod .knob svg{width:38px;height:38px}.mod .knob .kv{top:14px;font-size:9px}.mod .knob .kl{font-size:8px;letter-spacing:.06em}
+.mod .knob{width:auto;flex:1 1 0;min-width:46px}.mod .knob svg{width:46px;height:46px}.mod .knob .kv{top:18px;font-size:9.5px}.mod .knob .kl{font-size:8px;letter-spacing:.06em}
 .viz{flex:1;min-height:40px;position:relative;border:1px solid #ffffff0c;background:#0b0d12}.viz canvas{position:absolute;inset:0}
 .viz.curve{cursor:crosshair;touch-action:none}
 .subcap{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.subcap .seg button{padding:3px 7px;font-size:10.5px}
