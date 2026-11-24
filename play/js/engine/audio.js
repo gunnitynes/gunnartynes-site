@@ -1,6 +1,7 @@
 // The audio graph. Every track gets a Channel; the master bus runs through the WEATHER (filter, storm sends,
 // crusher) and a glue/limit stage. A Tap on the master records takes; a second Tap records the microphone.
 import { encodeWav } from '../lib/wav.js';
+import { micSession } from '../lib/speaker.js';
 
 export const SR = 48000;
 
@@ -183,14 +184,15 @@ export class AudioEngine {
 
   /** Microphone in → its own tap. Resolves to the same recorder interface. */
   async openMic(deviceId = this.micDevice || '') {
+    this.micUsers = (this.micUsers || 0) + 1;   // everyone who opens it lets go of it (releaseMic)
     if (this.mic && this.mic.deviceId === deviceId) return this.mic;
-    this.mic?.close();
+    this.mic?.close(); micSession(true);
     // phones: echo cancellation on, so the band coming out of the phone's own speaker is not recorded with you;
     // computers: off (headphones or an interface), and the input can be chosen (a virtual input carries the
     // computer's own sound, not a microphone)
     const phone = matchMedia('(pointer:coarse)').matches;
     const audio = { echoCancellation: phone, noiseSuppression: false, autoGainControl: false, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) };
-    const stream = await navigator.mediaDevices.getUserMedia({ audio });
+    let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio }); } catch (e) { this.micUsers--; micSession(false); throw e; }
     const src = this.ctx.createMediaStreamSource(stream);
     // the tap needs an output that leads somewhere, or some browsers (Safari) never run it
     const tap = new AudioWorkletNode(this.ctx, 'tap', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
@@ -198,9 +200,11 @@ export class AudioEngine {
     const monitor = this.ctx.createAnalyser(); monitor.fftSize = 1024;
     src.connect(tap); src.connect(monitor);
     const label = stream.getAudioTracks()[0]?.label || 'microphone';
-    this.mic = { stream, tap, monitor, deviceId, label, record: (f) => recordTap(tap, f), close: () => { stream.getTracks().forEach((t) => t.stop()); src.disconnect(); tap.disconnect(); this.mic = null; } };
+    this.mic = { stream, tap, monitor, deviceId, label, record: (f) => recordTap(tap, f), close: () => { stream.getTracks().forEach((t) => t.stop()); src.disconnect(); tap.disconnect(); this.mic = null; micSession(false); } };
     return this.mic;
   }
+  /** Done with the microphone: it closes when nobody else is using it (an iPhone's speaker needs that). */
+  releaseMic() { this.micUsers = Math.max(0, (this.micUsers || 0) - 1); if (!this.micUsers) this.mic?.close(); }
   /** The audio inputs there are (names appear once the microphone has been allowed). */
   async inputs() { try { return (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput'); } catch { return []; } }
 

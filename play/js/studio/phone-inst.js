@@ -74,7 +74,7 @@ export function buildPlay(S, U) {
   // ---- breath, knock, key
   let breath = null;
   const breathB = h('button', { type: 'button', class: 'sw', title: 'Blow into the microphone: the sound follows your breath' }, h('i'), 'Breath');
-  const breathOff = () => { clearInterval(breath?.t); breath = null; for (const s of S.sounds) s.breath.gain.setTargetAtTime(1, S.ctx.currentTime, 0.05); breathB.setAttribute('aria-pressed', 'false'); };
+  const breathOff = () => { if (breath) S.engine.releaseMic(); clearInterval(breath?.t); breath = null; for (const s of S.sounds) s.breath.gain.setTargetAtTime(1, S.ctx.currentTime, 0.05); breathB.setAttribute('aria-pressed', 'false'); };
   breathB.onclick = async () => {
     if (breath) { breathOff(); return; } if (!slot()) { toast('Breath plays Sound 1 and Sound 2'); return; }
     let mic; try { mic = await S.engine.openMic(); } catch (e) { toast(e?.name === 'NotAllowedError' ? 'The microphone was not allowed' : 'No microphone here'); return; }

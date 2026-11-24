@@ -2,6 +2,7 @@
 // three ways to make new sound out of them — a granular Cloud, a Forge of instruments built from any slice, and a
 // Textures rack on the master — all playable from the keys and recordable, as notes and moves, into four variations.
 import { AudioEngine } from '../engine/audio.js';
+import { wakeSpeaker } from '../lib/speaker.js';
 import { CellLoader } from '../engine/loader.js';
 import { Player } from '../engine/player.js';
 import { Session, initialState } from '../state/session.js';
@@ -101,8 +102,8 @@ async function boot() {
   let n = 0; await Promise.all(first.map((u) => loader.load(u).catch(() => {}).finally(() => { $('#gate-bar').style.width = `${(++n / first.length) * 100}%`; })));
   // straight into the studio once the stems are in; sound is unlocked by the first touch or key (nothing plays until you press play)
   $('#gate').classList.add('gone');
-  const unlock = () => { engine.ctx.resume(); removeEventListener('pointerdown', unlock, true); removeEventListener('keydown', unlock, true); };
-  addEventListener('pointerdown', unlock, true); addEventListener('keydown', unlock, true);
+  const unlock = () => { wakeSpeaker(engine.ctx); for (const t of ['pointerdown', 'touchend', 'click', 'keydown']) removeEventListener(t, t === 'pointerdown' ? early : unlock, true); }, early = (e) => { if (e.pointerType === 'mouse') unlock(); };   // a finger only counts once it lifts
+  addEventListener('pointerdown', early, true); for (const t of ['touchend', 'click', 'keydown']) addEventListener(t, unlock, true);
   requestAnimationFrame(frame);
   setInterval(save, 2000);
 }

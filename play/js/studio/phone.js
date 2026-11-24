@@ -3,6 +3,7 @@
 // motion as a controller — tilt bends what the page is about, a shake does something sudden, face-down freezes.
 // There is one place things go: the tape (the arrangement). With ● on, every touch, tilt and change lands on it.
 import { AudioEngine } from '../engine/audio.js';
+import { wakeSpeaker } from '../lib/speaker.js';
 import { CellLoader } from '../engine/loader.js';
 import { Player } from '../engine/player.js';
 import { Session, initialState } from '../state/session.js';
@@ -104,7 +105,7 @@ async function boot() {
   $('#gate').classList.add('gone');
   if (query.get('open') === 'atlas') featP.then(() => { const u = new URL(location.href); u.searchParams.delete('open'); history.replaceState(null, '', u); openAtlas(S, { say: toast }); });
   // (an iPhone only counts a FINISHED touch as a touch, for sound and for the motion question)
-  const touch1 = () => { for (const t of ['touchend', 'click']) removeEventListener(t, touch1, true); goFull(); engine.ctx.resume(); unlockIOS(); Motion.ask(); };
+  const touch1 = () => { for (const t of ['touchend', 'click']) removeEventListener(t, touch1, true); goFull(); wakeSpeaker(engine.ctx); Motion.ask(); };
   for (const t of ['touchend', 'click']) addEventListener(t, touch1, true);
   addEventListener('touchend', () => { if (engine.ctx.state !== 'running') engine.ctx.resume(); }, true);
   // two fingers belong to the sound, not to the page's own zoom
@@ -118,8 +119,6 @@ async function boot() {
 /** As much screen as the phone allows: real full screen where the browser lets a page ask (Android); on iPhone the
  *  page scrolls a little so Safari folds its bars away, and from the home screen it opens with no browser at all. */
 function goFull() { const d = document.documentElement; try { if (!document.fullscreenElement && d.requestFullscreen && !/iP(hone|od)/.test(navigator.userAgent)) d.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}); } catch { /* not here */ } }
-/** iOS plays Web Audio through the ringer channel unless a media element has played: a silent one fixes that. */
-function unlockIOS() { try { const a = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YQAAAAA='); a.playsInline = true; a.play().catch(() => {}); } catch { /* fine */ } }
 
 // ------------------------------------------------------------------------------------------------ motion
 // Tilt is measured from how you held the phone when motion was switched on (so any comfortable angle is "centre").
@@ -379,7 +378,7 @@ async function askSensors() {
 function buildMove() {
   const room = $('#p-move'), W = S.walk, T = S.surround;
   // walk
-  const walkB = h('button', { type: 'button', class: 'bigsw', onclick: async () => { await askSensors(); await S.ctx.resume(); unlockIOS(); W.set(!W.on); buzz(15); } }, h('i'), h('b', {}, 'Walk'), h('small', {}, 'the song follows your steps'));
+  const walkB = h('button', { type: 'button', class: 'bigsw', onclick: async () => { await askSensors(); await S.ctx.resume(); wakeSpeaker(S.ctx); W.set(!W.on); buzz(15); } }, h('i'), h('b', {}, 'Walk'), h('small', {}, 'the song follows your steps'));
   const spm = h('b', { class: 'num' }, '–'), bpm = h('b', { class: 'num' }, '–'), wst = h('p', { class: 'cap' });
   const tap = h('button', { type: 'button', class: 'steppad', onpointerdown: (e) => { e.preventDefault(); if (!W.on) return; W.step(); buzz(6); tap.classList.add('hit'); setTimeout(() => tap.classList.remove('hit'), 90); } }, 'tap your steps here');
   const showWalk = () => {
@@ -389,7 +388,7 @@ function buildMove() {
   };
   W.addEventListener('change', showWalk); S.params.on(({ path }) => path === 'song.bpm' && showWalk()); showWalk();
   // turn
-  const turnB = h('button', { type: 'button', class: 'bigsw', onclick: async () => { await askSensors(); await S.ctx.resume(); unlockIOS(); T.set(!T.on); buzz(15); } }, h('i'), h('b', {}, 'Turn'), h('small', {}, 'stand inside the band'));
+  const turnB = h('button', { type: 'button', class: 'bigsw', onclick: async () => { await askSensors(); await S.ctx.resume(); wakeSpeaker(S.ctx); T.set(!T.on); buzz(15); } }, h('i'), h('b', {}, 'Turn'), h('small', {}, 'stand inside the band'));
   const ring = h('div', { class: 'ring' }), cv = h('canvas'), g = cv.getContext('2d'); ring.append(cv);
   let R = 0; new ResizeObserver(() => { const r = ring.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); R = r.width; cv.width = R * d; cv.height = R * d; cv.style.width = cv.style.height = R + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }).observe(ring);
   const tst = h('p', { class: 'cap' });

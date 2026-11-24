@@ -80,7 +80,7 @@ export class Voice extends EventTarget {
   async stop() {
     const t = this.take; if (!t) return null; this.take = null; this.emit();
     const S = this.S, sr = S.ctx.sampleRate, song = S.song, cb = song.barsPerCell;
-    const out = await t.rec.stop(Math.round((S.ctx.currentTime + t.lat) * sr));
+    const out = await t.rec.stop(Math.round((S.ctx.currentTime + t.lat) * sr)); S.engine.releaseMic();
     let x = new Float32Array(out.L.length); for (let i = 0; i < x.length; i++) x[i] = (out.L[i] + out.R[i]) * 0.5;
     const barNow = Math.round(t.barDur * sr), nb = Math.ceil(x.length / barNow);
     for (let k = 0; k < nb; k++) if (t.map[t.B + k] === undefined) t.map[t.B + k] = this.srcOf(t.B + k);
@@ -140,7 +140,7 @@ export async function recordFree(S, { max = 20 } = {}) {
     level() { mic.monitor.getFloatTimeDomainData(lb); let pk = 0; for (const x of lb) pk = Math.max(pk, Math.abs(x)); return pk; },
     stop: () => (done ??= (async () => {
       clearTimeout(timer);
-      const out = await rec.stop(Math.round(S.ctx.currentTime * sr));
+      const out = await rec.stop(Math.round(S.ctx.currentTime * sr)); S.engine.releaseMic();
       const x = new Float32Array(out.L.length); for (let i = 0; i < x.length; i++) x[i] = (out.L[i] + out.R[i]) * 0.5;
       // trim the silence before and after; nothing heard → nothing kept
       let pk = 0; for (const v of x) pk = Math.max(pk, Math.abs(v)); if (pk < 0.003) return null;

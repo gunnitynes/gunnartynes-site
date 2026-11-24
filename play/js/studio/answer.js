@@ -59,7 +59,7 @@ export class Answer extends EventTarget {
 
   /** "Listen to me": sing or play an instrument into the microphone, and the notes count as a phrase. */
   async listen(on) {
-    clearInterval(this.poll); this.listening = false;
+    clearInterval(this.poll); if (this.listening) this.S.engine.releaseMic(); this.listening = false;
     if (on) {
       let mic; try { mic = await this.S.engine.openMic(); } catch (e) { this.S.say?.(e?.name === 'NotAllowedError' ? 'The microphone was not allowed' : 'No microphone here'); this.emit(); return; }
       const an = mic.monitor, buf = new Float32Array(an.fftSize), sr = this.S.ctx.sampleRate;
