@@ -72,7 +72,7 @@ async function boot() {
   S.voice = new Voice(S); S.walk = new Walk(S); S.surround = new Surround(S);
   // add-ons from the menu: the band answers you, the endless version, the Atlas
   S.mutate = new Mutator(S); S.answer = new Answer(S); S.endless = new Endless(S); S.say = (m) => toast(m);
-  loadFeatures(S);
+  const featP = loadFeatures(S);
   S.heard = []; let retuneT = 0;
   S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (P.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; tex.retune(); }, 60); };
 
@@ -92,6 +92,7 @@ async function boot() {
   // straight into the studio once the stems are in: the first touch unlocks the sound (and full screen, and on an
   // iPhone the question about motion), nothing plays until you press play
   $('#gate').classList.add('gone');
+  if (query.get('open') === 'atlas') featP.then(() => { const u = new URL(location.href); u.searchParams.delete('open'); history.replaceState(null, '', u); openAtlas(S, { say: toast }); });
   const touch1 = () => { removeEventListener('pointerdown', touch1, true); goFull(); engine.ctx.resume(); unlockIOS(); Motion.ask(); };
   addEventListener('pointerdown', touch1, true);
   requestAnimationFrame(frame);

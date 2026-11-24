@@ -19,6 +19,7 @@ import { Endless } from './endless.js';
 import { Conduct } from './conduct.js';
 import { Versions } from './versions.js';
 import { buildMore } from './more.js';
+import { openAtlas } from './atlas.js';
 
 const params = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {} };
@@ -83,7 +84,12 @@ async function boot() {
   const had = restore();
   S.voice.ensureTrack(); S.mutate.drift(true); S.voice.restore();
   S.versions = new Versions(S);
-  featP.then(() => buildMore(S, { button: $('#t-more'), names: NAMES }));
+  featP.then(() => {
+    buildMore(S, { button: $('#t-more'), names: NAMES });
+    const open = params.get('open'); if (!open) return;   // the start page's tiles can open an add-on directly (once: not again on a reload)
+    const u = new URL(location.href); u.searchParams.delete('open'); history.replaceState(null, '', u);
+    if (open === 'atlas') openAtlas(S, { say: flash }); else if (open === 'more') $('#t-more').click();
+  });
   if (!S.seq.arr.bars) S.seq.fillFromSong();
   if (!had) S.seq.setMode('song');
   S.seq.emit();
@@ -95,6 +101,7 @@ async function boot() {
   let n = 0; await Promise.all(first.map((u) => loader.load(u).catch(() => {}).finally(() => { $('#gate-bar').style.width = `${(++n / first.length) * 100}%`; })));
   // straight into the studio once the stems are in; sound is unlocked by the first touch or key (nothing plays until you press play)
   $('#gate').classList.add('gone');
+  S.hello?.();
   const unlock = () => { engine.ctx.resume(); removeEventListener('pointerdown', unlock, true); removeEventListener('keydown', unlock, true); };
   addEventListener('pointerdown', unlock, true); addEventListener('keydown', unlock, true);
   requestAnimationFrame(frame);
@@ -250,6 +257,15 @@ function buildArrange() {
     toArrB.disabled = !S.snaps[lastSnap];
   }
   S.showSnaps = showSnaps;
+  /** What was woken on the start page arrives as a snapshot: those musicians loop their block, the others rest. */
+  S.hello = () => {
+    let d; try { d = JSON.parse(sessionStorage.getItem('playground.hello')); sessionStorage.removeItem('playground.hello'); } catch { return; }
+    if (!d || d.song !== song.id || !Array.isArray(d.stems)) return;
+    const on = song.stems.filter((x) => d.stems.includes(x.id) && x.cells[d.cell]), i = S.snaps.findIndex((x) => !x); if (!on.length) return;
+    if (i < 0) { flash('All eight Re-arrange snapshots are full, so what you woke was not kept'); return; }
+    S.snaps[i] = { tracks: Object.fromEntries(song.stems.map((x) => [x.id, on.includes(x) ? { mode: 'loop', cell: d.cell } : { mode: 'follow' }])), mutes: song.stems.filter((x) => !on.includes(x)).map((x) => x.id), solos: [], ts: Date.now() };
+    showSnaps(); flash(`What you woke is here: snapshot ${i + 1} in Re-arrange`);
+  };
   const snapsRow = h('div', { class: 'snaps' }, h('span', { class: 'cap' }, 'Snapshots'), ...snapBtns, toArrB);
   showSnaps();
   const recB = h('button', { type: 'button', class: 'rec big', title: 'Play live and write it into the Arrangement when you stop' }, h('i'), 'Record into the Arrangement');
