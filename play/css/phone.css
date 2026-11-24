@@ -226,3 +226,38 @@ button,select{text-transform:uppercase;letter-spacing:.04em}
 .atlas-now{font:12px var(--mono);color:var(--dim);min-height:16px}
 .mitem.on{color:var(--p)}
 #atlas .atlas-leg{display:none}
+
+/* ---- v4: hands on. Every page fits the screen; the surfaces take what is left */
+body{min-height:calc(100lvh + 1px)}
+.page{min-height:calc(100dvh - 61px - 58px - var(--sat) - var(--sab));padding:10px 12px;gap:8px}
+.head h2{font-size:26px}
+.chip{min-height:34px;padding:0 12px;font-size:11px}.chip.sq{padding:0;width:38px;justify-content:center;font-size:16px}
+.sw{min-height:34px;padding:0 11px 0 8px;font-size:11px;gap:6px;white-space:nowrap}
+.songmap{height:46px;touch-action:none}
+.table{position:relative;flex:1;min-height:350px;border:1px solid var(--rule);border-radius:14px;background:#0b0d12;overflow:hidden;touch-action:none}
+.table canvas,.body canvas,.slice canvas,.reels canvas,.piece canvas{position:absolute;inset:0}
+.surface{min-height:230px}
+.mems{display:flex;gap:5px}.mem{width:34px;height:34px;border-radius:50%;border:1px dashed var(--rule2);font:11px var(--mono);color:var(--faint)}
+.mem.full{border:1px solid var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}.mem:active{background:var(--c);color:var(--ground)}
+/* instruments */
+#p-play .mem.full{border-color:var(--c);color:var(--c)}
+.ins-top{gap:5px;margin:0}.ins-top .chip{padding:0 9px;gap:6px;min-height:34px}.ins-top .seg button{padding:0 8px;min-height:32px;font-size:10.5px}
+.ins-src{min-height:34px}.srcpick{font:italic 400 18px var(--serif);min-height:34px;text-transform:none!important;letter-spacing:0!important;color:#fff;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slice{position:relative;height:50px;flex:none;border:1px solid var(--rule);border-radius:10px;background:#0b0d12;overflow:hidden;touch-action:none}
+.body{position:relative;flex:1;min-height:128px;touch-action:none}
+.ins-row{gap:5px}.ins-row .sw{padding:0 8px 0 6px;font-size:10px}.ins-row .sw i{width:15px}.ins-row .mem{width:30px;height:32px}
+#p-play .pads{flex:none;min-height:0;height:clamp(126px,22dvh,190px);grid-template-columns:repeat(4,1fr);gap:5px}
+.ins-key{justify-content:center}.ins-key .chip{min-height:30px}
+body.land #top,body.land #recline,body.land #tabs,body.land #p-play>:not(.pads){display:none!important}
+body.land{padding:0;min-height:100dvh}body.land .page{min-height:100dvh;padding:8px calc(10px + env(safe-area-inset-right,0px)) 8px calc(10px + env(safe-area-inset-left,0px))}body.land #p-play .pads{flex:1;height:calc(100dvh - 16px)}
+/* tape */
+.reels{position:relative;height:104px;flex:none;touch-action:none}
+.tape{height:clamp(130px,22dvh,210px);min-height:0;flex:none}
+.piece{position:relative;flex:1;min-height:190px;border:1px solid var(--rule);border-radius:14px;background:radial-gradient(70% 80% at 50% 50%,#1a1d26,#0d0f15);touch-action:none;overflow:hidden}
+.takes:empty{display:none}
+/* look */
+.xy .look{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;opacity:.6}
+.xy .dot,.xy .ax{z-index:1}
+#p-tape .head.row{gap:6px}#p-tape .head h2{font-size:24px}
+.ins-key{gap:5px}.ins-key .chip{padding:0 9px;font-size:10.5px}.chip.tog[aria-pressed=true]{background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c);border-color:var(--c)}
+.ins-top .chip.who{padding:0 12px}

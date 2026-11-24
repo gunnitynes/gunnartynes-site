@@ -242,3 +242,28 @@ class Gate extends AudioWorkletProcessor {
   }
 }
 registerProcessor('gate', Gate);
+
+// ------------------------------------------------------------------------------------------- platter
+// A hand on the tape: the last twelve seconds are always on it. Held, the sound is read back at the speed the hand
+// turns (either way, or standing still); let go, it crosses back into what is playing now.
+class Platter extends AudioWorkletProcessor {
+  constructor() { super(); this.n = Math.round(sampleRate * 12); this.b = [new Float32Array(this.n), new Float32Array(this.n)]; this.w = 0; this.full = 0; this.on = false; this.rp = 0; this.r = 0; this.target = 0; this.mix = 0; this.amp = 0;
+    this.port.onmessage = ({ data: d }) => { if (d.on !== undefined) { if (d.on && !this.on) { this.rp = 0; this.r = 1; this.target = 0; } this.on = d.on; } if (d.rate !== undefined) this.target = d.rate; }; }
+  process(inputs, outputs) {
+    const inp = inputs[0], out = outputs[0], N = this.n, oL = out[0], oR = out[1] || oL, len = oL.length, iL = inp[0], iR = inp[1] || iL;
+    for (let k = 0; k < len; k++) {
+      const x = iL ? iL[k] : 0, y = iR ? iR[k] : 0;
+      if (!this.on) { this.b[0][this.w] = x; this.b[1][this.w] = y; this.w = (this.w + 1) % N; if (this.full < N) this.full++; }
+      this.mix += ((this.on ? 1 : 0) - this.mix) * 0.003;
+      if (this.mix < 0.0005) { oL[k] = x; if (oR !== oL) oR[k] = y; continue; }
+      // rp: how far behind the hand is, in samples (0 = the moment it landed)
+      this.r += (this.target - this.r) * 0.0022; if (this.on) this.rp = Math.max(1, Math.min(this.full - 4, this.rp - this.r));
+      this.amp += (Math.min(1, Math.abs(this.r) * 5) - this.amp) * 0.004;
+      let p = this.w - 1 - this.rp; p = ((p % N) + N) % N; const i = p | 0, f = p - i, j = (i + 1) % N;
+      const sL = (this.b[0][i] + (this.b[0][j] - this.b[0][i]) * f) * this.amp, sR = (this.b[1][i] + (this.b[1][j] - this.b[1][i]) * f) * this.amp;
+      oL[k] = x * (1 - this.mix) + sL * this.mix; if (oR !== oL) oR[k] = y * (1 - this.mix) + sR * this.mix;
+    }
+    return true;
+  }
+}
+registerProcessor('platter', Platter);

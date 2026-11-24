@@ -4,7 +4,7 @@
   "start_url": "./phone.html",
   "scope": "./",
   "display": "fullscreen",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#11141b",
   "theme_color": "#11141b"
 }

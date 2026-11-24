@@ -104,7 +104,8 @@ export class Player extends EventTarget {
   get songBars() { return this.song.numBars || 1; }
 
   /** What should track `tr` sound at song bar B?  → { cell, bar, url } | null */
-  resolve(tr, B) {
+  resolve(tr, B) { const w = this.resolveSrc(tr, B), o = this.over?.get(tr.id); return o ? o(w, B) : w; }   // `over`: a stem living in a pool (phone)
+  resolveSrc(tr, B) {
     const src = this.catalog.get(tr.id);
     if (!src || src.locked || !src.cells.length) return null;
     const cb = this.cellBars;

@@ -16,6 +16,11 @@ import { loadFeatures } from './features.js';
 import { Answer } from './answer.js';
 import { Endless } from './endless.js';
 import { openAtlas } from './atlas.js';
+import { buildStems } from './phone-stems.js';
+import { buildCloudPage } from './phone-cloud.js';
+import { buildPlay } from './phone-inst.js';
+import { buildTape } from './phone-tape.js';
+import { Look } from './phone-look.js';
 
 const query = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {}, phone: true };
@@ -54,6 +59,8 @@ async function boot() {
   S.bandGate = engine.ctx.createGain();
   engine.bus.disconnect(); engine.post.disconnect();
   engine.post.connect(tex.input); tex.output.connect(engine.lp);
+  // the hand on the tape: between everything and the master (phone-tape.js)
+  S.platter = new AudioWorkletNode(engine.ctx, 'platter', { outputChannelCount: [2] }); engine.lp.disconnect(); engine.lp.connect(S.platter).connect(engine.hp);
   buildStrips(S, COLORS, NAMES);
   engine.bus.connect(S.bandGate).connect(S.strips.band.input);
   P.define('band.on', true, (v) => S.bandGate.gain.setTargetAtTime(v ? 1 : 0, S.ctx.currentTime, 0.04));
@@ -77,7 +84,8 @@ async function boot() {
   S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (P.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; tex.retune(); }, 60); };
 
   buildCloud(); buildSound(1, 'sampler'); buildSound(2, 'strings');
-  buildTop(); buildStems(); buildCloudPage(); buildPlay(); buildProcess(); buildTape(); buildMove(); buildTabs();
+  const U = { toast, tiltSet, askSensors, Motion, srcAt, barNow, nextBar, bpb }; S.look = new Look(S);
+  buildTop(); buildStems(S, U); buildCloudPage(S, U); buildPlay(S, U); buildProcess(); buildTape(S, U); buildMove(); buildTabs();
   restore();
   S.voice.ensureTrack(); S.voice.restore();
   P.set('song.bpm', song.bpm, { by: 'load' });   // a walking tempo is not kept: the pocket always starts at the song's
@@ -93,8 +101,15 @@ async function boot() {
   // iPhone the question about motion), nothing plays until you press play
   $('#gate').classList.add('gone');
   if (query.get('open') === 'atlas') featP.then(() => { const u = new URL(location.href); u.searchParams.delete('open'); history.replaceState(null, '', u); openAtlas(S, { say: toast }); });
-  const touch1 = () => { removeEventListener('pointerdown', touch1, true); goFull(); engine.ctx.resume(); unlockIOS(); Motion.ask(); };
-  addEventListener('pointerdown', touch1, true);
+  // (an iPhone only counts a FINISHED touch as a touch, for sound and for the motion question)
+  const touch1 = () => { for (const t of ['touchend', 'click']) removeEventListener(t, touch1, true); goFull(); engine.ctx.resume(); unlockIOS(); Motion.ask(); };
+  for (const t of ['touchend', 'click']) addEventListener(t, touch1, true);
+  addEventListener('touchend', () => { if (engine.ctx.state !== 'running') engine.ctx.resume(); }, true);
+  // two fingers belong to the sound, not to the page's own zoom
+  for (const t of ['gesturestart', 'gesturechange']) addEventListener(t, (e) => e.preventDefault(), { passive: false });
+  // the screen stays on while it plays
+  let lock = null; const awake = async () => { try { if (player.playing && !lock && !document.hidden) { lock = await navigator.wakeLock?.request('screen'); lock?.addEventListener('release', () => { lock = null; }); } else if (!player.playing && lock) { lock.release(); lock = null; } } catch { /* not here */ } };
+  player.on('transport', awake); document.addEventListener('visibilitychange', awake);
   requestAnimationFrame(frame);
   setInterval(save, 2000);
 }
@@ -131,11 +146,15 @@ const Motion = {
     else if (e.accelerationIncludingGravity) { const g = e.accelerationIncludingGravity, mm = Math.hypot(g.x, g.y, g.z); m = Math.abs(mm - 9.81) * 1.2; }
     const now = performance.now();
     if (S.walk?.on) return;
+    // a knock: one short jolt out of stillness, and not from a finger on the glass
+    const quiet = this.q ?? 0; this.q = quiet + (m - quiet) * 0.18;
+    if (this.subs.knock && m > 2.6 && quiet < 0.7 && now - (this.lastKnock || 0) > 160 && now - (this.lastTouch || 0) > 260) { this.lastKnock = now; this.subs.knock(Math.min(1, m / 9)); }
     if (m > 15 && now - this.lastShake > 700) { this.lastShake = now; buzz(20); this.subs.shake?.(); }
   },
 };
 addEventListener('deviceorientation', (e) => Motion.orient(e));
 addEventListener('devicemotion', (e) => Motion.motion(e));
+for (const t of ['pointerdown', 'pointerup']) addEventListener(t, () => { Motion.lastTouch = performance.now(); }, true);
 /** Set a param from motion only when it really changed (tilt is noisy, and every change is a recorded move). */
 const tiltSet = (path, v, step = 0.01) => { v = Math.round(v / step) * step; if (Math.abs((S.params.get(path) ?? 0) - v) >= step * 0.99) S.params.set(path, +v.toFixed(4)); };
 
@@ -180,12 +199,12 @@ const peaks = (src, n = 300) => { const out = new Float32Array(n), step = src.L.
 
 S.sounds = [];
 function buildSound(n, engine) {
-  const P = S.params, k = `f${n}`, out = S.ctx.createGain(); out.connect(S.addStrip(n).input);
+  const P = S.params, k = `f${n}`, out = S.ctx.createGain(), breath = S.ctx.createGain(); out.connect(breath).connect(S.addStrip(n).input);
   const voices = { sampler: new SamplerVoice(S, out), strings: new StringsVoice(S, out), grains: new CloudVoice(S, out) };
   const slot = { name: NAMES[n], voices, get voice() { return voices[P.get(`${k}.engine`)]; } };
   S.slots[n] = slot;
   let src = null;
-  const reslice = () => { if (!src) return; const [a, b] = P.get(`${k}.sel`).split(':').map(Number); const sl = sliceOf(src, a, b); voices.sampler.setSlice(sl); voices.strings.setSlice(sl); voices.grains.setSource(sl); };
+  const reslice = () => { if (!src) return; let [a, b] = P.get(`${k}.sel`).split(':').map(Number); if (!isFinite(a) || !isFinite(b)) [a, b] = [0.2, 0.3]; const sl = sliceOf(src, a, b); voices.sampler.setSlice(sl); voices.strings.setSlice(sl); voices.grains.setSource(sl); };
   P.define(`${k}.sel`, '0.2:0.3', reslice);
   const COMP = { sampler: 1, strings: 5, grains: 4.5 }, lvl = () => out.gain.setTargetAtTime((P.get(`${k}.level`) ?? 0.8) * COMP[P.get(`${k}.engine`)], S.ctx.currentTime, 0.03);
   P.define(`${k}.engine`, engine, () => { for (const v of Object.values(voices)) v.panic(); lvl(); });
@@ -205,7 +224,7 @@ function buildSound(n, engine) {
   const load = async (stemId, a, b, fresh) => { slot.src = { stemId, a, b }; src = await loadSource(S, stemId, a, b); if (fresh) { const x = loudestWindow(src, 0.06); P.set(`${k}.sel`, `${x.toFixed(4)}:${(x + 0.06).toFixed(4)}`, { by: 'load' }); } reslice(); S.soundChanged?.(); };
   const def = S.song.stems[(n * 5) % S.song.stems.length];
   const sound = {
-    n, k, slot,
+    n, k, slot, breath, get src() { return src; },
     init: () => {
       if (slot.src?.rec) { sourceOf(S, slot.src, loadSource).then((s0) => sound.useRec(s0, false)).catch(() => { slot.src = null; sound.init(); }); return; }
       const c = slot.src || { stemId: def.id, ...(([a, b]) => ({ a, b }))(loudestCells(def, 1)) }; load(c.stemId, c.a, c.b, !slot.src);
@@ -247,11 +266,11 @@ function buildTop() {
 // ------------------------------------------------------------------------------------------------ menu and help
 // The pages carry as little text as they can; how each one works is here, one tap away.
 const HELP = {
-  stems: ['Tap a stem to mute it, hold it to hear it alone. Tap a family’s name to mute the whole family.', 'Tap the song map to go there.', 'The buttons at the bottom change the next four bars: hold one bar, play backwards, at half speed, stutter, or shuffle every stem to another place.', 'Shake the phone to shuffle.'],
-  cloud: ['The sound is broken into grains. Touch and drag: across is where in the sound, up is bigger grains.', '‹ › picks another stem. Record audio makes the grains from a sound you record.', 'Drone keeps it sounding, Freeze stops it drifting.', 'With motion on: tilt left and right bends the pitch, towards and away sprays the grains, a shake scatters them.'],
-  play: ['Pads in a scale. Slide between them; higher on a pad is louder.', 'Choose the Cloud or a sound; a sound can be a sampler, strings or a pad, made of a slice of the stems. New sound picks another slice; Record audio makes it from a sound you record.', 'The key and scale are next to it.', 'With motion on: tilt for darker or brighter and for echo, shake for a run of notes.'],
-  process: ['One gesture moves the filter, tape, resonators and shimmer together.', 'Hold the buttons for an echo throw or a repeat; the others switch on and off.', 'With motion on: tilt moves the dot, a shake throws everything into the echo.', 'On any page: lay the phone face down and everything freezes into a shimmer.'],
-  tape: ['Everything you make lands on the tape. Press ● and play: touches, tilts and changes are written where the playhead is.', 'Tap the tape to go there. Drag across it to choose bars, then Loop, Repeat, Reverse, Half, Stutter, Silence, put the Song back, or Clear them. Hold on a piece to remove it.', 'Record audio records from the microphone onto the lane Audio, on the song’s own bars.', 'Forgot ●? Capture keeps what you just played. ↶ undoes anything.'],
+  stems: ['The table is the mix. In the middle the song is as it is; left and right is left and right, towards the far edge an instrument goes away into the room, towards you it comes close.', 'Push the discs with any number of fingers, and throw them. Tap one: off and on. Hold one: alone. Two fingers on the bare table gather, spread or turn everyone.', 'Drop one into a pool and it is held, reversed, halved, stuttered or sent wandering for as long as it lies there.', 'Roll: tilt the phone and they all roll. Shake: they scatter. Line up puts everything back.', 'With ● on it all goes onto the tape.'],
+  cloud: ['One finger plays the sound: across is where in it, up is bigger grains, flat on the glass is more spray.', 'Two fingers hold the sound itself. Pinch to zoom the buffer, from half a minute down to thousandths of a second. Move them to travel through it. Up and down: more or fewer grains. Twist: pitch.', 'Double tap and it goes on by itself.', 'A to D: tap an empty one to keep this cloud, tap a full one to glide to it, hold one to replace it.', 'With motion on: tilting moves the cloud through the sound, a shake scatters it.'],
+  play: ['The strip is the slice the sound is made of: drag it, pinch it. The name above it picks another sound from the song.', 'The body has eight arms, one for each thing the sound does: pull one out or push it in, double tap to reset it, tap the middle to hear it. Two fingers take the whole body: spread for long and swelling, pinch for short, twist to open or darken.', 'A to D keep a body; tap to glide between them.', 'Breath: hold a pad and blow into the microphone. Knock: knock on the phone and the last note plays. Shake: another body.', 'While a pad is held, tilt bends its tone and adds echo. Turn the phone on its side and the pads fill the screen.'],
+  process: ['One gesture moves the filter, tape, resonators and shimmer together.', 'Look: the song takes the colour of what the camera sees. Light brightens it, colour makes it ring. The picture stays on the phone.', 'Hold the buttons for an echo throw or a repeat; the others switch on and off.', 'With motion on: tilt moves the dot, a shake throws everything into the echo. On any page: lay the phone face down and everything freezes.'],
+  tape: ['Grab a reel and turn it: the song is under your hand, backwards, slowly or fast. Let go and it carries on.', 'The tape: tap to go there, drag across to choose a piece, pinch to zoom in, hold on something to remove it.', 'The piece: twist it over for backwards, pinch it for a stutter, stretch it for half speed. Throw it up to silence it, pull it down for the song as it was, right to have it once more, left to wipe what you played on it. Hold to loop it, tap to hear it.', 'With ● on, everything you do anywhere is written where the playhead is, the reels too. Capture keeps what you just played. ↶ undoes.'],
   move: ['Walk: press it and walk. Your pace becomes the tempo; the stems stretch to it and keep their pitch. Stand still and they sink back while the Cloud holds a drone. No sensors? Tap your steps on the pad.', 'Turn: headphones on, stand up. The stems are in a circle around you; turn and the band turns. The one you face comes forward; keep facing it and you hear it almost alone. Or drag the circle.'],
 };
 function openMenu() {
@@ -281,10 +300,11 @@ function closeMenu() { const sh = $('#sheet'); sh.classList.remove('on'); setTim
 function buildTabs() { document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => { showPage(b.dataset.p); buzz(5); }; }); }
 function showPage(id) {
   if (!S.rooms[id]) id = 'stems';
+  if (S.page !== id) S.rooms[S.page]?.hide?.();
   S.page = id;
   document.querySelectorAll('.page').forEach((p) => { p.hidden = p.id !== `p-${id}`; });
   document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.p === id));
-  const r = S.rooms[id]; Motion.subs = { tilt: r.tilt || null, shake: r.shake || null, face: r.face || faceFreeze };
+  const r = S.rooms[id]; Motion.subs = { tilt: r.tilt || null, shake: r.shake || null, knock: r.knock || null, face: r.face || faceFreeze };
   const u = new URL(location.href); u.searchParams.set('page', id); history.replaceState(null, '', u);
   requestAnimationFrame(() => r.show?.());
 }
@@ -311,166 +331,6 @@ function writeBand(make, label) {
   toast(`${label} · bars ${at + 1}–${at + 4} · ↶ undoes`); buzz(12);
 }
 
-// ------------------------------------------------------------------------------------------------ page: stems
-const GROUPS = [['rhythm', 'Rhythm'], ['bass', 'Bass'], ['keys', 'Keys'], ['guitar', 'Guitar'], ['synth', 'Synths'], ['other', 'Other'], ['voice', 'Audio']];
-function buildStems() {
-  const room = $('#p-stems'), { song, params: P } = S, cb = song.barsPerCell;
-  // the song as a map: how many stems play in each bar of the tape, its parts, the playhead; tap to go there
-  const map = h('div', { class: 'songmap' }), mcv = h('canvas'), mg = mcv.getContext('2d'); map.append(mcv);
-  let MW = 0, MH = 0; new ResizeObserver(() => { const r = map.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); MW = r.width; MH = r.height; mcv.width = MW * d; mcv.height = MH * d; mcv.style.width = MW + 'px'; mcv.style.height = MH + 'px'; mg.setTransform(d, 0, 0, d, 0, 0); }).observe(map);
-  map.addEventListener('pointerdown', (e) => { const r = map.getBoundingClientRect(); S.seek(Math.floor(((e.clientX - r.left) / r.width) * S.seq.arr.bars)); buzz(6); });
-  const busy = (bar) => { const c = Math.floor(srcAt(bar) / cb); let n = 0; for (const st of song.stems) if (st.cells[c] && st.cells[c].rms > -45) n++; return n; };
-  // the stems, in their families, each in its own colour: tap mutes, hold plays it alone; a family's name mutes the family
-  const tiles = [];
-  const fam = GROUPS.map(([g, label]) => {
-    const sts = song.stems.filter((st) => (st.voice ? 'voice' : GROUPS.some((x) => x[0] === st.group) ? st.group : 'other') === g); if (!sts.length) return null;
-    const col = sts.find((x) => x.color)?.color || '#ece8dc';
-    const head = h('button', { type: 'button', class: 'famname', style: { '--c': col }, onclick: () => { const all = sts.every((st) => P.get(`band.${st.id}.mute`)); for (const st of sts) P.set(`band.${st.id}.mute`, !all); buzz(8); } }, h('i'), label);
-    const box = h('div', { class: 'famtiles' });
-    for (const st of sts) {
-      const lvl = h('i', { class: 'lvl' }), t = h('button', { type: 'button', class: 'tile', style: { '--c': st.color || col } }, lvl, h('span', { class: 'nm' }, st.name));
-      let timer = null, long = false;
-      t.addEventListener('pointerdown', () => { long = false; timer = setTimeout(() => { long = true; P.set(`band.${st.id}.solo`, !P.get(`band.${st.id}.solo`)); buzz(25); }, 450); });
-      const up = () => clearTimeout(timer); t.addEventListener('pointerup', up); t.addEventListener('pointercancel', up); t.addEventListener('pointerleave', up);
-      t.addEventListener('click', () => { if (long) return; P.set(`band.${st.id}.mute`, !P.get(`band.${st.id}.mute`)); buzz(6); });
-      t.addEventListener('contextmenu', (e) => e.preventDefault());
-      const show = () => { t.classList.toggle('off', !!P.get(`band.${st.id}.mute`)); t.classList.toggle('solo', !!P.get(`band.${st.id}.solo`)); };
-      P.on(({ path }) => path.startsWith(`band.${st.id}.`) && show()); show();
-      tiles.push({ st, t, lvl, box }); box.append(t);
-    }
-    const el = h('section', { class: 'fam' }, head, box); el.sts = sts; return el;
-  }).filter(Boolean);
-  const act = (label, title, fn) => h('button', { type: 'button', class: 'act', title, onclick: fn }, label);
-  const shuffle = () => {
-    const q = S.seq, at = nextBar(); q.snapshot();
-    for (const st of song.stems) {
-      if (P.get(`band.${st.id}.mute`)) continue;
-      const live = st.cells.map((c, i) => (c && c.rms > -45 ? i : -1)).filter((i) => i >= 0); if (!live.length) continue;
-      const c = live[Math.floor(Math.random() * live.length)];
-      q.place({ lane: 'stem:' + st.id, start: at, len: 4, src: c * cb, loop: 4, name: `${c * cb + 1}` });
-    }
-    if (at + 4 > q.arr.bars) q.arr.bars = at + 4; q.changed();
-    toast(`Shuffled · bars ${at + 1}–${at + 4} · ↶ undoes`); buzz(25);
-  };
-  room.append(
-    h('div', { class: 'head' }, h('h2', {}, 'Stems')),
-    map,
-    h('div', { class: 'fams' }, ...fam),
-    h('div', { class: 'dock' },
-      h('p', { class: 'docklabel' }, 'Next four bars'),
-      h('div', { class: 'acts' },
-        act('Hold', 'Repeat the bar playing now', () => writeBand((at) => ({ src: srcAt(at - (S.player.playing ? 1 : 0)), loop: 1, name: 'hold' }), 'Held')),
-        act('Reverse', 'Every bar backwards', () => writeBand((at) => ({ src: srcAt(at), fx: { r: 1 } }), 'Reversed')),
-        act('Half', 'Half speed, an octave down', () => writeBand((at) => ({ src: srcAt(at), fx: { s: 0.5 } }), 'Half speed')),
-        act('Stutter', 'The start of each bar, over and over', () => writeBand((at) => ({ src: srcAt(at), fx: { u: 8 } }), 'Stuttered')),
-        act('Shuffle', 'Every stem jumps to another place in the song', shuffle))));
-  S.rooms.stems = {
-    shake: shuffle,
-    draw: () => {
-      for (const x of tiles) { const ch = S.engine.channels.get(x.st.id); x.lvl.style.transform = `scaleY(${ch ? Math.min(1, ch.readLevel() * 3.2) : 0})`; }
-      for (const f of fam) f.hidden = f.sts.every((st) => st.voice && !st.cells.some(Boolean));
-      if (!MW) return; const q = S.seq, n = Math.max(1, q.arr.bars), bw = MW / n, top = 14, hh = MH - top - 2; mg.clearRect(0, 0, MW, MH);
-      for (let b = 0; b < n; b++) { const v = busy(b) / 14; mg.fillStyle = '#ece8dc30'; const y = hh * Math.min(1, v); mg.fillRect(b * bw, top + hh - y, Math.max(1, bw - 0.6), y); }
-      mg.font = '9.5px "IBM Plex Mono", monospace'; mg.textBaseline = 'top';
-      for (const c of q.arr.clips) if (c.lane === 'band') { mg.fillStyle = '#ffffff30'; mg.fillRect(c.start * bw, 0, 1, MH); if (c.name && c.len * bw > 14) { mg.fillStyle = '#a3a6ad'; mg.fillText(c.name, c.start * bw + 3, 1); } }
-      if (q.arr.cycle) { mg.fillStyle = '#e6b45024'; mg.fillRect(q.arr.cycle[0] * bw, 0, (q.arr.cycle[1] - q.arr.cycle[0]) * bw, MH); }
-      const pb = q.tl(q.nowBeat()) / bpb(); mg.fillStyle = q.rec ? '#df8a74' : '#e6b450'; mg.fillRect(pb * bw - 1, 0, 2, MH);
-    },
-  };
-}
-
-// ------------------------------------------------------------------------------------------------ page: cloud
-function buildCloudPage() {
-  const room = $('#p-cloud'), P = S.params, voice = S.cloud.voice;
-  const surf = h('div', { class: 'surface' }), cv = h('canvas'), g = cv.getContext('2d'); surf.append(cv);
-  const hint = h('div', { class: 'surf-hint' }, h('b', {}, 'Touch and drag to play'), h('span', {}, 'across: where in the sound · up: bigger grains'));
-  surf.append(hint);
-  let W = 0, H = 0; new ResizeObserver(() => { const r = surf.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }).observe(surf);
-  let touching = 0;
-  const at = (e) => { const r = surf.getBoundingClientRect(); P.set('cloud.pos', r3(clamp((e.clientX - r.left) / r.width, 0, 1))); P.set('cloud.size', r3(clamp(1 - (e.clientY - r.top) / r.height, 0.02, 1))); };
-  surf.addEventListener('pointerdown', (e) => { e.preventDefault(); surf.setPointerCapture(e.pointerId); touching++; hint.classList.add('gone'); at(e); if (touching === 1 && !P.get('cloud.drone')) { voice.noteOn('touch', 60, 0.85); S.seq.noteIn(0, 60, 0.85, true); } });
-  surf.addEventListener('pointermove', (e) => { if (touching) at(e); });
-  const lift = () => { if (!touching) return; touching = 0; if (!P.get('cloud.drone')) { voice.noteOff('touch'); S.seq.noteIn(0, 60, 0, false); } };
-  surf.addEventListener('pointerup', lift); surf.addEventListener('pointercancel', lift);
-  const name = h('span', { class: 'src' });
-  const stems = S.song.stems.filter((s) => s.cells.filter(Boolean).length > 2);
-  const next = async (d) => { const i = stems.findIndex((s) => s.id === S.cloudSrc?.stemId), st = stems[(i + d + stems.length) % stems.length]; name.textContent = '…'; const [a, b] = loudestCells(st, 2); await S.setCloudSource(st.id, a, b); buzz(6); };
-  S.cloud.changed = () => { name.textContent = S.cloudSrc?.rec ? 'your recording' : S.song.stems.find((s) => s.id === S.cloudSrc?.stemId)?.name || ''; };
-  const micB = recButton(S, { onDone: (src) => S.useCloudSource(src, { rec: src.rec }), say: toast, cls: 'chip' });
-  const sw = (path, label) => { const b = h('button', { type: 'button', class: 'sw', onclick: () => { P.set(path, !P.get(path)); buzz(6); } }, h('i'), label); const s = () => b.setAttribute('aria-pressed', !!P.get(path)); P.on(({ path: p }) => p === path && s()); s(); return b; };
-  const pitchOut = h('span', { class: 'mono val' });
-  room.append(
-    h('div', { class: 'head' }, h('h2', {}, 'Cloud'), h('div', { class: 'srcrow' }, h('button', { type: 'button', class: 'chip', 'aria-label': 'Previous stem', onclick: () => next(-1) }, '‹'), name, h('button', { type: 'button', class: 'chip', 'aria-label': 'Next stem', onclick: () => next(1) }, '›'))),
-    surf,
-    h('div', { class: 'row' }, sw('cloud.drone', 'Drone'), sw('cloud.freeze', 'Freeze'), h('span', { class: 'sp' }), pitchOut),
-    h('div', { class: 'row' }, micB));
-  let scatterT = 0;
-  S.rooms.cloud = {
-    tilt: (x, y) => { tiltSet('cloud.pitch', x * 12, 0.25); tiltSet('cloud.spread', clamp(0.06 + Math.max(0, y) * 0.44, 0, 0.5), 0.01); },
-    shake: () => { P.set('cloud.jitter', 12); clearInterval(scatterT); scatterT = setInterval(() => { const v = P.get('cloud.jitter') * 0.82; if (v < 0.3) { clearInterval(scatterT); P.set('cloud.jitter', 0); } else P.set('cloud.jitter', +v.toFixed(2)); }, 120); toast('Scattered'); },
-    draw: () => {
-      if (!W) return; g.clearRect(0, 0, W, H);
-      const pk = S.cloud.peaks, mid = H / 2;
-      if (pk) { g.fillStyle = '#ece8dc22'; const bw = W / pk.length; for (let i = 0; i < pk.length; i++) { const a = pk[i] * H * 0.42; g.fillRect(i * bw, mid - a, Math.max(1, bw - 0.5), a * 2); } }
-      const v = voice.view || {}, pos = v.pos ?? P.get('cloud.pos'), sp = P.get('cloud.spread');
-      g.fillStyle = '#e6b45020'; g.fillRect((pos - sp) * W, 0, sp * 2 * W, H);
-      g.fillStyle = '#e6b450'; g.fillRect(pos * W - 1, 0, 2, H);
-      for (const x of v.grains || []) { g.globalAlpha = 0.9; g.beginPath(); g.arc(x * W, H * (0.1 + Math.random() * 0.8), 2.4, 0, 7); g.fill(); }
-      g.globalAlpha = 1;
-      const p = P.get('cloud.pitch'); pitchOut.textContent = `${p > 0 ? '+' : ''}${p.toFixed(p % 1 ? 1 : 0)} st`;
-    },
-  };
-}
-
-// ------------------------------------------------------------------------------------------------ page: play (pads)
-const SCALES = { 'minor pent.': [0, 3, 5, 7, 10], 'major pent.': [0, 2, 4, 7, 9], minor: [0, 2, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11], dorian: [0, 2, 3, 5, 7, 9, 10] };
-function buildPlay() {
-  const room = $('#p-play'), P = S.params;
-  const micB = recButton(S, { onDone: (src) => { const sl = P.get('pocket.slot'); if (sl) S.sounds[sl - 1].useRec(src); else S.useCloudSource(src, { rec: src.rec }); show(); }, say: toast, cls: 'chip' });
-  P.define('pocket.slot', 1); P.define('pocket.root', 9); P.define('pocket.scale', 'minor pent.');
-  const chips = [0, 1, 2].map((i) => h('button', { type: 'button', class: 'chip who', style: { '--c': COLORS[i] }, onclick: () => { P.set('pocket.slot', i, { by: 'ui' }); buzz(6); } }, h('i'), NAMES[i]));
-  const engines = h('div', { class: 'seg' }, ...[['sampler', 'Sampler'], ['strings', 'Strings'], ['grains', 'Pad']].map(([v, l]) => { const b = h('button', { type: 'button', onclick: () => { const s = P.get('pocket.slot'); if (s) P.set(`f${s}.engine`, v); } }, l); b.dataset.v = v; return b; }));
-  const srcName = h('span', { class: 'src' });
-  const surprise = h('button', { type: 'button', class: 'chip', onclick: async () => { const s = S.sounds[P.get('pocket.slot') - 1]; if (!s) return; srcName.textContent = '…'; const nm = await s.surprise(); srcName.textContent = `from ${nm}`; buzz(10); } }, 'New sound');
-  const keyB = h('button', { type: 'button', class: 'chip', onclick: () => { P.set('pocket.root', (P.get('pocket.root') + 7) % 12, { by: 'ui' }); } });
-  const scaleB = h('button', { type: 'button', class: 'chip', onclick: () => { const k = Object.keys(SCALES); P.set('pocket.scale', k[(k.indexOf(P.get('pocket.scale')) + 1) % k.length], { by: 'ui' }); } });
-  const grid = h('div', { class: 'pads' });
-  const COLS = 3, ROWS = 5;
-  const notes = () => { const sc = SCALES[P.get('pocket.scale')], root = 48 + P.get('pocket.root'), out = []; for (let i = 0; i < COLS * ROWS; i++) out.push(root + 12 * Math.floor(i / sc.length) + sc[i % sc.length]); return out; };
-  let pads = [];
-  const build = () => {
-    const ns = notes(); grid.replaceChildren(); pads = [];
-    for (let r = ROWS - 1; r >= 0; r--) for (let c = 0; c < COLS; c++) { const i = r * COLS + c, n = ns[i]; const p = h('div', { class: 'pad' + (n % 12 === P.get('pocket.root') ? ' root' : '') }, h('span', {}, `${NOTE[n % 12]}${Math.floor(n / 12) - 1}`)); p.dataset.n = n; pads.push(p); grid.append(p); }
-  };
-  // many fingers, and sliding between pads plays each one it reaches
-  const held = new Map();
-  const on = (pid, padEl, vel) => { const s = S.slots[P.get('pocket.slot')]; if (!s || !padEl) return; const n = +padEl.dataset.n, id = `pd${pid}`; s.voice.noteOn(id, n, vel); S.seq.noteIn(P.get('pocket.slot'), n, vel, true); S.noteSeen?.(n, true); padEl.classList.add('on'); held.set(pid, { padEl, n, slot: P.get('pocket.slot') }); };
-  const off = (pid) => { const x = held.get(pid); if (!x) return; S.slots[x.slot]?.voice.noteOff(`pd${pid}`); S.seq.noteIn(x.slot, x.n, 0, false); x.padEl.classList.remove('on'); held.delete(pid); };
-  const velOf = (e, el) => { const r = el.getBoundingClientRect(); return clamp(0.45 + 0.55 * (1 - (e.clientY - r.top) / r.height), 0.3, 1); };
-  grid.addEventListener('pointerdown', (e) => { const el = e.target.closest('.pad'); if (!el) return; e.preventDefault(); try { grid.setPointerCapture(e.pointerId); } catch { /* fine */ } on(e.pointerId, el, velOf(e, el)); buzz(4); });
-  grid.addEventListener('pointermove', (e) => { const x = held.get(e.pointerId); if (!x) return; const el = document.elementFromPoint(e.clientX, e.clientY)?.closest('.pad'); if (el && el !== x.padEl) { off(e.pointerId); on(e.pointerId, el, velOf(e, el)); } });
-  const up = (e) => off(e.pointerId); grid.addEventListener('pointerup', up); grid.addEventListener('pointercancel', up);
-  grid.addEventListener('contextmenu', (e) => e.preventDefault());
-  const show = () => {
-    const s = P.get('pocket.slot'); chips.forEach((c, i) => c.setAttribute('aria-pressed', i === s)); room.style.setProperty('--c', COLORS[s]);
-    engines.hidden = surprise.hidden = !s; srcName.textContent = s ? `from ${S.sounds[s - 1].srcName}` : `from ${S.song.stems.find((x) => x.id === S.cloudSrc?.stemId)?.name || 'the Cloud'}`;
-    if (s) engines.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === P.get(`f${s}.engine`)));
-    keyB.textContent = NOTE[P.get('pocket.root')]; scaleB.textContent = P.get('pocket.scale');
-  };
-  P.on(({ path }) => { if (/^pocket\./.test(path) || /\.engine$/.test(path)) { if (path !== 'pocket.slot') build(); show(); } });
-  build(); show(); S.soundChanged = show;
-  room.append(
-    h('div', { class: 'head' }, h('h2', {}, 'Instruments'), h('div', { class: 'row' }, ...chips)),
-    h('div', { class: 'row wrap' }, engines, surprise, h('span', { class: 'sp' }), keyB, scaleB),
-    h('div', { class: 'row' }, srcName, h('span', { class: 'sp' }), micB),
-    grid);
-  const echoPath = () => `mix.${P.get('pocket.slot') ? 'f' + P.get('pocket.slot') : 'cloud'}.echo`;
-  S.rooms.play = {
-    tilt: (x, y) => { tiltSet('fx.filter.lp', clamp(0.62 + x * 0.38, 0.25, 1), 0.01); tiltSet(echoPath(), clamp(y, 0, 1) * 0.8, 0.02); },
-    shake: () => { const s = S.slots[P.get('pocket.slot')]; if (!s) return; const ns = notes(), base = Math.floor(Math.random() * 6); [0, 2, 4, 7, 9].forEach((d, i) => setTimeout(() => { const el = pads.find((p) => +p.dataset.n === ns[Math.min(ns.length - 1, base + d)]); if (el) { on(9000 + i, el, 0.8); setTimeout(() => off(9000 + i), 160); } }, i * 90)); },
-  };
-}
-
 // ------------------------------------------------------------------------------------------------ page: process
 function buildProcess() {
   const room = $('#p-process'), P = S.params;
@@ -486,11 +346,14 @@ function buildProcess() {
   // hold buttons: act while a finger is on them; toggles: tap on, tap off
   const hold = (label, title, down, upFn) => { const b = h('button', { type: 'button', class: 'fxb hold', title }, h('b', {}, label), h('small', {}, 'hold')); b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.classList.add('on'); down(); buzz(8); }); const u = () => { if (!b.classList.contains('on')) return; b.classList.remove('on'); upFn(); }; b.addEventListener('pointerup', u); b.addEventListener('pointercancel', u); b.addEventListener('pointerleave', u); b.addEventListener('contextmenu', (e) => e.preventDefault()); return b; };
   const tog = (label, path, onV, offV) => { const b = h('button', { type: 'button', class: 'fxb', onclick: () => { P.set(path, P.get(path) === onV ? offV : onV); buzz(6); } }, h('b', {}, label), h('small', {}, 'on / off')); const s = () => b.classList.toggle('on', P.get(path) === onV); P.on(({ path: p }) => p === path && s()); s(); return b; };
+  // Look: the camera's picture behind the pad, and its light and colour moving the dot
+  const L = S.look, lookB = h('button', { type: 'button', class: 'sw', title: 'The song takes the colour of what the camera sees', onclick: () => { L.set(!L.on); buzz(8); } }, h('i'), 'Look'), lcv = h('canvas', { class: 'look' }), lg = lcv.getContext('2d'); lcv.width = L.W; lcv.height = L.H; pad.prepend(lcv); lcv.hidden = true;
+  L.addEventListener('change', () => { lookB.setAttribute('aria-pressed', L.on); lcv.hidden = !L.on; if (L.on) toast('Point the phone at something'); }); lookB.setAttribute('aria-pressed', false);
   let echoWas = null;
   const throwOn = () => { echoWas = [P.get('fx.echo.mix'), P.get('fx.echo.fb')]; P.set('fx.echo.mix', 0.9); P.set('fx.echo.fb', 0.78); };
   const throwOff = () => { if (!echoWas) return; P.set('fx.echo.mix', echoWas[0]); P.set('fx.echo.fb', echoWas[1]); echoWas = null; };
   room.append(
-    h('div', { class: 'head' }, h('h2', {}, 'Process')),
+    h('div', { class: 'head row' }, h('h2', {}, 'Process'), h('span', { class: 'sp' }), lookB),
     pad,
     h('div', { class: 'fxgrid' },
       hold('Echo throw', 'Everything into the echo while held', throwOn, throwOff),
@@ -498,115 +361,12 @@ function buildProcess() {
       hold('Repeat 1/16', 'Repeat the last sixteenth while held', () => P.set('fx.rep.hold', 0.25), () => P.set('fx.rep.hold', 0)),
       tog('Gate', 'fx.gate.depth', 0.9, 0), tog('Crush', 'fx.crush.mix', 0.7, 0), tog('Ensemble', 'fx.ens.mix', 0.75, 0)));
   S.rooms.process = {
-    tilt: (x, y) => { if (touching) return; tiltSet('fx.xy.x', clamp(0.5 + x * 0.5, 0, 1), 0.01); tiltSet('fx.xy.y', clamp(0.5 + y * 0.5, 0, 1), 0.01); },
+    draw: () => { if (L.on && L.img) lg.drawImage(L.img, 0, 0); }, hide: () => L.set(false),
+    tilt: (x, y) => { if (touching || L.on) return; tiltSet('fx.xy.x', clamp(0.5 + x * 0.5, 0, 1), 0.01); tiltSet('fx.xy.y', clamp(0.5 + y * 0.5, 0, 1), 0.01); },
     shake: () => { throwOn(); setTimeout(throwOff, S.player.beatDur * 1000 * 2); toast('Thrown into the echo'); },
   };
 }
 
-// ------------------------------------------------------------------------------------------------ page: tape (the arrangement)
-function buildTape() {
-  const room = $('#p-tape'), q = S.seq, { song } = S, cb = song.barsPerCell, V = S.voice;
-  const box = h('div', { class: 'tape' }), cv = h('canvas'), g = cv.getContext('2d'); box.append(cv);
-  let W = 0, H = 0; new ResizeObserver(() => { const r = box.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }).observe(box);
-  const ROWS = [['band', 'Stems', '#ece8dc'], ['own', 'Each stem', '#a3a6ad'], ['audio', 'Audio', '#df8a74'], [0, 'Cloud', COLORS[0]], [1, 'Sound 1', COLORS[1]], [2, 'Sound 2', COLORS[2]], ['m', 'Moves', '#a3a6ad']];
-  const rowOf = (cl) => (String(cl.lane).startsWith('stem:') ? 1 : ROWS.findIndex((r) => r[0] === cl.lane));
-  const geo = () => { const top = 18, rh = (H - top) / ROWS.length, ppb = W / Math.max(4, q.arr.bars); return { top, rh, ppb }; };
-  // tap: go there · drag across: choose bars · hold on a piece: remove it
-  let pt = null, sel = null;
-  const barAt = (e) => { const r = box.getBoundingClientRect(); return clamp((e.clientX - r.left) / geo().ppb, 0, q.arr.bars); };
-  box.addEventListener('pointerdown', (e) => {
-    const r = box.getBoundingClientRect(), y = e.clientY - r.top, { top, rh } = geo(), bar = barAt(e), row = Math.floor((y - top) / rh);
-    const hit = row > 0 ? [...q.arr.clips].reverse().find((c) => rowOf(c) === row && bar >= c.start && bar < c.start + c.len) : null;
-    try { box.setPointerCapture(e.pointerId); } catch { /* fine */ }
-    pt = { x: e.clientX, bar, hit, moved: false, t: setTimeout(() => { if (!pt?.hit || pt.moved) return; q.snapshot(); q.arr.clips = q.arr.clips.filter((c) => c !== pt.hit); q.changed(); toast('Removed · ↶ undoes'); buzz(30); pt = null; }, 550) };
-  });
-  box.addEventListener('pointermove', (e) => {
-    if (!pt) return; if (!pt.moved && Math.abs(e.clientX - pt.x) < 10) return;
-    pt.moved = true; const b = barAt(e), a0 = Math.floor(Math.min(pt.bar, b)), b0 = Math.max(a0 + 1, Math.ceil(Math.max(pt.bar, b))); sel = [a0, Math.min(q.arr.bars, b0)]; showSel();
-  });
-  const up = () => { if (!pt) return; clearTimeout(pt.t); if (!pt.moved) { sel = null; showSel(); S.seek(Math.max(0, Math.floor(pt.bar))); } else buzz(6); pt = null; };
-  box.addEventListener('pointerup', up); box.addEventListener('pointercancel', () => { if (pt) clearTimeout(pt.t); pt = null; });
-  box.addEventListener('contextmenu', (e) => e.preventDefault());
-
-  // what to do with the chosen bars (or, with none chosen, the next four)
-  const range = () => sel || [nextBar(), nextBar() + 4];
-  const grow = (end) => { if (end > q.arr.bars) q.arr.bars = end; };
-  const band = (label, make) => () => { const [a, b] = range(); q.snapshot(); q.place({ lane: 'band', start: a, len: b - a, ...make(a, b) }); grow(b); q.changed(); toast(`${label} · bars ${a + 1}–${b} · ↶ undoes`); buzz(12); };
-  const tools = [
-    ['Loop', 'Loop these bars', () => { const [a, b] = range(); q.snapshot(); const same = q.arr.cycle && q.arr.cycle[0] === a && q.arr.cycle[1] === b; q.arr.cycle = same ? null : [a, b]; q.changed(); toast(same ? 'Loop off' : `Looping bars ${a + 1}–${b}`); }],
-    ['Repeat', 'Play these bars again right after (everything on them)', () => {
-      const [a, b] = range(), n = b - a; q.snapshot();
-      // every piece on these bars, cut to them, played again right after (treatments and all)
-      const copies = q.arr.clips.filter((c) => c.start < b && c.start + c.len > a).map((c) => {
-        const s2 = Math.max(a, c.start), e2 = Math.min(b, c.start + c.len), d = s2 - c.start, pc = { ...c, id: undefined, fx: c.fx ? { ...c.fx } : undefined, start: s2 + n, len: e2 - s2 };
-        if (c.src !== undefined) shiftSrc(pc, d); else pc.off = (c.off || 0) + d; return pc;
-      });
-      for (const c of copies) q.place(c); grow(b + n); q.changed();
-      sel = [b, b + n]; showSel(); toast(`Repeated · bars ${b + 1}–${b + n}`); buzz(12);
-    }],
-    ['Reverse', 'Every bar backwards', band('Reversed', (a) => ({ src: srcAt(a), fx: { r: 1 } }))],
-    ['Half', 'Half speed, an octave down', band('Half speed', (a) => ({ src: srcAt(a), fx: { s: 0.5 } }))],
-    ['Stutter', 'The start of each bar, over and over', band('Stuttered', (a) => ({ src: srcAt(a), fx: { u: 8 } }))],
-    ['Silence', 'The stems rest here', band('Silenced', (a) => ({ src: srcAt(a), mute: song.stems.map((x) => x.id) }))],
-    ['Song', 'Put the song’s own bars back here', band('The song again', (a) => ({ src: a % song.numBars }))],
-    ['Clear', 'Take instruments, moves and stem changes out of these bars', () => {
-      const [a, b] = range(); q.snapshot();
-      for (const lane of new Set(q.arr.clips.filter((c) => c.lane !== 'band').map((c) => c.lane))) { const d = q.place({ lane, start: a, len: b - a, pat: '·' }); q.arr.clips = q.arr.clips.filter((c) => c !== d); }
-      q.changed(); toast(`Cleared bars ${a + 1}–${b} · ↶ undoes`); buzz(12);
-    }],
-  ].map(([l, t, fn]) => h('button', { type: 'button', class: 'act', title: t, onclick: fn }, l));
-  const selLabel = h('p', { class: 'docklabel' });
-  const showSel = () => { const [a, b] = range(); selLabel.textContent = sel ? `Bars ${a + 1}–${b}` : `Next four bars · drag across the tape to choose`; };
-  S.player.on('bar', () => { if (!sel) showSel(); }); showSel();
-
-  // record audio onto the tape (the lane "Audio": voice.js)
-  const recA = h('button', { type: 'button', class: 'chip recaudio' }, h('i'), h('span', {}, 'Record audio'));
-  recA.onclick = async () => {
-    if (V.recording) { recA.disabled = true; const r = await V.stop(); recA.disabled = false; toast(r ? `Recorded ${r.bars} bar${r.bars > 1 ? 's' : ''} onto “Audio” · ↶ undoes` : 'Nothing was heard, so nothing was kept'); buzz(20); return; }
-    try { await V.start(); toast('Recording from the next bar'); buzz(15); } catch (err) { toast(err.message); }
-  };
-  const showRecA = () => { recA.classList.toggle('on', V.recording); recA.lastChild.textContent = V.recording ? `Stop · bar ${V.bars + 1}` : 'Record audio'; };
-  V.addEventListener('change', showRecA); showRecA();
-  const takes = h('div', { class: 'takes' });
-  const btn = (label, fn, cls = 'chip') => h('button', { type: 'button', class: cls, onclick: fn }, label);
-  const capB = btn('Capture', () => { const r = q.capture(); if (r) { toast(`Kept ${r.len} bar${r.len > 1 ? 's' : ''} as ${takeName(r.k)} at bar ${r.bar + 1}`); buzz(20); } else toast('Nothing played yet to capture'); });
-  room.append(
-    h('div', { class: 'head row' }, h('h2', {}, 'Tape'), h('span', { class: 'sp' }), recA),
-    box,
-    h('div', { class: 'tapetools' }, selLabel, h('div', { class: 'acts four' }, ...tools)),
-    h('div', { class: 'row wrap' }, capB, btn('Redo', () => q.redo())),
-    takes);
-  const sync = () => {
-    capB.disabled = q.rec || !q.canCapture();
-    const ks = [...new Set(q.arr.clips.filter((c) => c.pat && isTake(c.pat)).map((c) => c.pat))];
-    takes.replaceChildren(...ks.map((k) => { const cl = q.arr.clips.filter((c) => c.pat === k), start = Math.min(...cl.map((c) => c.start)); return h('div', { class: 'take' }, h('button', { type: 'button', class: 'go', onclick: () => S.seek(start) }, `▸ ${takeName(k)}`), h('span', { class: 'mono' }, `bar ${start + 1} · ${q.lens[k]} bars`), h('button', { type: 'button', class: 'x', 'aria-label': `Remove ${takeName(k)}`, onclick: () => { q.snapshot(); q.arr.clips = q.arr.clips.filter((c) => c.pat !== k); q.changed(); toast(`${takeName(k)} removed · ↶ undoes`); } }, '×')); }));
-  };
-  q.addEventListener('change', sync); sync();
-  S.rooms.tape = {
-    draw: () => {
-      if (V.recording) recA.style.setProperty('--lv', Math.min(1, V.level() * 1.4).toFixed(2));
-      if (!W) return; const { top, rh, ppb } = geo(); g.clearRect(0, 0, W, H);
-      g.font = '9px "IBM Plex Mono", monospace'; g.textBaseline = 'middle';
-      const every = ppb > 14 ? 4 : ppb > 6 ? 8 : 16;
-      for (let b = 0; b <= q.arr.bars; b += every) { g.fillStyle = '#ffffff16'; g.fillRect(b * ppb, top, 1, H - top); g.fillStyle = '#6f747f'; g.fillText(String(b + 1), b * ppb + 2, 8); }
-      ROWS.forEach((r, i) => { g.fillStyle = i % 2 ? '#ffffff05' : '#ffffff02'; g.fillRect(0, top + i * rh, W, rh); });
-      const c = q.arr.cycle; if (c) { g.fillStyle = '#e6b45026'; g.fillRect(c[0] * ppb, 0, (c[1] - c[0]) * ppb, H); }
-      for (const cl of q.arr.clips) {
-        const row = rowOf(cl); if (row < 0) continue; const col = ROWS[row][2];
-        const x = cl.start * ppb, w = Math.max(2, cl.len * ppb), y = top + row * rh + 3, hh = rh - 6;
-        g.fillStyle = col + (cl.fx || cl.mute?.length ? '55' : '30'); g.fillRect(x + 0.5, y, w - 1, hh); g.fillStyle = col; g.fillRect(x + 0.5, y, 1.5, hh);
-        if (cl.pat && isTake(cl.pat)) { g.fillStyle = '#df8a74'; g.fillRect(x + 0.5, y + hh - 2, w - 1, 2); }
-      }
-      // your audio plays where the song's bars go: draw it bar by bar
-      const vc = S.song.stems.find((x) => x.voice)?.cells || [];
-      if (vc.some(Boolean)) for (let b = 0; b < q.arr.bars; b++) if (vc[Math.floor(srcAt(b) / cb)]) { g.fillStyle = '#df8a7466'; g.fillRect(b * ppb + 0.5, top + 2 * rh + 3, Math.max(1, ppb - 1), rh - 6); }
-      ROWS.forEach(([, nm], i) => { g.fillStyle = '#a3a6ad'; g.fillText(nm, 4, top + i * rh + 9); });
-      if (sel) { g.fillStyle = '#ece8dc1c'; g.fillRect(sel[0] * ppb, top, (sel[1] - sel[0]) * ppb, H - top); g.strokeStyle = '#ece8dc'; g.lineWidth = 1; g.strokeRect(sel[0] * ppb + 0.5, top + 0.5, (sel[1] - sel[0]) * ppb - 1, H - top - 1); }
-      const pb = q.tl(q.nowBeat()) / bpb(); g.fillStyle = q.rec ? '#df8a74' : '#ece8dc'; g.fillRect(pb * ppb, 0, 2, H);
-      if (q.take) { const t = q.take, l = t.len || Math.max(0, pb - t.start); g.fillStyle = '#df8a7430'; g.fillRect(t.start * ppb, 0, l * ppb, H); }
-    },
-  };
-}
 // ------------------------------------------------------------------------------------------------ page: move (walk, turn)
 /** iPhone asks once for the motion sensors; this asks without switching the tilt controls on. */
 async function askSensors() {
@@ -692,16 +452,16 @@ function frame(now) {
   S.surround?.frame(Math.min(0.1, Math.max(0, (now - lastF) / 1000) || 0)); lastF = now;
   const q = S.seq, raw = Math.max(0, q.tl(q.nowBeat())), bar = Math.floor(raw / bpb());
   $('#pos').textContent = `${String(bar + 1).padStart(3, '0')}.${Math.floor(raw % bpb()) + 1}`;
-  S.rooms[S.page]?.draw?.();
+  try { S.rooms[S.page]?.draw?.(); } catch (e) { if (frame.err !== e.message) { frame.err = e.message; console.error('draw', e); } }
   requestAnimationFrame(frame);
 }
 const KEY = () => `playground.pocket.${S.song.id}`;
-function save() { try { localStorage.setItem(KEY(), JSON.stringify({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.sounds.map((s) => s.slot.src || null), band: S.session.state })); } catch { /* full or private */ } }
+function save() { try { localStorage.setItem(KEY(), JSON.stringify({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.sounds.map((s) => s.slot.src || null), band: S.session.state, mem: S.mem, table: S.tableDump?.() })); } catch { /* full or private */ } }
 function restore() {
   let d; try { d = JSON.parse(localStorage.getItem(KEY())); } catch { return; }
   if (!d || d.v !== 2) return;
   S.params.load(d.params); S.seq.load(d.seq);
-  if (d.cloud) S.cloudSrc = d.cloud;
+  if (d.cloud) S.cloudSrc = d.cloud; if (d.mem) { S.mem = d.mem; S.memRows?.forEach((m) => m.show()); } if (d.table) S.tablePos = d.table;
   d.forges?.forEach((src, i) => { if (src && S.sounds[i]) S.sounds[i].slot.src = src; });
   if (d.band?.songId === S.song.id) S.session.dispatch({ t: 'state/load', state: d.band }, { log: false });
 }
