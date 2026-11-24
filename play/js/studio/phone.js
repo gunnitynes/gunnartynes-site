@@ -21,6 +21,7 @@ import { buildCloudPage } from './phone-cloud.js';
 import { buildPlay } from './phone-inst.js';
 import { buildTape } from './phone-tape.js';
 import { Look } from './phone-look.js';
+import { EdgeFx } from './phone-fx.js';
 
 const query = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {}, phone: true };
@@ -45,10 +46,11 @@ async function boot() {
 
   const engine = new AudioEngine(); await engine.ready;
   await engine.ctx.audioWorklet.addModule(new URL('./dsp.js', import.meta.url));
-  const loader = new CellLoader(engine.ctx, { max: 110 });
+  const loader = new CellLoader(engine.ctx, { max: 44 });
   const ids = song.stems.map((s) => s.id);
   const session = new Session(initialState(song, { catalogIds: ids }));
   const player = new Player(engine, loader, session, song);
+  player.prefetch = 3;
   for (const s of song.stems) player.addSource(s.id, { id: s.id, kind: 'stem', name: s.name, cells: s.cells, gain: s.gain });
   Object.assign(S, { song, engine, ctx: engine.ctx, loader, session, player, params: new Params() });
   const P = S.params;
@@ -59,8 +61,8 @@ async function boot() {
   S.bandGate = engine.ctx.createGain();
   engine.bus.disconnect(); engine.post.disconnect();
   engine.post.connect(tex.input); tex.output.connect(engine.lp);
-  // the hand on the tape: between everything and the master (phone-tape.js)
-  S.platter = new AudioWorkletNode(engine.ctx, 'platter', { outputChannelCount: [2] }); engine.lp.disconnect(); engine.lp.connect(S.platter).connect(engine.hp);
+  // what you hear is always kept for the last half minute, so it can be captured after the fact (phone-tape.js)
+  S.retro = new AudioWorkletNode(engine.ctx, 'retro', { numberOfOutputs: 1, outputChannelCount: [1], processorOptions: { seconds: 34 } }); engine.limit.connect(S.retro); S.retroMute = engine.ctx.createGain(); S.retroMute.gain.value = 0; S.retro.connect(S.retroMute).connect(engine.ctx.destination);
   buildStrips(S, COLORS, NAMES);
   engine.bus.connect(S.bandGate).connect(S.strips.band.input);
   P.define('band.on', true, (v) => S.bandGate.gain.setTargetAtTime(v ? 1 : 0, S.ctx.currentTime, 0.04));
@@ -84,7 +86,7 @@ async function boot() {
   S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (P.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; tex.retune(); }, 60); };
 
   buildCloud(); buildSound(1, 'sampler'); buildSound(2, 'strings');
-  const U = { toast, tiltSet, askSensors, Motion, srcAt, barNow, nextBar, bpb }; S.look = new Look(S);
+  const U = { toast, tiltSet, askSensors, Motion, srcAt, barNow, nextBar, bpb }; S.look = new Look(S); S.edge = new EdgeFx(S);
   buildTop(); buildStems(S, U); buildCloudPage(S, U); buildPlay(S, U); buildProcess(); buildTape(S, U); buildMove(); buildTabs();
   restore();
   S.voice.ensureTrack(); S.voice.restore();
@@ -266,11 +268,11 @@ function buildTop() {
 // ------------------------------------------------------------------------------------------------ menu and help
 // The pages carry as little text as they can; how each one works is here, one tap away.
 const HELP = {
-  stems: ['The table is the mix. In the middle the song is as it is; left and right is left and right, towards the far edge an instrument goes away into the room, towards you it comes close.', 'Push the discs with any number of fingers, and throw them. Tap one: off and on. Hold one: alone. Two fingers on the bare table gather, spread or turn everyone.', 'Drop one into a pool and it is held, reversed, halved, stuttered or sent wandering for as long as it lies there.', 'Roll: tilt the phone and they all roll. Shake: they scatter. Line up puts everything back.', 'With ● on it all goes onto the tape.'],
-  cloud: ['One finger plays the sound: across is where in it, up is bigger grains, flat on the glass is more spray.', 'Two fingers hold the sound itself. Pinch to zoom the buffer, from half a minute down to thousandths of a second. Move them to travel through it. Up and down: more or fewer grains. Twist: pitch.', 'Double tap and it goes on by itself.', 'A to D: tap an empty one to keep this cloud, tap a full one to glide to it, hold one to replace it.', 'With motion on: tilting moves the cloud through the sound, a shake scatters it.'],
-  play: ['The strip is the slice the sound is made of: drag it, pinch it. The name above it picks another sound from the song.', 'The body has eight arms, one for each thing the sound does: pull one out or push it in, double tap to reset it, tap the middle to hear it. Two fingers take the whole body: spread for long and swelling, pinch for short, twist to open or darken.', 'A to D keep a body; tap to glide between them.', 'Breath: hold a pad and blow into the microphone. Knock: knock on the phone and the last note plays. Shake: another body.', 'While a pad is held, tilt bends its tone and adds echo. Turn the phone on its side and the pads fill the screen.'],
+  stems: ['Every disc is an instrument. In the middle the song is as it is. Each edge is an effect: the nearer a disc lies to it, the more it takes on, and between two edges it takes on both. The line on top says what the disc in your hand is getting.', 'Tap an edge to choose its effect. Slide the handle along it to change the effect’s character.', 'Pinch a disc: bigger is louder. Tap it: off and on. Hold it: alone. Two fingers on the bare table gather, spread or turn everyone.', 'Drop one into a pool and it is held, reversed, halved, stuttered or sent wandering for as long as it lies there.', 'Orbit: a disc keeps making the movement you made with it, in time. Roll: tilt the phone and they roll. Shake: they scatter. Line up puts everything back.'],
+  cloud: ['One finger on the wave plays it: across is where in the sound, up and down is what the ↕ button says.', 'The strip under it is the whole sound. Drag its two handles, or what lies between them, to choose the buffer; pinching the wave does the same. “8 bars” makes the sound longer or shorter.', 'Eight characters, far apart: tap one and the cloud glides there. Then the sixteen faders: set one, or draw across them. Double tap resets one.', 'Harmony sends grains a fifth or an octave away; Rhythm locks them to the beat.', 'A to D keep a cloud and glide back to it. With motion on, tilt moves through the sound, a shake picks another character.'],
+  play: ['The strip is the slice the sound is made of: drag it, pinch it. The name above it picks another sound from the song.', 'The field: four sounds in its corners, your finger between them. Hold a corner to keep the sound as it is there; New corners (or a shake) makes four others. With Loop on, the movement you make goes on by itself.', 'The eight faders are what the sound is made of: set one, draw across, double tap to reset.', 'Breath: hold a pad and blow into the microphone. Knock: knock on the phone and the last note plays. While a pad is held, tilt bends its tone and adds echo. On its side, the pads fill the screen.'],
   process: ['One gesture moves the filter, tape, resonators and shimmer together.', 'Look: the song takes the colour of what the camera sees. Light brightens it, colour makes it ring. The picture stays on the phone.', 'Hold the buttons for an echo throw or a repeat; the others switch on and off.', 'With motion on: tilt moves the dot, a shake throws everything into the echo. On any page: lay the phone face down and everything freezes.'],
-  tape: ['Grab a reel and turn it: the song is under your hand, backwards, slowly or fast. Let go and it carries on.', 'The tape: tap to go there, drag across to choose a piece, pinch to zoom in, hold on something to remove it.', 'The piece: twist it over for backwards, pinch it for a stutter, stretch it for half speed. Throw it up to silence it, pull it down for the song as it was, right to have it once more, left to wipe what you played on it. Hold to loop it, tap to hear it.', 'With ● on, everything you do anywhere is written where the playhead is, the reels too. Capture keeps what you just played. ↶ undoes.'],
+  tape: ['The phone always listens to itself. The strip is the last half minute of everything you did: swipe across a part of it to keep it, or press 1, 2, 4 or 8 for the last bars.', 'What you kept is a piece, in the row below (hold one to throw it away). It is cut into slices: choose a tool and paint it over them. Move swaps two; a tap with it lets you hear one.', '½ and ×2 change its length, ÷ how fine it is cut, Mix finds a new order (so does a shake). Listen loops it in time with the song.', 'Then: on the tape at the playhead, into the Cloud, into an instrument, or share it as a sound file.', 'The tape: tap to go there, drag a piece to move it, hold to remove it, pinch to zoom. Mic records the microphone; ● on top records your moves and notes.'],
   move: ['Walk: press it and walk. Your pace becomes the tempo; the stems stretch to it and keep their pitch. Stand still and they sink back while the Cloud holds a drone. No sensors? Tap your steps on the pad.', 'Turn: headphones on, stand up. The stems are in a circle around you; turn and the band turns. The one you face comes forward; keep facing it and you hear it almost alone. Or drag the circle.'],
 };
 function openMenu() {
@@ -291,6 +293,7 @@ function openMenu() {
       ] : []),
       item(Motion.on ? 'Motion off' : 'Motion on (tilt and shake)', () => $('#motion').click()),
       bounceB,
+      ...(S.seq.canCapture() ? [item('Keep the last notes and moves', () => { const r = S.seq.capture(); toast(r ? `Kept at bar ${r.bar + 1} of the tape` : 'Nothing to keep'); })] : []),
       item('Open the full studio', () => { location.href = `play.html?song=${S.song.id}&desktop=1`; }),
       item('Start again', () => { if (confirm('Clear everything and start from the song again?')) { localStorage.removeItem(KEY()); location.reload(); } }, 'faint'),
       item('gunnar tynes', () => { location.href = '/'; }, 'faint')));
@@ -452,7 +455,7 @@ function frame(now) {
   S.surround?.frame(Math.min(0.1, Math.max(0, (now - lastF) / 1000) || 0)); lastF = now;
   const q = S.seq, raw = Math.max(0, q.tl(q.nowBeat())), bar = Math.floor(raw / bpb());
   $('#pos').textContent = `${String(bar + 1).padStart(3, '0')}.${Math.floor(raw % bpb()) + 1}`;
-  try { S.rooms[S.page]?.draw?.(); } catch (e) { if (frame.err !== e.message) { frame.err = e.message; console.error('draw', e); } }
+  try { for (const [k, r] of Object.entries(S.rooms)) if (k !== S.page) r.bg?.(); S.rooms[S.page]?.draw?.(); } catch (e) { if (frame.err !== e.message) { frame.err = e.message; console.error('draw', e); } }
   requestAnimationFrame(frame);
 }
 const KEY = () => `playground.pocket.${S.song.id}`;

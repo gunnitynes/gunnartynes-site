@@ -7,6 +7,7 @@
 
 const TAU = Math.PI * 2;
 const rnd = () => Math.random();
+const HARM = [12, 7, -12, 12, 19, -5, 24, 7];
 
 // ------------------------------------------------------------------------------------------- granulator
 class Granulator extends AudioWorkletProcessor {
@@ -14,7 +15,7 @@ class Granulator extends AudioWorkletProcessor {
     super();
     this.L = null; this.R = null; this.len = 0;
     this.p = { pos: 0.3, spread: 0.08, size: 120, density: 24, pitch: 0, jitter: 0, reverse: 0, width: 0.7, scan: 0, freeze: false,
-      attack: 0.08, release: 0.6, level: 0.8, drone: false, droneNote: 0, sizeJit: 0.3, shape: 0.5 };
+      attack: 0.08, release: 0.6, level: 0.8, drone: false, droneNote: 0, sizeJit: 0.3, shape: 0.5, harm: 0, sync: 0 };
     this.streams = new Map();   // id → { ratio, vel, env, gate, next }
     this.pending = [];          // timed note events
     this.grains = [];
@@ -56,12 +57,12 @@ class Granulator extends AudioWorkletProcessor {
       while (s.next <= 0 && this.grains.length < 160) {
         const dur = Math.max(64, Math.round(sizeS * sr * (1 + (rnd() * 2 - 1) * p.sizeJit)));
         let start = (p.pos + (rnd() * 2 - 1) * p.spread) * this.len; start = ((start % this.len) + this.len) % this.len;
-        const semis = p.pitch + (rnd() * 2 - 1) * p.jitter;
+        const semis = p.pitch + (rnd() * 2 - 1) * p.jitter + (p.harm && rnd() < p.harm ? HARM[(rnd() * HARM.length) | 0] : 0);   // harmony: some grains a fifth or an octave away
         const rev = rnd() < p.reverse ? -1 : 1, inc = rev * s.ratio * 2 ** (semis / 12);
         const pan = (rnd() * 2 - 1) * p.width, a = s.env * s.vel * norm * p.level;
         this.grains.push({ pos: start, inc, i: 0, len: dur, l: a * Math.cos((pan + 1) * Math.PI / 4), r: a * Math.sin((pan + 1) * Math.PI / 4), off: n + s.next });
         if (this.recent.length < 48) this.recent.push(start / this.len);
-        s.next += sr / Math.max(0.5, p.density) * (0.6 + rnd() * 0.8);
+        s.next += sr / Math.max(0.5, p.density) * (1 + (rnd() * 0.8 - 0.4) * (1 - p.sync));   // sync: an even pulse instead of a scatter
       }
     }
     oL.fill(0); if (oR !== oL) oR.fill(0);
@@ -243,27 +244,21 @@ class Gate extends AudioWorkletProcessor {
 }
 registerProcessor('gate', Gate);
 
-// ------------------------------------------------------------------------------------------- platter
-// A hand on the tape: the last twelve seconds are always on it. Held, the sound is read back at the speed the hand
-// turns (either way, or standing still); let go, it crosses back into what is playing now.
-class Platter extends AudioWorkletProcessor {
-  constructor() { super(); this.n = Math.round(sampleRate * 12); this.b = [new Float32Array(this.n), new Float32Array(this.n)]; this.w = 0; this.full = 0; this.on = false; this.rp = 0; this.r = 0; this.target = 0; this.mix = 0; this.amp = 0;
-    this.port.onmessage = ({ data: d }) => { if (d.on !== undefined) { if (d.on && !this.on) { this.rp = 0; this.r = 1; this.target = 0; } this.on = d.on; } if (d.rate !== undefined) this.target = d.rate; }; }
-  process(inputs, outputs) {
-    const inp = inputs[0], out = outputs[0], N = this.n, oL = out[0], oR = out[1] || oL, len = oL.length, iL = inp[0], iR = inp[1] || iL;
-    for (let k = 0; k < len; k++) {
-      const x = iL ? iL[k] : 0, y = iR ? iR[k] : 0;
-      if (!this.on) { this.b[0][this.w] = x; this.b[1][this.w] = y; this.w = (this.w + 1) % N; if (this.full < N) this.full++; }
-      this.mix += ((this.on ? 1 : 0) - this.mix) * 0.003;
-      if (this.mix < 0.0005) { oL[k] = x; if (oR !== oL) oR[k] = y; continue; }
-      // rp: how far behind the hand is, in samples (0 = the moment it landed)
-      this.r += (this.target - this.r) * 0.0022; if (this.on) this.rp = Math.max(1, Math.min(this.full - 4, this.rp - this.r));
-      this.amp += (Math.min(1, Math.abs(this.r) * 5) - this.amp) * 0.004;
-      let p = this.w - 1 - this.rp; p = ((p % N) + N) % N; const i = p | 0, f = p - i, j = (i + 1) % N;
-      const sL = (this.b[0][i] + (this.b[0][j] - this.b[0][i]) * f) * this.amp, sR = (this.b[1][i] + (this.b[1][j] - this.b[1][i]) * f) * this.amp;
-      oL[k] = x * (1 - this.mix) + sL * this.mix; if (oR !== oL) oR[k] = y * (1 - this.mix) + sR * this.mix;
-    }
+// ------------------------------------------------------------------------------------------- retro
+// Always listening: the last half minute of what is heard, on a ring (16 bit, to be light). Asked for a stretch
+// (in frames of the audio clock), it hands it over. It also reports how loud it is, for the picture of the past.
+class Retro extends AudioWorkletProcessor {
+  constructor(o) {
+    super(); this.n = Math.round(sampleRate * (o.processorOptions?.seconds || 34)); this.b = new Int16Array(this.n * 2); this.pk = 0; this.k = 0; this.from = currentFrame;
+    this.port.onmessage = ({ data: d }) => { if (!d.grab) return; const [a, z] = d.grab, len = Math.max(0, Math.round(z - a)), L = new Float32Array(len), R = new Float32Array(len), oldest = Math.max(this.from, currentFrame - this.n);
+      for (let i = 0; i < len; i++) { const f = Math.round(a) + i; if (f < oldest || f >= currentFrame) continue; const j = (f % this.n) * 2; L[i] = this.b[j] / 32767; R[i] = this.b[j + 1] / 32767; }
+      this.port.postMessage({ id: d.id, L, R }, [L.buffer, R.buffer]); };
+  }
+  process(inputs) {
+    const i = inputs[0], L = i[0], R = i[1] || L, N = this.n;
+    for (let k = 0; k < 128; k++) { const j = ((currentFrame + k) % N) * 2, x = L ? L[k] : 0, y = R ? R[k] : 0; this.b[j] = Math.max(-1, Math.min(1, x)) * 32767; this.b[j + 1] = Math.max(-1, Math.min(1, y)) * 32767; const a = Math.abs(x); if (a > this.pk) this.pk = a; }
+    if ((this.k += 128) >= 2048) { this.port.postMessage({ f: currentFrame, pk: this.pk }); this.k = 0; this.pk = 0; }
     return true;
   }
 }
-registerProcessor('platter', Platter);
+registerProcessor('retro', Retro);

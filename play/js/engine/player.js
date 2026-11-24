@@ -34,6 +34,7 @@ export class Player extends EventTarget {
     this.bpm = song.bpm; this.r = 1; this.warp = true; this.stretcher = new Stretcher(this.ctx);
     // key: semitones for the whole song, and per stem on top (warped copies carry the pitch shift too)
     this.semis = 0; this.stemSemis = {};
+    this.prefetch = PREFETCH_BARS;   // bars fetched and kept ahead (a phone asks for fewer)
     session.clock = () => this.elapsed();
     session.on(({ a, prev, state }) => this.onAction(a, prev, state));
     setInterval(() => this.tick(), TICK);
@@ -200,7 +201,7 @@ export class Player extends EventTarget {
       this.startVoice(id, buf, want, B, T, want.bar * this.barDur, !contiguous);
     }
     // prefetch the near future and pin it against eviction
-    for (let k = 0; k <= PREFETCH_BARS; k++) for (const id of st.order) { const w = this.resolve(st.tracks[id], B + k); if (w) { wanted.add(w.url); if (k) this.loader.ensure(w.url).then((b) => { const a = this.alphaFor(id); if (b && a !== 1) this.stretcher.get(b, a); }); } }
+    for (let k = 0; k <= this.prefetch; k++) for (const id of st.order) { const w = this.resolve(st.tracks[id], B + k); if (w) { wanted.add(w.url); if (k) this.loader.ensure(w.url).then((b) => { const a = this.alphaFor(id); if (b && a !== 1) this.stretcher.get(b, a); }); } }
     const chopUrl = this.chopUrl(); if (chopUrl) wanted.add(chopUrl);
     this.loader.pinned = wanted;
     this.emit('bar', { bar: B, time: T });

@@ -180,3 +180,6 @@ export function recButton(S, { onDone, say = () => {}, label = 'Record audio', c
   };
   return b;
 }
+
+/** Keep any sound as one of your recordings (a piece from the tape, for the Cloud or an instrument). */
+export async function keepSound(S, y, name = 'your recording') { const id = Date.now().toString(36) + 'p'; await idbPut(`rec:${S.song.id}:${id}`, y); return { ...asSource(S, id, y), name }; }
