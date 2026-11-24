@@ -51,7 +51,7 @@ export function openAtlas(S, { say = () => {} } = {}) {
     if (p.playing) { const sd = p.stepDur, k = Math.ceil((t - p.bar0) / sd); t = p.bar0 + k * sd; off = ((k % 16) + 16) % 16 * (bd / 16); }
     stopVoice(t);
     const src = c.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate; src.loop = true; src.loopStart = a0; src.loopEnd = Math.min(buf.duration, a0 + bd);
-    const gn = c.createGain(); gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(1, t + 0.012);
+    const gn = c.createGain(); gn.gain.value = 0; gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(1, t + 0.012);
     src.connect(gn).connect(S.engine.channel(pt.st.id).input); src.start(t, a0 + off);
     voice = { src, g: gn, pt };
     now.textContent = `${pt.st.name} · bar ${pt.b + 1} of the song`;

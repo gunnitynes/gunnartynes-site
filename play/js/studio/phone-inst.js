@@ -1,7 +1,7 @@
 // Instruments: a sound you shape with one hand while the other plays it.
 //  the strip  — the slice the sound is made of: drag to move it, pinch to make it longer or shorter
 //  the field  — four sounds in its four corners and your finger between them: one movement takes the whole sound from
-//               one to another. With Loop on, the movement goes on by itself, in time. Hold a corner to keep a sound there
+//               one to another. Auto moves the point by itself, round what you drew, in time. Hold a corner to keep a sound there
 //  the faders — the eight things the sound is made of, to set one by one or draw across; the field moves them, they show it
 //  the pads   — a scale under the thumb; turn the phone on its side and they fill the screen
 //  Breath: blow into the microphone and the sound follows. Knock: knock on the phone and it plays. Shake: four new corners.
@@ -51,9 +51,10 @@ export function buildPlay(S, U) {
   });
 
   // ---- the field and its faders
-  let held = new Map(), loopOn = false, wob = 0;
-  const field = morphPad(S, { arms, corners: () => CORNERS[kind()], key: () => `${slot()}.${kind()}`, color: () => COLORS[slot()], loop: () => loopOn, say: toast }), faders = faderField(S, arms, { color: () => COLORS[slot()] });
-  const loopB = h('button', { type: 'button', class: 'chip tog', 'aria-pressed': 'false', title: 'The movement you make in the field goes on by itself', onclick: () => { loopOn = !loopOn; loopB.setAttribute('aria-pressed', loopOn); buzz(8); if (loopOn) toast('Move in the field and let go: it keeps moving'); } }, '∞ Loop');
+  let held = new Map(), wob = 0;
+  const showAuto = () => { autoB.setAttribute('aria-pressed', field.auto); speedB.hidden = !field.auto; const n = field.beats(); speedB.textContent = n >= 4 ? `${n / 4} bar${n > 4 ? 's' : ''}` : `${n} beat${n > 1 ? 's' : ''}`; };
+  const field = morphPad(S, { arms, corners: () => CORNERS[kind()], key: () => `${slot()}.${kind()}`, color: () => COLORS[slot()], onAuto: () => showAuto() }), faders = faderField(S, arms, { color: () => COLORS[slot()] });
+  const autoB = h('button', { type: 'button', class: 'chip tog auto', 'aria-pressed': 'false', title: 'The point moves by itself: round the movement you drew last, or in a circle until you draw one', onclick: () => { field.setAuto(!field.auto); buzz(10); } }, h('i'), 'Auto'), speedB = h('button', { type: 'button', class: 'chip tog', title: 'How long once round takes', onclick: () => { field.speed(); buzz(6); } });
 
   // ---- the pads
   const grid = h('div', { class: 'pads' }); let pads = [], COLS = 4, ROWS = 3;
@@ -90,14 +91,14 @@ export function buildPlay(S, U) {
     const s = slot(); chips.forEach((c, i) => c.setAttribute('aria-pressed', i === s)); room.style.setProperty('--c', COLORS[s]); engines.hidden = !s; breathB.hidden = !s; revB.hidden = holdB.hidden = kind() !== 'sampler';
     srcName.textContent = `${s ? sound().srcName : S.cloudSrc?.rec ? 'your recording' : S.song.stems.find((x) => x.id === S.cloudSrc?.stemId)?.name || '…'}  ↻`;
     if (s) { engines.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.v === kind())); revB.setAttribute('aria-pressed', !!P.get(`f${s}.s.reverse`)); holdB.setAttribute('aria-pressed', !!P.get(`f${s}.s.loop`)); }
-    keyB.textContent = NOTE[P.get('pocket.root')]; scaleB.textContent = P.get('pocket.scale'); octB.textContent = `oct ${P.get('pocket.oct') > 0 ? '+' : ''}${P.get('pocket.oct')}`; zk = '';
+    keyB.textContent = NOTE[P.get('pocket.root')]; scaleB.textContent = P.get('pocket.scale'); showAuto(); octB.textContent = `oct ${P.get('pocket.oct') > 0 ? '+' : ''}${P.get('pocket.oct')}`; zk = '';
   };
   P.on(({ path }) => { if (/^pocket\./.test(path) || /\.engine$/.test(path)) { pendingSel = null; if (path === 'pocket.slot' && breath) breathOff(); for (const id of [...held.keys()]) off(id); if (path !== 'pocket.slot') build(); show(); } });
   build(); show(); S.soundChanged = show;
   room.append(
     h('div', { class: 'head row ins-top' }, ...chips, h('span', { class: 'sp' }), engines),
     h('div', { class: 'row ins-src' }, srcName, h('span', { class: 'sp' }), micB), strip, field, faders,
-    h('div', { class: 'row ins-row' }, loopB, h('button', { type: 'button', class: 'chip tog', title: 'Four new sounds in the corners (or shake the phone)', onclick: () => { field.shuffle(); buzz(12); } }, 'New corners'), h('span', { class: 'sp' }), breathB, knockB), grid, h('div', { class: 'row ins-key' }, keyB, scaleB, octB, holdB, revB));
+    h('div', { class: 'row ins-row' }, autoB, speedB, h('button', { type: 'button', class: 'chip tog', title: 'Four new sounds in the corners (or shake the phone)', onclick: () => { field.shuffle(); buzz(12); } }, 'Corners'), h('span', { class: 'sp' }), breathB, knockB), grid, h('div', { class: 'row ins-key' }, keyB, scaleB, octB, holdB, revB));
 
   // ---- drawing
   function draw() {

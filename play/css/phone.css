@@ -300,3 +300,12 @@ body.land{padding:0;min-height:100dvh}body.land .page{min-height:100dvh;padding:
   .past{height:42px}.keepb{min-height:34px;padding-top:6px}.tool{min-height:35px}.tool i{font-size:13px}.dest{min-height:32px}.edit{min-height:196px;gap:5px}.editor{min-height:82px}.tape{height:80px}.pc canvas{height:20px}.eds .chip{min-height:29px}
   .chars .chip{min-height:28px}
 }
+
+/* ---- v6 */
+body.recording::after{content:"";position:fixed;inset:0;z-index:40;pointer-events:none;box-shadow:inset 0 0 0 2px var(--rec)}
+#toast{bottom:auto;top:calc(70px + var(--sat));transform:translate(-50%,-8px);font-size:11px;padding:7px 12px}
+.chip.auto{gap:7px}.chip.auto i{width:8px;height:8px;border-radius:50%;border:1.5px solid currentColor}.chip.auto[aria-pressed=true]{background:var(--c);border-color:var(--c);color:#11141b}.chip.auto[aria-pressed=true] i{background:#11141b;animation:blink 1s steps(2) infinite}
+.tview{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px}.tview[hidden]{display:none}
+#p-tape .seg button{padding:0 11px;min-height:32px;font-size:10.5px}
+.tline{position:relative;flex:1;min-height:250px;border:1px solid var(--rule);border-radius:12px;background:#0b0d12;touch-action:none;overflow:hidden}.tline canvas{position:absolute;inset:0}
+.tlbar{flex:none;display:flex;gap:5px;min-height:44px}.tlb{flex:1;min-width:0;min-height:44px;border:1px solid var(--rule2);border-radius:11px;background:#1a1e28;font:10.5px var(--mono);padding:0 2px}.tlb.on{background:var(--p);color:#11141b;border-color:var(--p)}.tlb.del{color:var(--rec);border-color:#df8a7466}.tlb:active{background:var(--paper);color:var(--ground)}

@@ -59,6 +59,8 @@ class Granulator extends AudioWorkletProcessor {
         let start = (p.pos + (rnd() * 2 - 1) * p.spread) * this.len; start = ((start % this.len) + this.len) % this.len;
         const semis = p.pitch + (rnd() * 2 - 1) * p.jitter + (p.harm && rnd() < p.harm ? HARM[(rnd() * HARM.length) | 0] : 0);   // harmony: some grains a fifth or an octave away
         const rev = rnd() < p.reverse ? -1 : 1, inc = rev * s.ratio * 2 ** (semis / 12);
+        // a grain stays inside the sound: one running over its end would jump to the beginning halfway
+        const run = dur * Math.abs(inc) + 2; if (run < this.len) { if (rev > 0 && start + run > this.len) start = this.len - run; if (rev < 0 && start < run) start = run; }
         const pan = (rnd() * 2 - 1) * p.width, a = s.env * s.vel * norm * p.level;
         this.grains.push({ pos: start, inc, i: 0, len: dur, l: a * Math.cos((pan + 1) * Math.PI / 4), r: a * Math.sin((pan + 1) * Math.PI / 4), off: n + s.next });
         if (this.recent.length < 48) this.recent.push(start / this.len);
@@ -73,7 +75,7 @@ class Granulator extends AudioWorkletProcessor {
         if (gr.i >= gr.len) break;
         const ph = gr.i / gr.len;
         // window: shape 0 = soft Hann, 1 = sharper, more percussive grains
-        const w = shape < 0.5 ? Math.sin(Math.PI * ph) ** 2 : (ph < 0.08 ? ph / 0.08 : Math.exp(-(ph - 0.08) * (3 + shape * 6)));
+        const af = Math.max(0.08, Math.min(0.4, 110 / gr.len)), w = shape < 0.5 ? Math.sin(Math.PI * ph) ** 2 : (ph < af ? 0.5 - 0.5 * Math.cos(Math.PI * ph / af) : Math.exp(-(ph - af) * (3 + shape * 6)) * Math.min(1, (1 - ph) / 0.12));
         let x = gr.pos; x = ((x % len) + len) % len; const i0 = x | 0, f = x - i0, i1 = (i0 + 1) % len;
         oL[k] += (L[i0] + (L[i1] - L[i0]) * f) * w * gr.l;
         oR[k] += (R[i0] + (R[i1] - R[i0]) * f) * w * gr.r;
@@ -117,9 +119,10 @@ class Strings extends AudioWorkletProcessor {
       return false;
     });
     oL.fill(0); if (oR !== oL) oR.fill(0);
-    const bright = 0.05 + p.bright * 0.93, relK = Math.exp(-1 / Math.max(1, p.release * sr));
+    this.sb = (this.sb ?? p.bright) + (p.bright - (this.sb ?? p.bright)) * 0.06; this.sd = (this.sd ?? p.decay) + (p.decay - (this.sd ?? p.decay)) * 0.06;
+    const bright = 0.05 + this.sb * 0.93, relK = Math.exp(-1 / Math.max(1, p.release * sr));
     for (let vi = this.voices.length - 1; vi >= 0; vi--) {
-      const v = this.voices[vi], fb = v.gate ? p.decay : p.decay * 0.985;
+      const v = this.voices[vi], fb = v.gate ? this.sd : this.sd * 0.985;
       let peak = 0;
       for (let k = 0; k < n; k++) {
         let x = 0;
@@ -148,7 +151,8 @@ class Resonators extends AudioWorkletProcessor {
   process(inputs, outputs) {
     const inp = inputs[0], out = outputs[0], n = out[0].length, p = this.p;
     const iL = inp[0] || new Float32Array(n), iR = inp[1] || iL, oL = out[0], oR = out[1] || oL;
-    if (p.mix <= 0.0005) { oL.set(iL); if (oR !== oL) oR.set(iR); return true; }
+    const m0 = this.m ?? 0, m1 = (this.m = m0 + (p.mix - m0) * 0.12);
+    if (p.mix <= 0.0005 && m1 < 0.0008) { this.m = 0; oL.set(iL); if (oR !== oL) oR.set(iR); return true; }
     const fb = p.decay, br = 0.1 + p.bright * 0.85, g = 0.35 / Math.sqrt(this.lines.length);
     for (let k = 0; k < n; k++) {
       const x = (iL[k] + iR[k]) * 0.5 * 0.25; let sL = 0, sR = 0;
@@ -158,8 +162,8 @@ class Resonators extends AudioWorkletProcessor {
         st.s += (y - st.s) * br; st.buf[st.w] = x + st.s * fb; st.w = (st.w + 1) % st.n;
         if (j & 1) sR += y; else sL += y;
       }
-      oL[k] = iL[k] * (1 - p.mix) + Math.tanh(sL * g * 4) * p.mix;
-      oR[k] = iR[k] * (1 - p.mix) + Math.tanh(sR * g * 4) * p.mix;
+      const mx = m0 + ((m1 - m0) * k) / n; oL[k] = iL[k] * (1 - mx) + Math.tanh(sL * g * 4) * mx;
+      oR[k] = iR[k] * (1 - mx) + Math.tanh(sR * g * 4) * mx;
     }
     return true;
   }
@@ -170,6 +174,8 @@ registerProcessor('resonators', Resonators);
 class Shifter extends AudioWorkletProcessor {
   constructor() { super(); this.ratio = 2; this.n = 4096; this.buf = [new Float32Array(this.n), new Float32Array(this.n)]; this.w = 0; this.ph = 0; this.port.onmessage = (e) => { if (e.data.ratio) this.ratio = e.data.ratio; }; }
   process(inputs, outputs) {
+    // nothing coming in for a while: nothing to do (it used to work all the time)
+    let any = 0; const i0L = inputs[0][0]; if (i0L) for (let k = 0; k < i0L.length; k += 8) any += Math.abs(i0L[k]); if (any > 1e-7) this.quiet = 0; else if ((this.quiet = (this.quiet || 0) + 1) > 60) { for (const c of outputs[0]) c.fill(0); return true; }
     const inp = inputs[0], out = outputs[0], n = out[0].length, win = 2048, step = (1 - this.ratio) / win;
     for (let k = 0; k < n; k++) {
       for (let c = 0; c < 2; c++) this.buf[c][this.w] = (inp[c] || inp[0] || [])[k] || 0;

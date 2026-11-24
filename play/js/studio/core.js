@@ -1,3 +1,5 @@
+import { onTick } from '../lib/ticker.js';
+
 // The studio's moving parts that are not screens: settings that the sequencer can record, the sources cut from the
 // stems, the instruments built from them, and the textures rack on the master.
 
@@ -89,7 +91,7 @@ export class SamplerVoice {
     if (p.loop) { src.loop = true; src.loopStart = src.buffer.duration * 0.25; src.loopEnd = src.buffer.duration * 0.92; }
     const f = c.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 0.5 + p.res * 14;
     const base = 60 * 330 ** p.cutoff; f.frequency.setValueAtTime(base, t); f.frequency.setTargetAtTime(Math.min(20000, base * (1 + p.env * 8)), t, 0.01); f.frequency.setTargetAtTime(base, t + 0.05, 0.25);
-    const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel * p.level, t + p.attack);
+    const g = c.createGain(); g.gain.value = 0; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel * p.level, t + p.attack);
     src.connect(f).connect(g).connect(this.out); src.start(t);
     if (!p.loop) src.onended = () => { g.disconnect(); };
     this.notes.set(id, { src, g });
@@ -273,7 +275,7 @@ export class Sequencer extends EventTarget {
     this.touched = new Set(); this.last = -1; this.held = new Map(); this.pass = 0; this.mute = new Set();
     this.mode = 'jam'; this.arr = { bars: 0, clips: [], cycle: null }; this.take = null; this.uid = 1; this.jamTracks = null;
     this.undos = []; this.redos = [];
-    setInterval(() => this.tick(), 25);
+    onTick(() => this.tick());
   }
   get bpb() { return this.s.song.beatsPerBar; }
   get bars() { return this.lens[this.cur]; }
@@ -297,7 +299,7 @@ export class Sequencer extends EventTarget {
     const ab = p.beatNow();
     if (this.take) {
       const T = this.take; let r = this.tl(ab) - T.start * this.bpb;
-      if (T.len) { const n = T.len * this.bpb; r = ((r % n) + n) % n; } else if (r < 0) r += this.arr.bars * this.bpb;
+      if (T.len) { const n = T.len * this.bpb; r = ((r % n) + n) % n; } else if (r < 0) r = r > -1 ? 0 : r + this.arr.bars * this.bpb;
       return r;
     }
     return ((ab % this.beats) + this.beats) % this.beats;
@@ -347,7 +349,7 @@ export class Sequencer extends EventTarget {
   startTake() {
     let n = 1; while (this.vars['T' + n]) n++;
     const free = 'T' + n; this.vars[free] = []; this.lens[free] = 4;
-    const c = this.arr.cycle, bar = c ? c[0] : Math.floor(this.tl(this.nowBeat()) / this.bpb);
+    const c = this.arr.cycle, bar = c ? c[0] : Math.floor((this.tl(this.nowBeat()) + 0.25) / this.bpb);   // just before a bar line counts as on it
     this.take = { pat: free, start: bar, len: c ? c[1] - c[0] : 0 }; this.prevCur = this.cur; this.cur = free;
   }
   endTake() {
@@ -356,8 +358,18 @@ export class Sequencer extends EventTarget {
     let end = 0; for (const e of ev) end = Math.max(end, e.b + (e.d || 0.01));
     const len = T.len || Math.max(1, Math.ceil(end / this.bpb - 1e-6));
     this.lens[T.pat] = len;
+    // on the phone, recording adds to the timeline: notes join the notes already there, and moves replace only their own kind
+    if (this.s.phone) for (const lane of new Set(ev.map((e) => (e.k === 'n' ? e.slot : 'm')))) { const mine = new Set(ev.filter((e) => e.k === 'm').map((e) => e.path)); for (const e of this.flat(lane, T.start, len)) if (lane !== 'm' || !mine.has(e.path)) ev.push(e); }
     for (const lane of new Set(ev.map((e) => (e.k === 'n' ? e.slot : 'm')))) this.place({ lane, part: lane, start: T.start, len, pat: T.pat });
     this.changed();
+  }
+
+  /** What a lane plays between two bars, as one list of events counted from the first. */
+  flat(lane, start, len) {
+    const bpb = this.bpb, out = [], s = start * bpb, z = (start + len) * bpb;
+    for (const cl of this.arr.clips) { if (cl.lane !== lane || cl.pat == null || !this.vars[cl.pat]) continue; const pb = this.pb(cl.pat), cs = cl.start * bpb, ce = cs + cl.len * bpb, base = cs - (cl.off || 0) * bpb, a = Math.max(s, cs), b = Math.min(z, ce);
+      for (let k = Math.floor((a - base) / pb); b > a && base + k * pb < b; k++) for (const e of this.vars[cl.pat]) { if (e.b >= pb || (lane === 'm' ? e.k !== 'm' : e.k !== 'n' || e.slot !== (cl.part ?? cl.lane))) continue; const t = base + k * pb + e.b; if (t >= a && t < b) out.push({ ...e, b: +(t - s).toFixed(3), ...(e.k === 'n' ? { slot: lane, note: e.note + (cl.tr || 0), d: Math.min(e.d, z - t) } : {}) }); } }
+    return out;
   }
 
   // ---------------------------------------------------------------- arrangement editing
@@ -450,7 +462,8 @@ export class Sequencer extends EventTarget {
     const ab = p.beatNow(), H = (this.hist ??= []);
     H.push({ ...e, ab }); const cut = ab - 32 * this.bpb; while (H.length && H[0].ab < cut) H.shift();
     if (H.length > 6000) H.splice(0, H.length - 6000);
-    this.emit();
+    // a moving finger is a hundred of these a second; who is listening only needs to know now and then
+    if (!this.remT) this.remT = setTimeout(() => { this.remT = 0; this.emit(); }, 300);
   }
   canCapture() { const H = this.hist || []; return H.some((e) => e.k === 'n' && e.on) || H.some((e) => e.k === 'm'); }
   /** Turn the last phrase you played (back to the first pause of two bars or more, at most 16 bars) into a take. */
@@ -483,7 +496,7 @@ export class Sequencer extends EventTarget {
   tick() {
     const p = this.s.player; if (!p.playing || !this.on) { this.last = -1; return; }
     const now = p.ctx.currentTime, beatAbs = (t) => (t - p.bar0) / p.beatDur;
-    let from = this.last < 0 ? beatAbs(now) : this.last; const to = beatAbs(now + 0.12);
+    let from = this.last < 0 ? beatAbs(now) : this.last; const to = beatAbs(now + (this.s.phone ? 0.2 : 0.12));
     if (to - from > 2 || to < from - 0.01) from = beatAbs(now);   // the player jumped (a seek)
     if (to <= from) return;
     if (this.mode === 'song') this.tickSong(from, to); else this.tickJam(from, to);

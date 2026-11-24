@@ -92,11 +92,13 @@ export class MotionLoop {
   add(x, y) { this.rec?.push([performance.now() - this.t0, x, y]); }
   /** → true when there was enough of a movement to keep. Its length is the nearest of ½ 1 2 4 8 16 beats. */
   end() {
-    const r = this.rec; this.rec = null; if (!r || r.length < 6) return false; const d = r[r.length - 1][0]; if (d < 220) return false;
+    const r = this.rec; this.rec = null; if (!r || r.length < 4) return false; const d = r[r.length - 1][0]; if (d < 180) return false;
     const beats = d / 1000 / this.S.player.beatDur; this.len = [0.5, 1, 2, 4, 8, 16].reduce((a, b) => (Math.abs(Math.log(b / beats)) < Math.abs(Math.log(a / beats)) ? b : a));
     this.pts = r.map(([t, x, y]) => [t / d, x, y]); this.b0 = this.beat(); return true;
   }
   clear() { this.pts = this.rec = null; }
+  /** A circle to begin with, when nothing has been drawn yet. */
+  circle(x, y, r = 0.26, beats = 8) { this.rec = null; this.len = beats; this.b0 = this.beat(); this.pts = Array.from({ length: 49 }, (_, i) => { const a = (i / 48) * Math.PI * 2; return [i / 48, clamp(x + r * (Math.cos(a) - 1), 0, 1), clamp(y + r * Math.sin(a), 0, 1)]; }); return this; }
   now() { if (!this.pts) return null; const u = (((this.beat() - this.b0) / this.len) % 1 + 1) % 1, p = this.pts; let i = 1; while (i < p.length - 1 && p[i][0] < u) i++; const a = p[i - 1], b = p[i], k = clamp((u - a[0]) / Math.max(1e-6, b[0] - a[0]), 0, 1); let x = a[1] + (b[1] - a[1]) * k, y = a[2] + (b[2] - a[2]) * k;
     // the last tenth leads back to the beginning, so it goes round without a jump
     if (u > 0.9) { const e = (u - 0.9) / 0.1, s = e * e * (3 - 2 * e); x += (p[0][1] - x) * s; y += (p[0][2] - y) * s; } return [x, y]; }
@@ -120,22 +122,38 @@ export function faderField(S, arms, { rows = 1, color = () => '#e6b450' } = {}) 
 }
 // ------------------------------------------------------------------------------------------------ the morph pad
 /** Four sounds in four corners and a finger between them. corners() → [[name, values in arms order] ×4]; hold a corner to
- *  keep the sound as it is there. loop() → is a movement to go on by itself when the finger lifts. */
-export function morphPad(S, { arms, corners, key, color, loop, say }) {
-  const P = S.params, el = h('div', { class: 'morph' }), C = surface(el), g = C.g, M = new Map(), L = (k = key()) => { if (!M.has(k)) M.set(k, { p: null, ml: new MotionLoop(S), from: null }); return M.get(k); };
+ *  keep the sound as it is there. Automation (el.setAuto / el.auto / el.speed) moves the point by itself: round the last
+ *  movement drawn, or in a circle until one is drawn. A finger takes over; letting go, what it drew goes on. */
+export function morphPad(S, { arms, corners, key, color, onAuto, say }) {
+  const P = S.params, el = h('div', { class: 'morph' }), C = surface(el), g = C.g, M = new Map(), L = (k = key()) => { if (!M.has(k)) M.set(k, { p: null, ml: new MotionLoop(S), from: null, auto: false, kept: null, beats: 0 }); return M.get(k); };
   const store = () => ((S.mem ??= {})['morph.' + key()] ??= corners().map(([n, v]) => ({ n, v: [...v] })));
-  let down = null, hold = 0, flash = [0, -1], last = 0;
-  const apply = (x, y, quick) => { const now = performance.now(); if (!quick && now - last < 35) return; last = now; const cs = store(), w = [(1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y], st = L(), k = st.from ? clamp((now - st.t) / 260, 0, 1) : 1; arms().forEach(([p, , , a = 0, b = 1], i) => { let v = 0; for (let c = 0; c < 4; c++) v += w[c] * (cs[c].v[i] ?? 0); if (st.from) v = st.from[i] + (v - st.from[i]) * k; v = r3(a + clamp(v, 0, 1) * (b - a)); if (Math.abs((P.get(p) ?? 0) - v) > 0.004) P.set(p, v); }); if (k === 1) st.from = null; };
+  let down = null, hold = 0, flash = [0, -1];
+  const apply = (x, y, quick, st = L(), A = arms(), cs = store()) => { const now = performance.now(), auto = st.auto && !down, by = auto && !S.seq.rec ? 'auto' : 'user'; if (!quick && now - (st.last || 0) < (auto ? (S.seq.rec ? 90 : 33) : 33)) return; st.last = now; const w = [(1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y], k = st.from ? clamp((now - st.t) / 260, 0, 1) : 1; A.forEach(([p, , , a = 0, b = 1], i) => { let v = 0; for (let c = 0; c < 4; c++) v += w[c] * (cs[c].v[i] ?? 0); if (st.from) v = st.from[i] + (v - st.from[i]) * k; v = r3(a + clamp(v, 0, 1) * (b - a)); if (Math.abs((P.get(p) ?? 0) - v) > 0.004) P.set(p, v, { by }); }); if (k === 1) st.from = null; };
   const cur = () => arms().map(([p, , , a = 0, b = 1]) => clamp(((P.get(p) ?? a) - a) / (b - a), 0, 1));
   const xy = (e) => { const r = el.getBoundingClientRect(); return [clamp((e.clientX - r.left - 14) / (r.width - 28), 0, 1), clamp((e.clientY - r.top - 14) / (r.height - 28), 0, 1)]; };
-  el.addEventListener('pointerdown', (e) => { if (down || !C.W) return; e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch { /* fine */ } const [x, y] = xy(e), st = L(), c = (x > 0.78 ? 1 : x < 0.22 ? 0 : -1) < 0 || (y > 0.3 && y < 0.7) ? -1 : (x > 0.5 ? 1 : 0) + (y > 0.5 ? 2 : 0);
-    down = { id: e.pointerId, x, y, moved: false, c }; st.from = cur(); st.t = performance.now(); st.ml.clear(); st.ml.start(x, y); if (c >= 0) hold = setTimeout(() => { if (!down || down.moved) return; down.kept = true; st.from = null; store()[c].v = down.vals; store()[c].n = 'yours'; flash = [performance.now(), c]; buzz([20, 30, 20]); say?.('This sound is in that corner now'); }, 620); down.vals = [...st.from]; st.p = [x, y]; if (c < 0) apply(x, y); buzz(5); });
+  el.addEventListener('pointerdown', (e) => { if (!C.W || (down && performance.now() - down.t < 400)) return; e.preventDefault(); clearTimeout(hold); try { el.setPointerCapture(e.pointerId); } catch { /* fine */ } const [x, y] = xy(e), st = L(), c = (x > 0.78 ? 1 : x < 0.22 ? 0 : -1) < 0 || (y > 0.3 && y < 0.7) ? -1 : (x > 0.5 ? 1 : 0) + (y > 0.5 ? 2 : 0);
+    down = { id: e.pointerId, x, y, moved: false, c, t: performance.now() }; st.from = cur(); st.t = performance.now(); if (st.ml.pts) st.kept = { pts: st.ml.pts, len: st.ml.len }; st.ml.clear(); st.ml.start(x, y); if (c >= 0) hold = setTimeout(() => { if (!down || down.moved) return; down.kept = true; st.from = null; store()[c].v = down.vals; store()[c].n = 'yours'; flash = [performance.now(), c]; buzz([20, 30, 20]); say?.('This sound is in that corner now'); }, 620); down.vals = [...st.from]; st.p = [x, y]; if (c < 0) apply(x, y); buzz(5); });
   el.addEventListener('pointermove', (e) => { if (down?.id !== e.pointerId || down.kept) return; const [x, y] = xy(e); if (!down.moved && Math.hypot(x - down.x, y - down.y) > 0.035) { down.moved = true; clearTimeout(hold); } const st = L(); st.p = [x, y]; st.ml.add(x, y); if (down.moved || down.c < 0) apply(x, y); });
-  const up = (e) => { if (down?.id !== e.pointerId) return; clearTimeout(hold); const st = L(), d = down; down = null; if (d.kept) { st.p = [d.c % 2, d.c > 1 ? 1 : 0]; st.ml.clear(); return; } if (loop?.() && d.moved) { if (st.ml.end()) { buzz(12); say?.(`It goes round by itself · ${st.ml.len} beat${st.ml.len === 1 ? '' : 's'}`); } } else st.ml.clear(); };
-  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('contextmenu', (e) => e.preventDefault());
+  const up = (e) => {
+    if (down?.id !== e.pointerId) return; clearTimeout(hold); const st = L(), d = down; down = null; if (d.kept) { st.p = [d.c % 2, d.c > 1 ? 1 : 0]; st.ml.clear(); }
+    else if (d.moved && st.ml.end()) { if (st.beats) st.ml.len = st.beats; st.kept = { pts: st.ml.pts, len: st.ml.len }; if (!st.auto) st.ml.clear(); }
+    else if (st.auto && st.kept) { const [x0, y0] = [st.kept.pts[0][1], st.kept.pts[0][2]], [x, y] = st.p; st.ml.pts = st.kept.pts = st.kept.pts.map(([u, a, b]) => [u, clamp(a + x - x0, 0, 1), clamp(b + y - y0, 0, 1)]); st.ml.len = st.kept.len; st.ml.b0 = st.ml.beat(); }   // a tap moves the whole movement there
+    else st.ml.clear();
+    if (st.auto && !st.ml.pts) go(st); st.keyArms = arms(); st.keyCorners = store(); onAuto?.();
+  };
+  const go = (st) => { const [x, y] = (st.p ??= [0.5, 0.5]); if (st.kept) { st.ml.pts = st.kept.pts; st.ml.len = st.kept.len; st.ml.rec = null; st.ml.b0 = st.ml.beat(); } else { st.ml.circle(clamp(x, 0.5, 0.98), clamp(y, 0.26, 0.74), 0.24, st.beats || 8); st.kept = { pts: st.ml.pts, len: st.ml.len }; } };
+  /** Automation on or off, for the sound in hand. Off leaves the sound where it is; on again goes on as before. */
+  el.setAuto = (on) => { const st = L(); st.auto = on; st.keyArms = arms(); st.keyCorners = store(); if (on) { st.from = cur(); st.t = performance.now(); go(st); } else { if (st.ml.pts) st.kept = { pts: st.ml.pts, len: st.ml.len }; st.ml.clear(); } onAuto?.(); };
+  Object.defineProperty(el, 'auto', { get: () => L().auto });
+  const LENS = [1, 2, 4, 8, 16, 32]; el.beats = () => L().ml.pts ? L().ml.len : L().kept?.len || L().beats || 8;
+  el.speed = () => { const st = L(), n = el.beats(), i = LENS.findIndex((x) => x >= n - 1e-6), v = LENS[(i < 0 ? 0 : i + 1) % LENS.length]; st.beats = v; if (st.kept) st.kept.len = v; if (st.ml.pts) { const u = ((st.ml.beat() - st.ml.b0) / st.ml.len) % 1; st.ml.len = v; st.ml.b0 = st.ml.beat() - u * v; } onAuto?.(); };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up); el.addEventListener('contextmenu', (e) => e.preventDefault());
   /** Four new corners: variations around what each was. */
   el.shuffle = () => { for (const c of store()) { c.v = c.v.map((v) => clamp(v + (Math.random() - 0.5) * 0.9, 0.02, 1)); c.n = ['odd', 'raw', 'thin', 'wide', 'slow', 'blur', 'sharp', 'far', 'bent', 'soft'][Math.floor(Math.random() * 10)]; } const st = L(); st.p ??= [0.5, 0.5]; st.from = cur(); st.t = performance.now(); apply(...st.p, true); };
-  el.tick = () => { const st = L(), q = !down && st.ml.now(); if (q) { st.p = q; apply(...q); } else if (st.from && st.p && !down?.kept && (!down || down.moved || down.c < 0)) apply(...st.p); else if (st.from && down && !down.moved && down.c >= 0 && performance.now() - st.t > 170 && performance.now() - st.t < 560) apply(...st.p); };
+  el.tick = () => {
+    const here = L(); for (const st of M.values()) { if (st === here || !st.auto || !st.keyArms) continue; const q = st.ml.now(); if (q) { st.p = q; apply(...q, false, st, st.keyArms, st.keyCorners); } }   // other sounds' automation goes on too
+    const st = here, q = !down && st.auto && st.ml.now(); if (q) { st.p = q; apply(...q); } else if (st.from && st.p && !down?.kept && (!down || down.moved || down.c < 0)) apply(...st.p); else if (st.from && down && !down.moved && down.c >= 0 && performance.now() - st.t > 170 && performance.now() - st.t < 560) apply(...st.p);
+  };
   el.draw = () => {
     if (!C.W) return; const { W, H } = C, col = color(), cs = store(), st = L(), now = performance.now(), px = (u) => 14 + u * (W - 28), py = (v) => 14 + v * (H - 28); g.clearRect(0, 0, W, H);
     const [x, y] = st.p || [0.5, 0.5], w = [(1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y];
@@ -144,7 +162,7 @@ export function morphPad(S, { arms, corners, key, color, loop, say }) {
     g.strokeStyle = '#ffffff10'; g.lineWidth = 1; for (let i = 1; i < 6; i++) { g.beginPath(); g.moveTo((W * i) / 6, 0); g.lineTo((W * i) / 6, H); g.stroke(); } for (let i = 1; i < 3; i++) { g.beginPath(); g.moveTo(0, (H * i) / 3); g.lineTo(W, (H * i) / 3); g.stroke(); }
     g.textBaseline = 'middle'; for (let c = 0; c < 4; c++) { const r = c % 2, b = c > 1, k = flash[1] === c ? clamp(1 - (now - flash[0]) / 700, 0, 1) : 0; g.textAlign = r ? 'right' : 'left'; g.font = `italic ${16 + k * 5}px Newsreader, serif`; g.fillStyle = k ? '#fff' : hue[c]; g.fillText(cs[c].n, r ? W - 12 : 12, b ? H - 16 : 17); // the corner's sound, as a little profile
       const vs = cs[c].v, bw = 4; vs.forEach((v, i) => { g.globalAlpha = 0.5; g.fillStyle = hue[c]; const bx = r ? W - 12 - (vs.length - i) * bw : 12 + i * bw, hh = 2 + v * 15; g.fillRect(bx, b ? H - 30 - hh : 30, bw - 1, hh); }); g.globalAlpha = 1; }
-    if (st.ml.pts) { g.strokeStyle = col; g.globalAlpha = 0.65; g.lineWidth = 1.5; g.setLineDash([4, 4]); g.beginPath(); st.ml.pts.forEach(([, u, v], i) => (i ? g.lineTo(px(u), py(v)) : g.moveTo(px(u), py(v)))); g.stroke(); g.setLineDash([]); g.globalAlpha = 1; }
+    if (st.ml.pts && st.auto) { g.strokeStyle = col; g.globalAlpha = 0.65; g.lineWidth = 1.5; g.setLineDash([4, 4]); g.beginPath(); st.ml.pts.forEach(([, u, v], i) => (i ? g.lineTo(px(u), py(v)) : g.moveTo(px(u), py(v)))); g.stroke(); g.setLineDash([]); g.globalAlpha = 1; }
     if (st.p) { g.fillStyle = '#fff'; g.shadowColor = col; g.shadowBlur = 22; g.beginPath(); g.arc(px(x), py(y), down ? 15 : 11, 0, 7); g.fill(); g.shadowBlur = 0; } else { g.textAlign = 'center'; g.font = 'italic 16px Newsreader, serif'; g.fillStyle = '#d6d2c6'; g.fillText('slide between four sounds', W / 2, H / 2); }
   };
   return el;

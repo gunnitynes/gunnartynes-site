@@ -77,8 +77,8 @@ function makeIR(ctx, seconds) {
 }
 
 export class AudioEngine {
-  constructor() {
-    this.ctx = new AudioContext({ sampleRate: SR, latencyHint: 'interactive' });
+  constructor({ latency = 'interactive' } = {}) {
+    this.ctx = new AudioContext({ sampleRate: SR, latencyHint: latency });
     this.channels = new Map();
     this.ready = this.init();
   }

@@ -1,12 +1,11 @@
-// Tape: keep what you just heard, and make something of it. The phone is always listening to itself: the strip on top
-// is the last half minute of everything you did, and a swipe across it (or 1 2 4 8, for the last bars) keeps that much
-// as a piece. The piece opens below, cut into slices: choose a tool and paint it over the slices — off, backwards,
-// repeated, an octave up or down, or move them about — and hear it as you do. Then put it on the tape, in the Cloud,
-// in an instrument, or keep it as a sound file.
+// Tape, two views of it. TIMELINE: the tape itself, in lanes, where ● writes what you do (phone-time.js). PIECES: the
+// phone always listens to itself; the strip is the last half minute, and a swipe across it (or 1 2 4 8, for the last
+// bars) keeps that much as a piece, cut into slices. Choose a tool and paint it over them — off, backwards, repeated, an
+// octave up or down, or move them about — and hear it as you do. Then onto the timeline, into the Cloud or an instrument.
 import { h, $ } from '../lib/util.js';
 import { encodeWav } from '../lib/wav.js';
-import { clamp, buzz, surface, gestures, COLORS, NAMES } from './phone-kit.js';
-import { isTake, takeName } from './core.js';
+import { clamp, buzz, surface, gestures, NAMES } from './phone-kit.js';
+import { buildTimeline } from './phone-time.js';
 import { keepSound } from './voice.js';
 
 const DB = 'playground-pieces'; let dbp = null;
@@ -15,7 +14,7 @@ const idb = async (mode, fn) => { const d = await db(); return new Promise((res,
 const LEAD = 0.012;   // the master's own look-ahead: what is heard arrives on the ring this much late
 
 export function buildTape(S, U) {
-  const room = $('#p-tape'), q = S.seq, { song, player, ctx } = S, sr = ctx.sampleRate, { toast, srcAt, nextBar, bpb } = U, cb = song.barsPerCell, V = S.voice, pre = `${song.id}:`;
+  const room = $('#p-tape'), q = S.seq, P = S.params, { song, player, ctx } = S, sr = ctx.sampleRate, { toast, nextBar, bpb } = U, V = S.voice, pre = `${song.id}:`;
 
   // ---- listening: how loud it was, and where the bar lines were
   const past = [], lines = []; let asks = new Map(), askId = 0;
@@ -61,16 +60,26 @@ export function buildTape(S, U) {
     const b = bufOf(c).b, rate = c.bars ? player.bpm / c.bpm : 1, d = b.duration / rate; let t = ctx.currentTime + 0.03, off = 0;
     if (keepPhase && playing) { off = ((((t - playing.t) % d) + d) % d) * rate; } else if (player.playing) t = player.timeOfBar(player.barNow() + 1);
     const t0 = keepPhase && playing ? playing.t : t, old = playing; playing = null; if (old) { old.g.gain.setTargetAtTime(0, t, 0.006); old.s.stop(t + 0.06); }
-    const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + 0.006); s.connect(g).connect(S.dryBus); s.start(t, off); playing = { s, g, c, t: t0, d, rate }; listenB.setAttribute('aria-pressed', 'true'); listenB.textContent = '■ Stop';
+    const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; g.gain.value = 0; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + 0.006); s.connect(g).connect(S.dryBus); s.start(t, off); playing = { s, g, c, t: t0, d, rate }; listenB.setAttribute('aria-pressed', 'true'); listenB.textContent = '■ Stop';
   }
   let edT = 0; const edited = (c) => { clearTimeout(edT); edT = setTimeout(() => { if (playing?.c === c) play(c, true); save(c); }, 90); };
   const remember = (c) => { (c.hist ??= []).push(JSON.stringify([c.steps, c.src])); if (c.hist.length > 40) c.hist.shift(); };
-  /** On the tape, a piece is bars of sound played by the tape's own clock. */
+  /** On the timeline a piece sounds from where it begins to where it ends, as one sound, round and round inside. */
+  const live = new Map(), hush = (id) => { for (const [k, x] of live) if (id === undefined || k === id) { const t = ctx.currentTime; x.g.gain.cancelScheduledValues(t); x.g.gain.setValueAtTime(x.g.gain.value, t); x.g.gain.linearRampToValueAtTime(0, t + 0.012); try { x.s.stop(t + 0.02); } catch { /* gone */ } live.delete(k); } };
   player.on('bar', ({ bar, time }) => {
-    if (q.mode !== 'song') return; const T = Math.floor(q.tl(bar * bpb()) / bpb());
-    for (const cl of q.arr.clips) { if (!cl.cap || T < cl.start || T >= cl.start + cl.len) continue; const c = pieces.find((x) => x.id === cl.cap); if (!c) continue; const b = bufOf(c).b, n = Math.max(1, Math.round(barsOf(c))), rate = b.duration / n / player.barDur, at = (((T - cl.start + (cl.off || 0)) % n) * b.duration) / n, s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; s.playbackRate.value = rate; const first = T === cl.start || T === Math.floor(q.arr.cycle?.[0] ?? -1), end = time + player.barDur; g.gain.setValueAtTime(first ? 0 : 1, time); g.gain.linearRampToValueAtTime(1, time + 0.004); g.gain.setValueAtTime(1, end - 0.0015); g.gain.linearRampToValueAtTime(T === cl.start + cl.len - 1 ? 0 : 1, end); s.connect(g).connect(S.dryBus); s.start(time, at, b.duration / n + 0.002); live.add(s); s.onended = () => live.delete(s); }
+    if (q.mode !== 'song') return; const T = Math.floor(q.tl(bar * bpb()) / bpb()), seen = new Set();
+    for (const cl of q.arr.clips) {
+      if (!cl.cap || T < cl.start || T >= cl.start + cl.len || q.mute.has('cap')) continue; const c = pieces.find((x) => x.id === cl.cap); if (!c) continue;
+      const b = bufOf(c).b, n = Math.max(0.25, c.bars ? barsOf(c) : Math.max(1, Math.round(barsOf(c)))), rate = b.duration / n / player.barDur, at = (((T - cl.start + (cl.off || 0)) % n) + n) % n, key = cl.id; seen.add(key); const x = live.get(key);
+      if (x && x.b === b && Math.abs(x.rate - rate) < 1e-4 && x.next === T) { x.next = T + 1; } else {
+        if (x) { x.g.gain.setValueAtTime(1, time); x.g.gain.linearRampToValueAtTime(0, time + 0.01); x.s.stop(time + 0.015); }
+        const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; g.gain.value = 0; g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(1, time + 0.006); s.connect(g).connect(S.dryBus); s.start(time, (at / n) * b.duration); live.set(key, { s, g, b, rate, next: T + 1 }); s.onended = () => { if (live.get(key)?.s === s) live.delete(key); };
+      }
+      const y = live.get(key), end = time + player.barDur, lastBar = T === cl.start + cl.len - 1 || T === (q.arr.cycle?.[1] ?? q.arr.bars) - 1; if (lastBar) { y.g.gain.setValueAtTime(1, end - 0.002); y.g.gain.linearRampToValueAtTime(0, end + 0.008); y.s.stop(end + 0.02); live.delete(key); }
+    }
+    for (const [k, x] of live) if (!seen.has(k)) { x.g.gain.setValueAtTime(1, time); x.g.gain.linearRampToValueAtTime(0, time + 0.01); x.s.stop(time + 0.02); live.delete(k); }
   });
-  const live = new Set(); const hush = () => { for (const s of live) { try { s.stop(); } catch { /* gone */ } } live.clear(); }; player.on('transport', ({ playing: p }) => { if (!p) hush(); }); player.on('seek', hush); player.on('tempo', () => { if (playing?.c.bars) play(playing.c, false); });
+  player.on('transport', ({ playing: p }) => { if (!p) hush(); }); player.on('seek', () => hush()); player.on('tempo', () => { hush(); if (playing?.c.bars) play(playing.c, false); });
 
   // ---- the strip of what was just heard
   const strip = h('div', { class: 'past' }), K = surface(strip), kg = K.g; let pick = null, flash = 0;
@@ -112,30 +121,23 @@ export function buildTape(S, U) {
   const clean = btn('Reset', 'As it was kept', change((c) => { const n = c.src || c.steps.length; c.steps = steps(n); c.src = undefined; }));
 
   // ---- where it goes
-  const onTape = btn('On the tape', 'Put it on the tape at the playhead', () => { if (!cur) return; const n = Math.max(1, Math.round(barsOf(cur))), a = nextBar(); q.snapshot(); if (q.mode !== 'song') q.setMode('song'); q.place({ lane: 'cap', start: a, len: n, cap: cur.id, name: 'piece' }); if (a + n > q.arr.bars) q.arr.bars = a + n; q.changed(); toast(`On the tape at bar ${a + 1} · ↶ undoes`); buzz(14); }, 'dest');
+  const onTape = btn('→ Timeline', 'Put it on the timeline at the playhead', () => { if (!cur) return; const n = Math.max(1, Math.round(barsOf(cur))), a = nextBar(); q.snapshot(); if (q.mode !== 'song') q.setMode('song'); const cl = q.place({ lane: 'cap', start: a, len: n, cap: cur.id, name: 'piece' }); if (a + n > q.arr.bars) q.arr.bars = a + n; q.changed(); if (playing) stop(); view('time'); TL.show(cl); toast(`On the tape at bar ${a + 1} · ↶ undoes`); buzz(14); }, 'dest');
   const mono = () => { const x = bufOf(cur), y = new Float32Array(x.L.length); for (let i = 0; i < y.length; i++) y[i] = (x.L[i] + x.R[i]) * 0.5; return y; };
   const toCloud = btn('Cloud', 'Grains made of this piece', async () => { if (!cur) return; const src = await keepSound(S, mono(), 'your piece'); S.params.set('cloud.va', 0, { by: 'ui' }); S.params.set('cloud.vb', 1, { by: 'ui' }); S.useCloudSource(src, { rec: src.rec, name: 'your piece' }); toast('The Cloud is made of it now'); buzz(14); }, 'dest');
   const toSound = btn('Instrument', 'An instrument made of this piece', async () => { if (!cur) return; const n = S.params.get('pocket.slot') || 1, src = await keepSound(S, mono(), 'your piece'); S.sounds[n - 1].useRec(src); toast(`${NAMES[n]} is made of it now`); buzz(14); }, 'dest');
   const share = btn('Share', 'Keep it as a sound file', async () => { if (!cur) return; const x = bufOf(cur), file = new File([encodeWav([x.L, x.R], sr)], `${song.title} · piece.wav`, { type: 'audio/wav' }); if (navigator.canShare?.({ files: [file] })) { try { await navigator.share({ files: [file] }); return; } catch (e) { if (e?.name === 'AbortError') return; } } const a = h('a', { href: URL.createObjectURL(file), download: file.name }); document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); }, 'dest');
 
-  // ---- the tape itself
-  const box = h('div', { class: 'tape' }), C = surface(box), tg = C.g, ROWS = [['band', 'Stems', '#ece8dc'], ['own', 'Each stem', '#a3a6ad'], ['cap', 'Pieces', '#e6b450'], ['audio', 'Mic', '#df8a74'], [0, 'Cloud', COLORS[0]], [1, 'Sound 1', COLORS[1]], [2, 'Sound 2', COLORS[2]], ['m', 'Moves', '#a3a6ad']];
-  const rowOf = (cl) => (String(cl.lane).startsWith('stem:') ? 1 : ROWS.findIndex((r) => r[0] === cl.lane)), geo = () => { const top = 14, rh = (C.H - top) / ROWS.length; return { top, rh, ppb: C.W / Math.max(4, vb() - va()) }; };
-  let tv = null, td = null; const va = () => tv?.[0] ?? 0, vb = () => tv?.[1] ?? q.arr.bars, X = (b) => (b - va()) * geo().ppb, barAt = (x) => clamp(va() + x / geo().ppb, 0, q.arr.bars);
-  gestures(box, {
-    down: (p) => { const { top, rh } = geo(), bar = barAt(p.x), row = Math.floor((p.y - top) / rh), hit = row > 0 ? [...q.arr.clips].reverse().find((c) => rowOf(c) === row && bar >= c.start && bar < c.start + c.len) : null; td = { x: p.x, bar, hit, s0: hit?.start, t: setTimeout(() => { if (!td?.hit || td.moved) return; q.snapshot(); q.arr.clips = q.arr.clips.filter((c) => c !== td.hit); q.changed(); toast('Removed · ↶ undoes'); buzz(30); td = null; }, 550) }; },
-    move: (p) => { if (!td) return; if (!td.moved && Math.abs(p.x - td.x) < 9) return; if (!td.moved) { td.moved = true; clearTimeout(td.t); if (td.hit) { q.snapshot(); buzz(8); } } if (td.hit) { const n = Math.max(0, td.s0 + Math.round((p.x - td.x) / geo().ppb)); if (n !== td.hit.start) { td.hit.start = n; buzz(3); } } else S.seek(Math.floor(barAt(p.x))); },
-    up: () => { if (!td) return; clearTimeout(td.t); if (!td.moved) { S.seek(Math.floor(td.bar)); if (td.hit?.cap) { const c = pieces.find((x) => x.id === td.hit.cap); if (c) { cur = c; shelfShow(); show(); } } } else if (td.hit) { q.place(td.hit); if (td.hit.start + td.hit.len > q.arr.bars) q.arr.bars = td.hit.start + td.hit.len; q.changed(); } td = null; },
-    twoStart: () => { if (td) clearTimeout(td.t); td = null; }, two: (e) => { const n = q.arr.bars, w = vb() - va(), a = va() + ((e.x - e.dx) / C.W) * w, nw = clamp(w / e.ds, 4, n), x = clamp(a - (e.x / C.W) * nw, 0, n - nw); tv = nw >= n ? null : [x, x + nw]; },
-  });
+  // ---- the two views
+  P.define('pocket.tape', 'time'); const TL = buildTimeline(S, U, { openPiece: (id) => { const c = pieces.find((x) => x.id === id); if (c) { cur = c; shelfShow(); show(); view('pieces'); } } });
+  const tabs = [['time', 'Timeline'], ['pieces', 'Pieces']].map(([k, l]) => h('button', { type: 'button', onclick: () => { view(k); buzz(6); } }, l)), view = (k) => { P.set('pocket.tape', k, { by: 'ui' }); sync(); };
   const recA = h('button', { type: 'button', class: 'chip sm recaudio' }, h('i'), h('span', {}, 'Mic'));
   recA.onclick = async () => { if (V.recording) { recA.disabled = true; const r = await V.stop(); recA.disabled = false; toast(r ? `Recorded ${r.bars} bar${r.bars > 1 ? 's' : ''} from the microphone · ↶ undoes` : 'Nothing was heard, so nothing was kept'); buzz(20); return; } try { await V.start(); toast('Recording the microphone from the next bar'); buzz(15); } catch (err) { toast(err.message); } };
   const showRec = () => { recA.classList.toggle('on', V.recording); recA.lastChild.textContent = V.recording ? `Stop · ${V.bars + 1}` : 'Mic'; }; V.addEventListener('change', showRec); showRec();
-  const takes = h('div', { class: 'takes' }), sync = () => { const ks = [...new Set(q.arr.clips.filter((c) => c.pat && isTake(c.pat)).map((c) => c.pat))], sig = ks.map((k) => k + q.lens[k]).join(); if (sync.sig === sig) return; sync.sig = sig; takes.replaceChildren(...ks.map((k) => { const s = Math.min(...q.arr.clips.filter((c) => c.pat === k).map((c) => c.start)); return h('div', { class: 'take' }, h('button', { type: 'button', class: 'go', onclick: () => S.seek(s) }, `▸ ${takeName(k)}`), h('span', { class: 'mono' }, `bar ${s + 1} · ${q.lens[k]} bars`), h('button', { type: 'button', class: 'x', 'aria-label': `Remove ${takeName(k)}`, onclick: () => { q.snapshot(); q.arr.clips = q.arr.clips.filter((c) => c.pat !== k); q.changed(); } }, '×')); })); }; q.addEventListener('change', sync); sync();
-
+  const V1 = h('div', { class: 'tview' }), V2 = h('div', { class: 'tview' }), sync = () => { const k = P.get('pocket.tape'); V1.hidden = k !== 'time'; V2.hidden = k === 'time'; tabs.forEach((x, n) => x.setAttribute('aria-pressed', ['time', 'pieces'][n] === k)); }; P.on(({ path }) => path === 'pocket.tape' && sync());
   const empty = h('p', { class: 'tape-empty' }, 'Play something, then keep it: swipe across what you just heard, or press 1, 2, 4 or 8 bars.');
   const edit = h('div', { class: 'edit' }, ed, h('div', { class: 'tools' }, ...toolB), h('div', { class: 'row eds' }, listenB, undoB, half, dbl, fine, mix, clean), h('div', { class: 'dests' }, onTape, toCloud, toSound, share));
-  room.append(h('div', { class: 'head row' }, h('h2', {}, 'Tape'), h('span', { class: 'sp' }), recA), h('div', { class: 'caprow' }, strip, h('div', { class: 'keepbs' }, h('small', { class: 'keepl' }, 'Keep the last'), ...keepBs)), shelf, empty, edit, box, takes);
+  V1.append(TL.el, TL.row); V2.append(h('div', { class: 'caprow' }, strip, h('div', { class: 'keepbs' }, h('small', { class: 'keepl' }, 'Keep the last'), ...keepBs)), shelf, empty, edit);
+  room.append(h('div', { class: 'head row' }, h('h2', {}, 'Tape'), h('div', { class: 'seg' }, ...tabs), h('span', { class: 'sp' }), recA), V1, V2); sync();
   const show = () => { edit.hidden = !cur; empty.hidden = !!cur; if (cur) { fine.textContent = `÷${cur.src || cur.steps.length}`; } }; show(); void ready;
 
   // ---- drawing
@@ -156,13 +158,6 @@ export function buildTape(S, U) {
     if (ph >= 0 && ctx.currentTime >= playing.t) { const k = Math.floor(ph); g.fillStyle = '#fff'; g.fillRect((k % per) * w + (ph - k) * w, Math.floor(k / per) * hh, 1.5, hh); }
     if (drag) { g.strokeStyle = '#e6b450'; g.lineWidth = 2; g.beginPath(); g.roundRect(drag.x - w / 2, drag.y - hh / 2 - 6, w, hh, 5); g.stroke(); }
   }
-  function drawTape() {
-    const { W, H } = C; if (!W) return; const { top, rh, ppb } = geo(); tg.clearRect(0, 0, W, H); tg.font = '8.5px "IBM Plex Mono", monospace'; tg.textBaseline = 'middle'; tg.textAlign = 'left'; const every = ppb > 20 ? 1 : ppb > 12 ? 4 : ppb > 5 ? 8 : 16; for (let b = Math.floor(va() / every) * every; b <= vb(); b += every) { tg.fillStyle = '#ffffff16'; tg.fillRect(X(b), top, 1, H - top); tg.fillStyle = '#6f747f'; tg.fillText(String(b + 1), X(b) + 2, 7); }
-    ROWS.forEach((r, i) => { tg.fillStyle = i % 2 ? '#ffffff05' : '#ffffff02'; tg.fillRect(0, top + i * rh, W, rh); }); const cy = q.arr.cycle; if (cy) { tg.fillStyle = '#e6b45026'; tg.fillRect(X(cy[0]), 0, (cy[1] - cy[0]) * ppb, H); }
-    for (const cl of q.arr.clips) { const row = rowOf(cl); if (row < 0) continue; const col = ROWS[row][2], x = X(cl.start), w = Math.max(2, cl.len * ppb), y = top + row * rh + 1.5; if (x > W || x + w < 0) continue; tg.fillStyle = col + (cl.cap ? (cl.cap === cur?.id ? 'cc' : '77') : cl.fx || cl.mute?.length ? '66' : '30'); tg.fillRect(x + 0.5, y, w - 1, rh - 3); tg.fillStyle = col; tg.fillRect(x + 0.5, y, 1.5, rh - 3); }
-    const vc = song.stems.find((x) => x.voice)?.cells || []; if (vc.some(Boolean)) for (let b = 0; b < q.arr.bars; b++) if (vc[Math.floor(srcAt(b) / cb)]) { tg.fillStyle = '#df8a7466'; tg.fillRect(X(b) + 0.5, top + 3 * rh + 1.5, Math.max(1, ppb - 1), rh - 3); }
-    ROWS.forEach(([, nm], i) => { tg.fillStyle = '#c3c4c8'; tg.fillText(nm, 4, top + i * rh + rh / 2); }); const pb = q.tl(q.nowBeat()) / bpb(); tg.fillStyle = q.rec ? '#df8a74' : '#ece8dc'; tg.fillRect(X(pb), 0, 2, H); if (q.take) { const t = q.take, l = t.len || Math.max(0, pb - t.start); tg.fillStyle = '#df8a7430'; tg.fillRect(X(t.start), 0, l * ppb, H); }
-  }
-  S.rooms.tape = { draw: () => { if (V.recording) recA.style.setProperty('--lv', Math.min(1, V.level() * 1.4).toFixed(2)); drawPast(); drawEd(); drawTape(); }, hide: () => { if (!player.playing) stop(); }, shake: () => { if (cur) mix.click(); } };
+  S.rooms.tape = { draw: () => { if (V.recording) recA.style.setProperty('--lv', Math.min(1, V.level() * 1.4).toFixed(2)); if (P.get('pocket.tape') === 'time') TL.draw(); else { drawPast(); drawEd(); } }, hide: () => { if (!player.playing) stop(); }, shake: () => { if (cur && P.get('pocket.tape') !== 'time') mix.click(); } };
   S.tapeRoom = { last, keep, get pieces() { return pieces; }, get cur() { return cur; }, render, bufOf, play, stop, lines, past };
 }

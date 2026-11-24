@@ -4,9 +4,10 @@
 // and a new one cut in on the bar. Launches, scene jumps, genomes and loops are all just different answers to
 // that one question, which is why every world can drive the same engine.
 
+import { onTick } from '../lib/ticker.js';
+
 const LOOKAHEAD = 0.2;   // seconds scheduled ahead
-const TICK = 25;         // ms
-const FADE = 0.004;      // seconds — splice fade between discontinuous cells
+const FADE = 0.008;      // seconds — splice fade between discontinuous cells
 const XFADE = 0.03;      // seconds — the crossfade where the tempo changes (on a bar line)
 const PREFETCH_BARS = 8;
 
@@ -37,7 +38,8 @@ export class Player extends EventTarget {
     this.prefetch = PREFETCH_BARS;   // bars fetched and kept ahead (a phone asks for fewer)
     session.clock = () => this.elapsed();
     session.on(({ a, prev, state }) => this.onAction(a, prev, state));
-    setInterval(() => this.tick(), TICK);
+    this.ahead = LOOKAHEAD;   // seconds scheduled ahead (a phone looks further)
+    onTick(() => this.tick());
   }
 
   // ------------------------------------------------------------ tempo
@@ -173,7 +175,7 @@ export class Player extends EventTarget {
   // ------------------------------------------------------------ scheduling
   tick() {
     if (!this.playing) return;
-    const now = this.ctx.currentTime, horizon = now + LOOKAHEAD;
+    const now = this.ctx.currentTime, horizon = now + this.ahead;
     if (this.pendingTempo && this.timeOfBar(this.nextBar) < horizon + 0.06) this.applyTempo(this.nextBar);
     while (this.timeOfBar(this.nextBar) < horizon) { this.scheduleBar(this.nextBar, this.timeOfBar(this.nextBar)); this.nextBar++; }
     while (this.bar0 + this.nextStep * this.stepDur < horizon) { this.scheduleStep(this.nextStep, this.bar0 + this.nextStep * this.stepDur); this.nextStep++; }
@@ -193,6 +195,7 @@ export class Player extends EventTarget {
         if (!ended && want && !want.fx && !v.fx && v.url === want.url && B - v.base === want.bar) continue; // just the next bar — let it ring
         contiguous = ended && want && !want.fx && !v.fx && want.bar === 0 && want.cell === v.cell + 1 && Math.abs(v.end - T) < 2e-3;
         if (!ended) this.kill(v, T);
+        else if (!contiguous && !v.fx) this.close(v);   // its file ends here but the next one is not its continuation: no hard edge
         this.voices.delete(id);
       }
       if (!want) continue;
@@ -209,10 +212,12 @@ export class Player extends EventTarget {
 
   startVoice(id, buf, want, B, T, offset, fadeIn) {
     if (want.fx) return this.startTreated(id, buf, want, B, T, offset - want.bar * this.barDur);
+    // scheduled too late (the phone was busy): join where it should be by now, softly, instead of starting behind
+    const behind = this.ctx.currentTime + 0.006 - T; if (behind > 0) { T += behind; offset += behind; fadeIn = true; }
     const src = this.ctx.createBufferSource(); src.buffer = buf;
     const rm = this.rateFor(buf); if (rm !== 1) src.playbackRate.value = rm;
     const g = this.ctx.createGain();
-    if (fadeIn) { const f = B === this.xfadeBar ? XFADE : FADE; g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(1, T + f); }
+    if (fadeIn) { g.gain.value = 0; const f = B === this.xfadeBar ? XFADE : FADE; g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(1, T + f); }
     src.connect(g).connect(this.engine.channel(id).input);
     src.start(T, offset * rm);
     src.onended = () => { src.disconnect(); g.disconnect(); };
@@ -224,6 +229,7 @@ export class Player extends EventTarget {
   /** One bar of a stem with a treatment: reversed, slowed (an octave down) or doubled (an octave up, the bar
    *  twice), stuttered (its first slice repeated), louder or softer. Always exactly one bar long, then cut. */
   startTreated(id, buf0, want, B, T, late = 0) {
+    const behind = this.ctx.currentTime + 0.006 - T; if (behind > 0) { T += behind; late += behind; }
     const fx = want.fx, bd = this.barDur, rm = this.rateFor(buf0), rate = (fx.s || 1) * rm, rev = !!fx.r, bb = bd * rm;   // bb: a bar inside the buffer
     const buf = rev ? this.loader.reverse(buf0) : buf0, D = buf.duration;
     const s0 = rev ? D - (want.bar + 1) * bb : want.bar * bb;
@@ -232,11 +238,15 @@ export class Player extends EventTarget {
     const slice = fx.u ? bd / fx.u : (fx.s || 1) > 1 ? bd / fx.s : 0;   // seconds of timeline per repeat
     if (slice) { src.loop = true; src.loopStart = at; src.loopEnd = Math.min(D, at + slice * rate); }
     const g = this.ctx.createGain(), lvl = fx.g ?? 1, end = T + bd - late;
-    g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(lvl, T + FADE);
-    g.gain.setValueAtTime(lvl, end - FADE); g.gain.linearRampToValueAtTime(0, end);
+    g.gain.value = 0; g.gain.setValueAtTime(0, T); g.gain.linearRampToValueAtTime(lvl, T + FADE);
+    // a repeated slice never jumps from its end back to its beginning: the level dips for a moment in between
+    if (slice) for (let k = 1; k * slice < bd - 0.004; k++) { const t = T - late + k * slice; if (t < T + FADE + 0.004) continue; g.gain.setValueAtTime(lvl, t - 0.0045); g.gain.linearRampToValueAtTime(0, t); g.gain.linearRampToValueAtTime(lvl, t + 0.0045); }
+    // and it crosses into whatever comes next; a repeat, or a file that runs out at the bar line, is down before it instead
+    const short = slice || at + (bd + FADE) * rate > D - 0.001, down = short ? end - 0.006 : end;
+    g.gain.setValueAtTime(lvl, down); g.gain.linearRampToValueAtTime(0, short ? end : end + FADE);
     src.connect(g).connect(this.engine.channel(id).input);
     const off = slice ? at + ((late * rate) % (slice * rate)) : at + late * rate;
-    src.start(T, Math.min(off, D - 0.01)); src.stop(end + 0.003);
+    src.start(T, Math.min(off, D - 0.01)); src.stop(end + FADE + 0.003);
     src.onended = () => { src.disconnect(); g.disconnect(); };
     const v = { src, g, url: want.url, cell: want.cell, base: B - want.bar, end, fx };
     this.voices.set(id, v);
@@ -250,10 +260,15 @@ export class Player extends EventTarget {
     } catch { /* already stopped */ }
   }
 
+  close(v, fade = 0.006) {
+    const t = v.end - fade; if (t < this.ctx.currentTime + 0.002) return;
+    try { v.g.gain.setValueAtTime(1, t); v.g.gain.linearRampToValueAtTime(0, v.end); } catch { /* already gone */ }
+  }
+
   /** A cell that arrived after its bar was scheduled joins mid-bar, in phase, instead of waiting a whole bar. */
   lateJoin(now) {
     const B = Math.floor((now - this.bar0) / this.barDur);
-    if (B >= this.nextBar || this.timeOfBar(B + 1) - now < LOOKAHEAD + 0.05) return;
+    if (B >= this.nextBar || this.timeOfBar(B + 1) - now < this.ahead + 0.05) return;
     const st = this.session.state;
     for (const id of st.order) {
       const v = this.voices.get(id);
@@ -284,7 +299,7 @@ export class Player extends EventTarget {
     if (c.choke) { for (const v of this.chopVoices) this.kill(v, t); this.chopVoices = []; }
     const src = this.ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
     const g = this.ctx.createGain(), dur = len / rate;
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(c.gain, t + 0.002);
+    g.gain.value = 0; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(c.gain, t + 0.002);
     g.gain.setValueAtTime(c.gain, t + Math.max(0.003, dur - 0.012)); g.gain.linearRampToValueAtTime(0, t + dur);
     src.connect(g).connect(this.engine.channel('__chop').input);
     src.start(t, Math.max(0, off), len + 0.01);

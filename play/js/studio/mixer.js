@@ -14,12 +14,14 @@ export class Strip {
     this.input = g();
     const bq = (type, f, q = 0.7) => { const n = c.createBiquadFilter(); n.type = type; n.frequency.value = f; n.Q.value = q; return n; };
     this.lo = bq('lowshelf', 180); this.mid = bq('peaking', 1100, 0.8); this.hi = bq('highshelf', 5200);
-    this.heat = c.createWaveShaper(); this.heat.oversample = '2x';
+    // heat: one fixed curve, driven harder or softer (a curve that changed with the knob clicked as it moved)
+    this.heat = g(); this.heatOut = g(); const hDry = g(1), hWet = g(0), hPre = g(0.1), hSh = c.createWaveShaper(), hPost = g(1); hSh.curve = heatCurve(); hSh.oversample = '2x';
+    this.heat.connect(hDry).connect(this.heatOut); this.heat.connect(hPre).connect(hSh).connect(hPost).connect(hWet).connect(this.heatOut);
     this.pump = g(1); this.pumpDepth = g(0); this.pumpDepth.connect(this.pump.gain);
     this.pan = c.createStereoPanner(); this.fader = g(1); this.gate = g(1);
     this.meter = c.createAnalyser(); this.meter.fftSize = 512; this.buf = new Float32Array(512); this.level = 0;
     this.tex = g(1); this.dry = g(0); this.rev = g(0); this.dly = g(0);
-    this.input.connect(this.lo).connect(this.mid).connect(this.hi).connect(this.heat).connect(this.pump).connect(this.pan).connect(this.fader).connect(this.gate);
+    this.input.connect(this.lo).connect(this.mid).connect(this.hi).connect(this.heat); this.heatOut.connect(this.pump).connect(this.pan).connect(this.fader).connect(this.gate);
     this.gate.connect(this.meter); this.gate.connect(this.tex).connect(S.tex.input); this.gate.connect(this.dry).connect(S.dryBus);
     this.gate.connect(this.rev).connect(S.engine.revIn); this.gate.connect(this.dly).connect(S.engine.dlyIn);
     const t = () => c.currentTime, k = `mix.${key}`;
@@ -27,7 +29,7 @@ export class Strip {
     P.define(`${k}.level`, 0.8, () => this.setFader());
     P.define(`${k}.pan`, 0, (v) => this.pan.pan.setTargetAtTime(v, t(), 0.03));
     P.define(`${k}.low`, 0, shelf(this.lo)); P.define(`${k}.mid`, 0, shelf(this.mid)); P.define(`${k}.high`, 0, shelf(this.hi));
-    P.define(`${k}.heat`, 0, (v) => { this.heat.curve = v < 0.01 ? null : heatCurve(v); });
+    P.define(`${k}.heat`, 0, (v) => { const on = v < 0.01 ? 0 : 1, d = 1 + v * 9, n = t(); hWet.gain.setTargetAtTime(on, n, 0.04); hDry.gain.setTargetAtTime(1 - on, n, 0.04); hPre.gain.setTargetAtTime(d / 10, n, 0.04); hPost.gain.setTargetAtTime((1 - v * 0.25) / Math.tanh(d), n, 0.04); });
     P.define(`${k}.pump`, 0, (v) => this.pumpDepth.gain.setTargetAtTime(v * 0.92, t(), 0.03));
     P.define(`${k}.space`, 0, (v) => this.rev.gain.setTargetAtTime(v * v, t(), 0.03));
     P.define(`${k}.echo`, 0, (v) => this.dly.gain.setTargetAtTime(v * v, t(), 0.03));
@@ -37,7 +39,7 @@ export class Strip {
   setFader() { const P = this.S.params, v = faderGain(P.get(`mix.${this.key}.level`) ?? 0.8) * (this.inst ? (P.get('inst.level') ?? 0.9) / 0.9 : 1); this.fader.gain.setTargetAtTime(v, this.S.ctx.currentTime, 0.03); }
   readLevel() { this.meter.getFloatTimeDomainData(this.buf); let pk = 0; for (const x of this.buf) pk = Math.max(pk, Math.abs(x)); this.level = Math.max(pk, this.level * 0.9); return this.level; }
 }
-function heatCurve(k) { const n = 1024, cv = new Float32Array(n), d = 1 + k * 9; for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; cv[i] = (Math.tanh(x * d) / Math.tanh(d)) * (1 - k * 0.25) + x * k * 0.05; } return cv; }
+function heatCurve() { const n = 4096, cv = new Float32Array(n); for (let i = 0; i < n; i++) cv[i] = Math.tanh((i / (n - 1) * 2 - 1) * 10); return cv; }
 
 /** Creates the strips (before the instruments exist, so they can plug in) and the pump clock. */
 export function buildStrips(S, COLORS, NAMES) {

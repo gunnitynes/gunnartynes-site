@@ -45,13 +45,13 @@ async function boot() {
   $('#gate-meta').textContent = `${song.artist} · ${song.stems.length - 1} stems · ${song.bpm} bpm`;
   $('#full').href = `play.html?song=${song.id}&desktop=1`;
 
-  const engine = new AudioEngine(); await engine.ready;
+  const engine = new AudioEngine({ latency: 'balanced' }); await engine.ready;   // a little more time to make the sound: no gaps when a lot happens
   await engine.ctx.audioWorklet.addModule(new URL('./dsp.js', import.meta.url));
   const loader = new CellLoader(engine.ctx, { max: 44 });
   const ids = song.stems.map((s) => s.id);
   const session = new Session(initialState(song, { catalogIds: ids }));
   const player = new Player(engine, loader, session, song);
-  player.prefetch = 3;
+  player.prefetch = 3; player.ahead = 0.45;
   for (const s of song.stems) player.addSource(s.id, { id: s.id, kind: 'stem', name: s.name, cells: s.cells, gain: s.gain });
   Object.assign(S, { song, engine, ctx: engine.ctx, loader, session, player, params: new Params() });
   const P = S.params;
@@ -63,7 +63,8 @@ async function boot() {
   engine.bus.disconnect(); engine.post.disconnect();
   engine.post.connect(tex.input); tex.output.connect(engine.lp);
   // what you hear is always kept for the last half minute, so it can be captured after the fact (phone-tape.js)
-  S.retro = new AudioWorkletNode(engine.ctx, 'retro', { numberOfOutputs: 1, outputChannelCount: [1], processorOptions: { seconds: 34 } }); engine.limit.connect(S.retro); S.retroMute = engine.ctx.createGain(); S.retroMute.gain.value = 0; S.retro.connect(S.retroMute).connect(engine.ctx.destination);
+  S.retro = new AudioWorkletNode(engine.ctx, 'retro', { numberOfOutputs: 1, outputChannelCount: [1], processorOptions: { seconds: 34 } }); // nothing leaves louder than it can be: rounded off softly instead of clipped
+  const soft = engine.ctx.createWaveShaper(), cv = new Float32Array(4097); for (let i = 0; i < 4097; i++) { const x = (i / 2048 - 1) * 2, a = Math.abs(x); cv[i] = Math.sign(x) * (a < 0.75 ? a : 0.75 + 0.22 * Math.tanh((a - 0.75) / 0.22)); } const pre = engine.ctx.createGain(); pre.gain.value = 0.5; soft.curve = cv; engine.limit.disconnect(); engine.limit.connect(pre).connect(soft).connect(engine.master); soft.connect(S.retro); S.retroMute = engine.ctx.createGain(); S.retroMute.gain.value = 0; S.retro.connect(S.retroMute).connect(engine.ctx.destination);
   buildStrips(S, COLORS, NAMES);
   engine.bus.connect(S.bandGate).connect(S.strips.band.input);
   P.define('band.on', true, (v) => S.bandGate.gain.setTargetAtTime(v ? 1 : 0, S.ctx.currentTime, 0.04));
@@ -105,7 +106,7 @@ async function boot() {
   $('#gate').classList.add('gone');
   if (query.get('open') === 'atlas') featP.then(() => { const u = new URL(location.href); u.searchParams.delete('open'); history.replaceState(null, '', u); openAtlas(S, { say: toast }); });
   // (an iPhone only counts a FINISHED touch as a touch, for sound and for the motion question)
-  const touch1 = () => { for (const t of ['touchend', 'click']) removeEventListener(t, touch1, true); goFull(); wakeSpeaker(engine.ctx); Motion.ask(); };
+  const touch1 = () => { for (const t of ['touchend', 'click']) removeEventListener(t, touch1, true); goFull(); wakeSpeaker(engine.ctx); };
   for (const t of ['touchend', 'click']) addEventListener(t, touch1, true);
   addEventListener('touchend', () => { if (engine.ctx.state !== 'running') engine.ctx.resume(); }, true);
   // two fingers belong to the sound, not to the page's own zoom
@@ -116,9 +117,11 @@ async function boot() {
   requestAnimationFrame(frame);
   setInterval(save, 2000);
 }
-/** As much screen as the phone allows: real full screen where the browser lets a page ask (Android); on iPhone the
- *  page scrolls a little so Safari folds its bars away, and from the home screen it opens with no browser at all. */
-function goFull() { const d = document.documentElement; try { if (!document.fullscreenElement && d.requestFullscreen && !/iP(hone|od)/.test(navigator.userAgent)) d.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}); } catch { /* not here */ } }
+/** As much screen as the phone allows. Where a page may go full screen (Android, iPad) the first touch does it. An iPhone
+ *  does not let a web page do that; opened from its home screen it has no browser around it at all (menu: Full screen). */
+const FULL = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen, standalone = () => navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches, isFull = () => document.fullscreenElement || document.webkitFullscreenElement;
+function goFull() { try { if (FULL && !isFull() && !standalone()) FULL.call(document.documentElement, { navigationUI: 'hide' })?.catch?.(() => {}); } catch { /* not here */ } }
+function fullMenu() { if (FULL) { if (isFull()) (document.exitFullscreen || document.webkitExitFullscreen).call(document); else goFull(); return; } const inn = $('#sheet').firstElementChild; setTimeout(() => { inn.replaceChildren(h('div', { class: 'mhead' }, h('span', { class: 'eyebrow' }, 'Full screen'), h('button', { type: 'button', class: 'mclose', 'aria-label': 'Close', onclick: closeMenu }, '×')), h('h3', {}, 'On an iPhone'), h('ul', { class: 'help' }, h('li', {}, 'Tap the Share button in Safari’s bar.'), h('li', {}, 'Choose “Add to Home Screen”, then Add.'), h('li', {}, 'Open Playground from your home screen: the whole screen is yours.'))); $('#sheet').hidden = false; requestAnimationFrame(() => $('#sheet').classList.add('on')); }, 260); }
 
 // ------------------------------------------------------------------------------------------------ motion
 // Tilt is measured from how you held the phone when motion was switched on (so any comfortable angle is "centre").
@@ -256,7 +259,6 @@ function buildTop() {
   const sync = () => {
     $('#rec').classList.toggle('on', seq.rec); document.body.classList.toggle('recording', seq.rec);
     $('#undo').disabled = !seq.undos.length;
-    const rl = $('#recline'); rl.hidden = !seq.rec; if (seq.rec) rl.textContent = `● recording onto the tape${seq.take ? ` · ${takeName(seq.take.pat)}` : ''} · everything you touch, tilt and shake goes in`;
   };
   seq.addEventListener('change', sync); sync();
   S.seek = (bar) => session.dispatch({ t: 'seek', bar });
@@ -269,9 +271,9 @@ function buildTop() {
 const HELP = {
   stems: ['Every disc is an instrument. In the middle the song is as it is. Each edge is an effect: the nearer a disc lies to it, the more it takes on, and between two edges it takes on both. The line on top says what the disc in your hand is getting.', 'Tap an edge to choose its effect. Slide the handle along it to change the effect’s character.', 'Pinch a disc: bigger is louder. Tap it: off and on. Hold it: alone. Two fingers on the bare table gather, spread or turn everyone.', 'Drop one into a pool and it is held, reversed, halved, stuttered or sent wandering for as long as it lies there.', 'Orbit: a disc keeps making the movement you made with it, in time. Roll: tilt the phone and they roll. Shake: they scatter. Line up puts everything back.'],
   cloud: ['One finger on the wave plays it: across is where in the sound, up and down is what the ↕ button says.', 'The strip under it is the whole sound. Drag its two handles, or what lies between them, to choose the buffer; pinching the wave does the same. “8 bars” makes the sound longer or shorter.', 'Eight characters, far apart: tap one and the cloud glides there. Then the sixteen faders: set one, or draw across them. Double tap resets one.', 'Harmony sends grains a fifth or an octave away; Rhythm locks them to the beat.', 'A to D keep a cloud and glide back to it. With motion on, tilt moves through the sound, a shake picks another character.'],
-  play: ['The strip is the slice the sound is made of: drag it, pinch it. The name above it picks another sound from the song.', 'The field: four sounds in its corners, your finger between them. Hold a corner to keep the sound as it is there; New corners (or a shake) makes four others. With Loop on, the movement you make goes on by itself.', 'The eight faders are what the sound is made of: set one, draw across, double tap to reset.', 'Breath: hold a pad and blow into the microphone. Knock: knock on the phone and the last note plays. While a pad is held, tilt bends its tone and adds echo. On its side, the pads fill the screen.'],
+  play: ['The strip is the slice the sound is made of: drag it, pinch it. The name above it picks another sound from the song.', 'The field: four sounds in its corners, your finger between them. Hold a corner to keep the sound as it is there; Corners (or a shake) makes four others. Auto moves the point by itself, round the last movement you made (a circle until you make one); the button next to it is how long once round takes. A finger takes over.', 'The eight faders are what the sound is made of: set one, draw across, double tap to reset.', 'Breath: hold a pad and blow into the microphone. Knock: knock on the phone and the last note plays. While a pad is held, tilt bends its tone and adds echo. On its side, the pads fill the screen.'],
   process: ['One gesture moves the filter, tape, resonators and shimmer together.', 'Look: the song takes the colour of what the camera sees. Light brightens it, colour makes it ring. The picture stays on the phone.', 'Hold the buttons for an echo throw or a repeat; the others switch on and off.', 'With motion on: tilt moves the dot, a shake throws everything into the echo. On any page: lay the phone face down and everything freezes.'],
-  tape: ['The phone always listens to itself. The strip is the last half minute of everything you did: swipe across a part of it to keep it, or press 1, 2, 4 or 8 for the last bars.', 'What you kept is a piece, in the row below (hold one to throw it away). It is cut into slices: choose a tool and paint it over them. Move swaps two; a tap with it lets you hear one.', '½ and ×2 change its length, ÷ how fine it is cut, Mix finds a new order (so does a shake). Listen loops it in time with the song.', 'Then: on the tape at the playhead, into the Cloud, into an instrument, or share it as a sound file.', 'The tape: tap to go there, drag a piece to move it, hold to remove it, pinch to zoom. Mic records the microphone; ● on top records your moves and notes.'],
+  tape: ['Timeline is the tape itself. Press ● anywhere and what you do is written here, where the playhead is: notes join those already there, moves replace only their own kind, pools write what each stem played.', 'Drag on the numbers to move the playhead. Pinch to zoom, drag a lane to look around. Tap a lane’s name to switch it off and on.', 'Tap a part, then drag it, drag its ends, or use the row below: split, again, loop, backwards, delete. ↶ undoes.', 'Pieces: the phone always listens to itself. The strip is the last half minute: swipe across a part to keep it, or press 1, 2, 4 or 8 for the last bars. Paint tools over its slices; ½ and ×2 change its length, ÷ how fine it is cut, Mix finds a new order. → Timeline puts it on the tape.', 'Mic records the microphone onto the timeline.'],
   move: ['Walk: press it and walk. Your pace becomes the tempo; the stems stretch to it and keep their pitch. Stand still and they sink back while the Cloud holds a drone. No sensors? Tap your steps on the pad.', 'Turn: headphones on, stand up. The stems are in a circle around you; turn and the band turns. The one you face comes forward; keep facing it and you hear it almost alone. Or drag the circle.'],
 };
 function openMenu() {
@@ -293,6 +295,7 @@ function openMenu() {
       item(Motion.on ? 'Motion off' : 'Motion on (tilt and shake)', () => $('#motion').click()),
       bounceB,
       ...(S.seq.canCapture() ? [item('Keep the last notes and moves', () => { const r = S.seq.capture(); toast(r ? `Kept at bar ${r.bar + 1} of the tape` : 'Nothing to keep'); })] : []),
+      ...(standalone() ? [] : [item(FULL && isFull() ? 'Leave full screen' : 'Full screen', fullMenu)]),
       item('Open the full studio', () => { location.href = `play.html?song=${S.song.id}&desktop=1`; }),
       item('Start again', () => { if (confirm('Clear everything and start from the song again?')) { localStorage.removeItem(KEY()); location.reload(); } }, 'faint'),
       item('gunnar tynes', () => { location.href = '/'; }, 'faint')));
@@ -316,7 +319,9 @@ function faceFreeze(down) {
   if (down) { faceFreeze.was = [P.get('fx.shim.mix'), P.get('fx.shim.freeze')]; P.set('fx.shim.mix', Math.max(0.7, P.get('fx.shim.mix'))); P.set('fx.shim.freeze', true); P.set('band.on', false); toast('Face down: frozen'); buzz(30); }
   else if (faceFreeze.was) { P.set('band.on', true); P.set('fx.shim.freeze', faceFreeze.was[1]); P.set('fx.shim.mix', faceFreeze.was[0]); faceFreeze.was = null; }
 }
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
+/** Only what you could not know otherwise (something is not allowed, missing, or failed) is worth a message. */
+const WORTH = /not allowed|no microphone|no camera|nothing was heard|silence|sensors|needs|could not|is gone|stopped:|half minute|first whole bar/i;
+function toast(msg) { if (!WORTH.test(msg)) return; const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
 const cap = (t) => h('p', { class: 'cap' }, t);
 const tiltLine = (t) => h('p', { class: 'tilt' }, h('i'), t);
 
