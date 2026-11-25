@@ -20,6 +20,9 @@ import { Endless } from './endless.js';
 import { Conduct } from './conduct.js';
 import { Versions } from './versions.js';
 import { buildMore } from './more.js';
+import { EdgeFx } from './phone-fx.js';
+import { pieceStore, pieceSound } from './pieces.js';
+import { Work, loadParams, carry, saveFile, fileField } from './project.js';
 import { openAtlas } from './atlas.js';
 
 const params = new URLSearchParams(location.search);
@@ -76,13 +79,15 @@ async function boot() {
   let retuneT = 0;
   S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (S.params.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; S.tex.retune(); }, 60); };
 
-  let savedN = 3; try { savedN = Math.max(3, Math.min(MAX_FORGE, JSON.parse(localStorage.getItem(KEY()))?.forges?.length || 3)); } catch { /* none */ }
+  const work = (S.work = new Work(S, KEY())), kept = await work.read(), savedN = Math.max(3, Math.min(MAX_FORGE, kept?.forges?.length || 3));
+  S.pieces = []; pieceSound(S, () => S.pieces); pieceStore(song.id).all().then((x) => { S.pieces = x; });   // pieces kept on a phone play here too
   buildDeck(); buildHeader(); buildArrange(); buildCloud(); buildForge(savedN);
   buildTexturesRoom(S, { seg, sw, recBtn }); buildMixRoom(S, { recBtn }); buildSong(S, { COLORS, NAMES });
   // key: the whole song, and each stem on top (the player shifts the warped copies)
   S.params.define('song.key', 0, (v) => player.setKey(v));
   for (const st of song.stems) S.params.define(`band.${st.id}.key`, 0, (v) => player.setKey(v, st.id));
-  const had = restore();
+  let had = false; try { had = restore(kept); } catch (e) { console.error(e); work.aside(kept); }
+  S.slotsChanged?.();
   S.voice.ensureTrack(); S.mutate.drift(true); S.voice.restore();
   S.versions = new Versions(S);
   featP.then(() => {
@@ -105,7 +110,7 @@ async function boot() {
   const unlock = () => { wakeSpeaker(engine.ctx); for (const t of ['pointerdown', 'touchend', 'click', 'keydown']) removeEventListener(t, t === 'pointerdown' ? early : unlock, true); }, early = (e) => { if (e.pointerType === 'mouse') unlock(); };   // a finger only counts once it lifts
   addEventListener('pointerdown', early, true); for (const t of ['touchend', 'click', 'keydown']) addEventListener(t, unlock, true);
   requestAnimationFrame(frame);
-  setInterval(save, 2000);
+  work.start(); S.openField = fileField(S, work, (m) => alert(m)); S.saveProject = () => saveFile(S, 'computer').catch((e) => alert('The project could not be saved: ' + e.message));
 }
 
 // ------------------------------------------------------------------------------------------------ header
@@ -603,11 +608,14 @@ function frame() {
 
 // ------------------------------------------------------------------------------------------------ keeping your work
 const KEY = () => `playground.studio.${S.song.id}`;
-S.projectData = () => ({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.forges.map((f) => f.slot.src || null), band: S.session.state, morph: S.morph, mixMem: S.mixMem, snaps: S.snaps });
-function save() { try { localStorage.setItem(KEY(), JSON.stringify(S.projectData())); } catch { /* full or private */ } }
+S.projectData = () => ({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.forges.map((f) => f.slot.src || null), band: S.session.state, morph: S.morph, mixMem: S.mixMem, snaps: S.snaps, ...S.carried });
+const OWN = ['v', 'song', 'params', 'seq', 'cloud', 'forges', 'band', 'morph', 'mixMem', 'snaps'];
 function applyProject(d) {
   if (!d || (d.v !== 1 && d.v !== 2)) return false;
-  S.params.load(d.params); S.seq.load(d.seq);
+  S.carried = carry(d, OWN);
+  // a project from the phone: what its table's edges do to the stems is heard here too
+  if (!S.edge && (Object.entries(d.params || {}).some(([k, x]) => /^band\..+\.fx\./.test(k) && x > 0 && !/\.(echo|space)$/.test(k)) || /band\.[^."]+\.fx\./.test(JSON.stringify(d.seq?.vars || {})))) S.edge = new EdgeFx(S);
+  loadParams(S.params, d.params); S.seq.load(d.seq);
   if (d.cloud) S.cloudSrc = d.cloud;
   d.forges?.forEach((src, i) => { if (src) S.forges[i].slot.src = src; });
   if (d.morph) S.morph = d.morph; if (d.mixMem) S.mixMem = d.mixMem;
@@ -622,11 +630,9 @@ S.applyLive = (d) => {
   const want = S.seq.wantMode, jt = S.seq.jamTracks; S.seq.mode = 'jam'; if (want === 'song') { S.seq.setMode('song'); if (jt) S.seq.jamTracks = jt; }
   S.voice.ensureTrack(); S.voice.restore(); S.seq.changed();
 };
-function restore() {
-  let d; try { d = JSON.parse(localStorage.getItem(KEY())); } catch { return false; }
+function restore(d) {
   if (!applyProject(d)) return false;
   const want = S.seq.wantMode; S.seq.mode = 'jam'; if (want === 'song') { const jt = S.seq.jamTracks; S.seq.setMode('song'); if (jt) S.seq.jamTracks = jt; }
   return true;
 }
-S.loadProject = (d) => { if (d.song && d.song !== S.song.id) { alert('That file belongs to another song.'); return; } try { localStorage.setItem(KEY(), JSON.stringify(d)); } catch { /* fine */ } location.reload(); };
-S.reset = () => { localStorage.removeItem(KEY()); location.reload(); };
+S.reset = () => S.work.replace(null, 'before starting again').catch((e) => alert('It could not be cleared: ' + e.message));

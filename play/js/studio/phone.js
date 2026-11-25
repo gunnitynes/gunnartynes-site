@@ -23,6 +23,8 @@ import { buildPlay } from './phone-inst.js';
 import { buildTape } from './phone-tape.js';
 import { Look } from './phone-look.js';
 import { EdgeFx } from './phone-fx.js';
+import { Versions, ago } from './versions.js';
+import { Work, loadParams, carry, saveFile, fileField, lastSaved } from './project.js';
 
 const query = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {}, phone: true };
@@ -54,7 +56,7 @@ async function boot() {
   player.prefetch = 3; player.ahead = 0.45;
   for (const s of song.stems) player.addSource(s.id, { id: s.id, kind: 'stem', name: s.name, cells: s.cells, gain: s.gain });
   Object.assign(S, { song, engine, ctx: engine.ctx, loader, session, player, params: new Params() });
-  const P = S.params;
+  const P = S.params, work = (S.work = new Work(S, KEY())), kept = await work.read();
 
   // the same signal flow as the studio: strips → the Process rack and the dry bus → glue and limiter
   const tex = buildTextures(S); S.tex = tex; S.resFreqs = tex.resFreqs;
@@ -75,6 +77,8 @@ async function boot() {
   P.define('fx.rep.hold', 0, (v) => tex.repeat(v || 0));
   // tempo (Walk moves it; warped, so the pitch stays)
   P.define('song.bpm', song.bpm, (v) => player.setTempo(v, true));
+  // the key: set on the computer, heard here too
+  P.define('song.key', 0, (v) => player.setKey(v)); for (const st of song.stems) P.define(`band.${st.id}.key`, 0, (v) => player.setKey(v, st.id));
   (P.range ??= {})['fx.rep.hold'] = [0, 0.5, 'Repeat'];
   defineXY(P);
 
@@ -90,9 +94,9 @@ async function boot() {
   buildCloud(); buildSound(1, 'sampler'); buildSound(2, 'strings');
   const U = { toast, tiltSet, askSensors, Motion, srcAt, barNow, nextBar, bpb }; S.look = new Look(S); S.edge = new EdgeFx(S);
   buildTop(); buildStems(S, U); buildCloudPage(S, U); buildPlay(S, U); buildProcess(); buildTape(S, U); buildMove(); buildTabs();
-  restore();
+  try { restore(kept); } catch (e) { console.error(e); work.aside(kept); }
   S.voice.ensureTrack(); S.voice.restore();
-  P.set('song.bpm', song.bpm, { by: 'load' });   // a walking tempo is not kept: the pocket always starts at the song's
+  P.set('song.bpm', S.keptBpm || song.bpm, { by: 'load' });   // a walking tempo is not kept: the pocket starts at the song's, or at the one a file from the computer brought
   const q = S.seq;
   if (!q.arr.bars) q.fillFromSong();
   q.mode = 'jam'; q.setMode('song');
@@ -115,7 +119,7 @@ async function boot() {
   let lock = null; const awake = async () => { try { if (player.playing && !lock && !document.hidden) { lock = await navigator.wakeLock?.request('screen'); lock?.addEventListener('release', () => { lock = null; }); } else if (!player.playing && lock) { lock.release(); lock = null; } } catch { /* not here */ } };
   player.on('transport', awake); document.addEventListener('visibilitychange', awake);
   requestAnimationFrame(frame);
-  setInterval(save, 2000);
+  S.versions = new Versions(S, { pre: 'pocket:' }); S.openField = fileField(S, work, toast); work.start();
 }
 /** As much screen as the phone allows. Where a page may go full screen (Android, iPad) the first touch does it. An iPhone
  *  does not let a web page do that; opened from its home screen it has no browser around it at all (menu: Full screen). */
@@ -297,9 +301,21 @@ function openMenu() {
       ...(S.seq.canCapture() ? [item('Keep the last notes and moves', () => { const r = S.seq.capture(); toast(r ? `Kept at bar ${r.bar + 1} of the tape` : 'Nothing to keep'); })] : []),
       ...(standalone() ? [] : [item(FULL && isFull() ? 'Leave full screen' : 'Full screen', fullMenu)]),
       item('Open the full studio', () => { location.href = `play.html?song=${S.song.id}&desktop=1`; }),
-      item('Start again', () => { if (confirm('Clear everything and start from the song again?')) { localStorage.removeItem(KEY()); location.reload(); } }, 'faint'),
+      h('p', { class: 'mkept' }, 'Your work is kept in this browser. ', lastSaved(S) ? `Last saved as a file ${ago(lastSaved(S))}.` : 'A file keeps it safe, and opens in the full studio on a computer too.'),
+      item('Save the project as a file', saveProject), item('Open a project file', () => S.openField.click()), ...(S.versions.list.length ? [item('Earlier versions', versionSheet)] : []),
+      item('Start again', () => { if (confirm('Start from the song again? What is here now stays under Earlier versions.')) S.work.replace(null, 'before starting again').catch((e) => toast('It could not be cleared: ' + e.message)); }, 'faint'),
       item('gunnar tynes', () => { location.href = '/'; }, 'faint')));
   sh.hidden = false; requestAnimationFrame(() => sh.classList.add('on'));
+}
+async function saveProject() { try { await saveFile(S, 'phone'); } catch (e) { toast('The project could not be saved: ' + e.message); } }
+function versionSheet() {
+  setTimeout(() => {
+    const sh = $('#sheet');
+    sh.firstElementChild.replaceChildren(h('div', { class: 'mhead' }, h('span', { class: 'eyebrow' }, 'Earlier versions'), h('button', { type: 'button', class: 'mclose', 'aria-label': 'Close', onclick: closeMenu }, '×')),
+      h('p', { class: 'mkept' }, 'Put aside every few minutes. Going back to one keeps what you have now as a version too.'),
+      h('div', { class: 'mlist' }, ...S.versions.list.slice(0, 20).map((v) => h('button', { type: 'button', class: 'mitem ver', onclick: () => S.work.replace(v.data, 'before going back').catch((e) => toast('It could not be opened: ' + e.message)) }, h('b', {}, ago(v.ts)), h('small', {}, v.summary)))));
+    sh.hidden = false; requestAnimationFrame(() => sh.classList.add('on'));
+  }, 240);
 }
 function closeMenu() { const sh = $('#sheet'); sh.classList.remove('on'); setTimeout(() => { sh.hidden = true; }, 220); }
 function buildTabs() { document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => { showPage(b.dataset.p); buzz(5); }; }); }
@@ -463,11 +479,12 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 const KEY = () => `playground.pocket.${S.song.id}`;
-function save() { try { localStorage.setItem(KEY(), JSON.stringify({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.sounds.map((s) => s.slot.src || null), band: S.session.state, mem: S.mem, table: S.tableDump?.() })); } catch { /* full or private */ } }
-function restore() {
-  let d; try { d = JSON.parse(localStorage.getItem(KEY())); } catch { return; }
-  if (!d || d.v !== 2) return;
-  S.params.load(d.params); S.seq.load(d.seq);
+const OWN = ['v', 'song', 'params', 'seq', 'cloud', 'forges', 'band', 'mem', 'table', 'bpm'];
+S.projectData = () => ({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: [...S.sounds.map((s) => s.slot.src || null), ...(S.moreForges || [])], band: S.session.state, mem: S.mem, table: S.tableDump?.(), ...(S.keptBpm ? { bpm: S.keptBpm } : {}), ...S.carried });
+function restore(d) {
+  if (!d || (d.v !== 1 && d.v !== 2)) return;
+  S.carried = carry(d, OWN); S.keptBpm = d.bpm || 0; S.moreForges = (d.forges || []).slice(S.sounds.length);
+  loadParams(S.params, d.params); S.seq.load(d.seq);
   if (d.cloud) S.cloudSrc = d.cloud; if (d.mem) { S.mem = d.mem; S.memRows?.forEach((m) => m.show()); } if (d.table) S.tablePos = d.table;
   d.forges?.forEach((src, i) => { if (src && S.sounds[i]) S.sounds[i].slot.src = src; });
   if (d.band?.songId === S.song.id) S.session.dispatch({ t: 'state/load', state: d.band }, { log: false });

@@ -25,6 +25,9 @@ const idbPut = (k, v) => idb('readwrite', (s) => s.put(v, k)).catch(() => null);
 const idbKeys = () => idb('readonly', (s) => s.getAllKeys()).catch(() => []);
 const idbDel = (k) => idb('readwrite', (s) => s.delete(k)).catch(() => null);
 
+/** The sounds of one song, for the project file: what is on the Audio lane (cells), and the sounds recorded on their own. */
+export const voiceStore = (songId) => ({ cell: (url) => idbGet(url), putCell: (url, d) => idb('readwrite', (s) => s.put(d, url)), rec: (id) => idbGet(`rec:${songId}:${id}`), putRec: (id, d) => idb('readwrite', (s) => s.put(d, `rec:${songId}:${id}`)) });
+
 export class Voice extends EventTarget {
   constructor(S) {
     super(); this.S = S; this.st = S.song.stems.find((s) => s.id === VOICE); this.take = null; this.n = 0;
@@ -42,13 +45,18 @@ export class Voice extends EventTarget {
     for (let c = 0; c < cells.length; c++) { const v = m[c] && L.has(m[c].url) ? m[c] : null; if ((cells[c]?.url || null) !== (v?.url || null)) { cells[c] = v; ch = true; } }
     if (ch) this.emit();
   }
-  /** After a reload: bring the takes back from the browser's storage (and forget audio nothing points at any more). */
+  /** After a reload: bring the takes back from the browser's storage. */
   async restore() {
     const m = this.S.seq.arr.voice || {}, want = new Set(Object.values(m).map((v) => v.url));
     await Promise.all([...want].map(async (url) => { if (this.S.loader.has(url)) return; const d = await idbGet(url); if (d) this.S.loader.put(url, this.buffer(d)); }));
-    const pre = `voice:${this.S.song.id}/`;
-    for (const k of await idbKeys()) if (String(k).startsWith(pre) && !want.has(k)) idbDel(k);
     this.sync(); this.S.seq.applyBand();
+    setTimeout(() => this.tidy(), 12000);
+  }
+  /** Forget takes that nothing names any more: no project in this browser (the phone's, the studio's), no version, no undo. */
+  async tidy() {
+    const { inUse } = await import('./project.js'), t = await inUse(this.S); if (!t) return;
+    const pre = `voice:${this.S.song.id}/`;
+    for (const k of await idbKeys()) if (String(k).startsWith(pre) && !t.includes(k)) idbDel(k);
   }
   buffer(data) { const b = this.S.ctx.createBuffer(1, data.length, this.S.ctx.sampleRate); b.copyToChannel(data, 0); return b; }
 

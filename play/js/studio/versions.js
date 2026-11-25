@@ -7,12 +7,12 @@ const db = () => (dbp ??= new Promise((res, rej) => { const r = indexedDB.open(D
 async function tx(mode, fn) { const d = await db(); return new Promise((res, rej) => { const t = d.transaction('v', mode), r = fn(t.objectStore('v')); t.oncomplete = () => res(r?.result); t.onerror = () => rej(t.error); }); }
 
 export class Versions extends EventTarget {
-  constructor(S, { every = 3 } = {}) {
-    super(); this.S = S; this.list = []; this.listening = null; this.now = null; this.lastJson = '';
+  constructor(S, { every = 3, pre = '' } = {}) {
+    super(); this.S = S; this.prefix = pre; this.list = []; this.listening = null; this.now = null; this.lastJson = '';
     this.load().then(() => this.save('when you came in'));
     setInterval(() => { if (!this.listening) this.save(); }, every * 60000);
   }
-  get pre() { return `${this.S.song.id}:`; }
+  get pre() { return `${this.prefix}${this.S.song.id}:`; }
   async load() {
     const keys = (await tx('readonly', (s) => s.getAllKeys()).catch(() => [])).filter((k) => String(k).startsWith(this.pre)).sort();
     this.list = (await Promise.all(keys.map((k) => tx('readonly', (s) => s.get(k)).catch(() => null)))).filter(Boolean).reverse();

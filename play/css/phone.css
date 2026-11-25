@@ -309,3 +309,7 @@ body.recording::after{content:"";position:fixed;inset:0;z-index:40;pointer-event
 #p-tape .seg button{padding:0 11px;min-height:32px;font-size:10.5px}
 .tline{position:relative;flex:1;min-height:250px;border:1px solid var(--rule);border-radius:12px;background:#0b0d12;touch-action:none;overflow:hidden}.tline canvas{position:absolute;inset:0}
 .tlbar{flex:none;display:flex;gap:5px;min-height:44px}.tlb{flex:1;min-width:0;min-height:44px;border:1px solid var(--rule2);border-radius:11px;background:#1a1e28;font:10.5px var(--mono);padding:0 2px}.tlb.on{background:var(--p);color:#11141b;border-color:var(--p)}.tlb.del{color:var(--rec);border-color:#df8a7466}.tlb:active{background:var(--paper);color:var(--ground)}
+/* keeping your work */
+.mkept{font:13px/1.45 var(--sans);color:var(--dim);margin:18px 0 6px}
+.mitem.ver{display:flex;flex-direction:column;gap:2px;justify-content:center}
+.mitem.ver b{font-weight:500}.mitem.ver small{font:11px var(--mono,monospace);color:var(--dim)}

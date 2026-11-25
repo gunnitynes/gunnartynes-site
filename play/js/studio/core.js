@@ -19,7 +19,7 @@ export class Params extends EventTarget {
   }
   reset(path) { this.set(path, this.def[path]); }
   on(fn) { const h = (e) => fn(e.detail); this.addEventListener('change', h); return h; }
-  dump() { return { ...this.v }; }
+  dump() { return { ...this.extra, ...this.v }; }
   load(v) { for (const [k, x] of Object.entries(v || {})) if (k in this.def) this.set(k, x, { by: 'load' }); }
 }
 
