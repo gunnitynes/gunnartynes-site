@@ -47,7 +47,7 @@ async function boot() {
 
   const engine = new AudioEngine({ latency: 'balanced' }); await engine.ready;   // a little more time to make the sound: no gaps when a lot happens
   await engine.ctx.audioWorklet.addModule(new URL('./dsp.js', import.meta.url));
-  const loader = new CellLoader(engine.ctx, { max: 44 });
+  const loader = new CellLoader(engine.ctx, { max: 44, light: song.light ? song.cellDur : 0 });
   const ids = song.stems.map((s) => s.id);
   const session = new Session(initialState(song, { catalogIds: ids }));
   const player = new Player(engine, loader, session, song);

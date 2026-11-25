@@ -1,5 +1,6 @@
 // What an edge of the table does to a stem. Every stem can have every one of these, by its own amount; a unit is only
-// built for a stem the first time it is really used, and sits between its filter and its pan.
+// built for a stem the first time it is really used, and sits between its filter and its pan. Nothing is ever unplugged
+// while it sounds: the new way is laid beside the old one and faded over to.
 //   amount (band.<id>.fx.<name>, 0..1) is how near the disc is to the edge · character (edge.k.<name>, 0..1) is shared:
 //   the handle that slides along the edge.
 import { clamp } from './phone-kit.js';
@@ -20,6 +21,7 @@ export class EdgeFx {
     this.root = () => { if (this._root !== undefined || !S.feat) return this._root ?? 9; const c = new Array(12).fill(0); for (const rows of Object.values(S.feat.stems)) for (const x of rows) if (x) x.c.forEach((v, i) => { c[i] += v; }); return (this._root = c.indexOf(Math.max(...c))); };
     for (const n of Object.keys(FX)) { P.define(`edge.k.${n}`, { echo: 0.5, space: 0.6, pulse: 0.4, fly: 0.4, ring: 0, wobble: 0.35 }[n] ?? 0.4, () => this.character(n)); (P.range ??= {})[`edge.k.${n}`] = [0, 1, `${FX[n][0]} ${FX[n][2]}`]; }
     for (const st of S.song.stems) for (const n of Object.keys(FX)) P.define(`band.${st.id}.fx.${n}`, 0, (v) => this.set(st.id, n, v));
+    for (const st of S.song.stems) this.direct(st.id);
     for (const t of ['transport', 'tempo', 'seek']) S.player.on(t, () => { for (const r of this.ch.values()) for (const u of Object.values(r.units)) u.sync?.(); });
   }
   k(n) { return this.S.params.get(`edge.k.${n}`) ?? 0.4; }
@@ -30,7 +32,7 @@ export class EdgeFx {
     if (n === 'space') { if (D.state.tracks[id]) D.dispatch({ t: 'track/set', id, p: { rev: 0.06 + v * v * 1.2 } }, { log: false }); return; }
     let r = this.ch.get(id); if (v < 0.004 && !r?.units[n]) return;
     if (!r) this.ch.set(id, (r = { units: {} }));
-    if (!r.units[n]) { r.units[n] = this.build(n); this.wire(id, r); }
+    if (!r.units[n]) { r.units[n] = this.build(n); this.wire(id, r, n); }
     r.units[n].set(v, this.k(n));
   }
   character(n) {
@@ -39,7 +41,23 @@ export class EdgeFx {
     if (n === 'space') { if ('mix.space.tone' in P.def) P.set('mix.space.tone', +(0.25 + k * 0.75).toFixed(3), { by: 'ui' }); else this.S.engine.revOut.gain.setTargetAtTime(0.3 + k * 1.1, this.S.ctx.currentTime, 0.05); return; }
     for (const [id, r] of this.ch) r.units[n]?.set(this.amount(id, n), k, true);
   }
-  wire(id, r) { const c = this.S.engine.channel(id), list = ORDER.map((n) => r.units[n]).filter(Boolean); c.lp.disconnect(); let prev = c.lp; for (const u of list) { try { u.out.disconnect(); } catch { /* new */ } prev.connect(u.in); prev = u.out; } prev.connect(c.pan); }
+  fade(g, v) { const t = this.S.ctx.currentTime + 0.01; g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(v, t + 0.03); }
+  gain(v) { const g = this.S.ctx.createGain(); g.gain.value = v; return g; }
+  /** The way round: filter → (a gain we can close) → pan. Made before anything sounds. */
+  direct(id) {
+    const c = this.S.engine.channel(id); if (c.direct) return c;
+    c.direct = this.gain(1); c.lp.connect(c.direct).connect(c.pan); c.lp.disconnect(c.pan); return c;
+  }
+  wire(id, r, n) {
+    const c = this.direct(id);
+    if (!r.row) {   // a row of places, one per effect in a fixed order, each passing straight through until it is used
+      r.row = {}; const inn = this.gain(1), out = this.gain(0); let prev = inn;
+      for (const k of ORDER) { const by = this.gain(1), o = this.gain(1); prev.connect(by).connect(o); r.row[k] = { from: prev, by, to: o }; prev = o; }
+      prev.connect(out).connect(c.pan); c.lp.connect(inn); this.fade(out, 1); this.fade(c.direct, 0);
+    }
+    const u = r.units[n], p = r.row[n], wet = this.gain(0);
+    p.from.connect(u.in); u.out.connect(wet).connect(p.to); this.fade(wet, 1); this.fade(p.by, 0);
+  }
   build(n) {
     const c = this.S.ctx, S = this.S, t = () => c.currentTime, g = (v = 1) => { const x = c.createGain(); x.gain.value = v; return x; }, ramp = (p, v, tc = 0.05) => p.setTargetAtTime(v, t(), tc);
     const mix = (make) => { const i = g(), o = g(), dry = g(), wet = g(0); i.connect(dry).connect(o); wet.connect(o); const u = make(i, wet); return { in: i, out: o, dry, wet, ...u }; };

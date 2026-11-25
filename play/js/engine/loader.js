@@ -1,8 +1,10 @@
+import { cutLight, edges } from './light.js';
 // Fetch + decode cells on demand, keep a bounded LRU of decoded buffers. A full song decoded is ~2 GB;
 // the player only ever needs the next few bars of each track, so it pins what it wants and the rest can go.
 export class CellLoader {
-  constructor(ctx, { max = 96, concurrency = 6 } = {}) {
+  constructor(ctx, { max = 96, concurrency = 6, light = 0 } = {}) {
     this.ctx = ctx; this.max = max; this.concurrency = concurrency;
+    this.light = light;       // seconds per cell: fetch the lighter (AAC) copy of each cell; 0 = the lossless one
     this.cache = new Map();   // url → AudioBuffer (insertion order = recency)
     this.pending = new Map(); // url → Promise
     this.queue = []; this.active = 0;
@@ -38,12 +40,19 @@ export class CellLoader {
     while (this.active < this.concurrency && this.queue.length) {
       const job = this.queue.shift();
       this.active++;
-      fetch(job.url).then((r) => { if (!r.ok) throw new Error(`${r.status} ${job.url}`); return r.arrayBuffer(); })
-        .then((ab) => this.ctx.decodeAudioData(ab))
+      this.fetchCell(job.url)
         .then((buf) => { this.cache.set(job.url, buf); this.evict(); job.resolve(buf); this.onload?.(job.url); })
         .catch((e) => { console.warn('cell load failed', e); job.reject(e); })
         .finally(() => { this.pending.delete(job.url); this.active--; this.pump(); });
     }
+  }
+  async fetchCell(url) {
+    const bytes = async (u) => { const r = await fetch(u); if (!r.ok) throw new Error(`${r.status} ${u}`); return r.arrayBuffer(); };
+    if (this.light && /\.flac(\?|$)/.test(url)) {
+      try { const ab = await bytes(url.replace('.flac', '.m4a')), e = edges(ab), b = cutLight(this.ctx, await this.ctx.decodeAudioData(ab), this.light, e); this.lit = true; return b; }
+      catch (e) { this.misses = (this.misses || 0) + 1; if (this.misses > 3 && !this.lit) this.light = 0; console.warn('no light cell, taking the full one', e.message); }   // a browser that can't: lossless from here
+    }
+    return this.ctx.decodeAudioData(await bytes(url));
   }
   evict() {
     if (this.cache.size <= this.max) return;
