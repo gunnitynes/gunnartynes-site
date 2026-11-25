@@ -340,3 +340,7 @@ body.recording::after{content:"";position:fixed;inset:0;z-index:40;pointer-event
 .pickb span{font:500 14px var(--sans);color:#fff;text-transform:none;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pickb canvas{width:100%;height:18px;opacity:.6}
 .pickb[aria-pressed=true]{background:color-mix(in srgb,var(--c) 26%,transparent);border-color:var(--c)}.pickb[aria-pressed=true] canvas{opacity:1}.pickb.busy{opacity:.55}
 @media (max-height:720px){.seg.views button{min-height:32px}.stemline{height:42px}.ins-src .seg button,.srcpick{min-height:34px}#p-play .pads{height:112px}.tiles{min-height:160px}.ins-top .chip.who{min-height:32px}.cdeck.big{height:210px}#p-cloud .surface{min-height:100px}}
+/* process */
+.morph .look{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;opacity:.5}.morph .look[hidden]{display:none}
+#p-process .fxgrid{flex:none}#p-process .morph{min-height:160px}#p-process .morph .tip{top:24%}
+@media (max-height:720px){.fxb{min-height:46px}}

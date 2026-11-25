@@ -23,7 +23,8 @@ import { buildPlay } from './phone-inst.js';
 import { buildTape } from './phone-tape.js';
 import { Look } from './phone-look.js';
 import { EdgeFx } from './phone-fx.js';
-import { COLORS, NAMES } from './phone-kit.js';
+import { COLORS, NAMES, morphPad, tileField } from './phone-kit.js';
+import { ARMS as PROC, defineField, fresh, standing } from './process-field.js';
 import { Versions, ago } from './versions.js';
 import { Work, loadParams, carry, saveFile, fileField, lastSaved } from './project.js';
 
@@ -79,7 +80,8 @@ async function boot() {
   // the key: set on the computer, heard here too
   P.define('song.key', 0, (v) => player.setKey(v)); for (const st of song.stems) P.define(`band.${st.id}.key`, 0, (v) => player.setKey(v, st.id));
   (P.range ??= {})['fx.rep.hold'] = [0, 0.5, 'Repeat'];
-  defineXY(P);
+  defineXY(P);   // (older recordings on the timeline move this one)
+  S.runField = defineField(P, () => ((S.mem ??= {})['morph.process'] ??= fresh()));
 
   S.seq = new Sequencer(S);
   P.recorder = (path, v) => S.seq.moveIn(path, v);
@@ -288,7 +290,7 @@ const HELP = {
   stems: ['Every disc is an instrument. In the middle the song is as it is. Each edge is an effect: the nearer a disc lies to it, the more it takes on, and between two edges it takes on both. The line on top says what the disc in your hand is getting.', 'Tap an edge to choose its effect. Slide the handle along it to change the effect’s character.', 'Pinch a disc: bigger is louder. Tap it: off and on. Hold it: alone. Two fingers on the bare table gather, spread or turn everyone.', 'Drop one into a pool and it is held, reversed, halved, stuttered or sent wandering for as long as it lies there.', 'Orbit: a disc keeps making the movement you made with it, in time. Roll: tilt the phone and they roll. Shake: they scatter. Line up puts everything back.'],
   cloud: ['One finger on the wave plays it: across is where in the sound, up and down is what the ↕ button says.', 'The strip under it is the whole sound. Drag its two handles, or what lies between them, to choose the buffer; pinching the wave does the same. “8 bars” makes the sound longer or shorter.', 'Eight characters, far apart: tap one and the cloud glides there. Controls has all sixteen settings: put a finger on one and slide. Two taps put it back. The name on top chooses another stem.', 'Harmony sends grains a fifth or an octave away; Rhythm locks them to the beat.', 'A to D keep a cloud and glide back to it. With motion on, tilt moves through the sound, a shake picks another character.'],
   play: ['Cloud, 1 and 2 are your instruments; + makes another. The pads at the bottom always play the one you are on, in all three windows.', 'Source: tap the name to choose which stem it is made from. The line of bars is that stem through the song: slide along it for another place. The wave is the slice itself: drag it, drag its ends, or pinch.', 'Field: four sounds in its corners, your finger between them. Hold a corner to keep the sound as it is there; Corners (or a shake) makes four others. Auto moves the point by itself, round the last movement you made; the button next to it is how long once round takes.', 'Controls: put a finger anywhere on one and slide, across or up and down. Two taps put it back.', 'Breath: hold a pad and blow into the microphone. Knock: knock on the phone and the last note plays. While a pad is held, tilt bends its tone and adds echo. On its side, the pads fill the screen.'],
-  process: ['One gesture moves the filter, tape, resonators and shimmer together.', 'Look: the song takes the colour of what the camera sees. Light brightens it, colour makes it ring. The picture stays on the phone.', 'Hold the buttons for an echo throw or a repeat; the others switch on and off.', 'With motion on: tilt moves the dot, a shake throws everything into the echo. On any page: lay the phone face down and everything freezes.'],
+  process: ['The whole song. In the middle of the field it is as it is; each corner is a treatment of it, and the nearer the point, the more of it. “As it is” takes everything away again.', 'Hold a corner to keep what you hear there; Corners (or a shake) makes four others. Auto moves the point by itself, round the last movement you made.', 'Controls: what the treatments are made of. Put a finger on one and slide; two taps put it back.', 'Look: the song takes the colour of what the camera sees. Light moves the point across, colour up. The picture stays on the phone.', 'Hold Throw to send everything into the echo, Repeat to go round the last moment, Freeze to hold what sounds now. Gate and Crush switch on and off.', 'With motion on: tilt moves the point. On any page: lay the phone face down and everything freezes.'],
   tape: ['Timeline is the tape itself. Press ● anywhere and what you do is written here, where the playhead is: notes join those already there, moves replace only their own kind, pools write what each stem played.', 'Drag on the numbers to move the playhead. Pinch to zoom, drag a lane to look around. Tap a lane’s name to switch it off and on.', 'Tap a part, then drag it, drag its ends, or use the row below: split, again, loop, backwards, delete. ↶ undoes.', 'Pieces: the phone always listens to itself. The strip is the last half minute: swipe across a part to keep it, or press 1, 2, 4 or 8 for the last bars. Paint tools over its slices; ½ and ×2 change its length, ÷ how fine it is cut, Mix finds a new order. → Timeline puts it on the tape.', 'Mic records the microphone onto the timeline.'],
   move: ['Walk: press it and walk. Your pace becomes the tempo; the stems stretch to it and keep their pitch. Stand still and they sink back while the Cloud holds a drone. No sensors? Tap your steps on the pad.', 'Turn: headphones on, stand up. The stems are in a circle around you; turn and the band turns. The one you face comes forward; keep facing it and you hear it almost alone. Or drag the circle.'],
 };
@@ -339,7 +341,7 @@ function tips() {
     ['stems', '#p-stems .table', 'Press ▶\uFE0E, then drag one to an edge'],
     ['cloud', '#p-cloud .surface', 'Touch the wave and hold'],
     ['play', '#p-play .slice', 'Tap the name to choose a stem'],
-    ['process', '#p-process .xy', 'Drag the dot: the whole song follows'],
+    ['process', '#p-process .morph', 'Drag the point: the whole song follows'],
     ['tape', '#p-tape .tline', 'Press ● and what you do is written here'],
   ]) {
     const box = document.querySelector(where); if (!box || seen.has(k)) continue;
@@ -389,37 +391,46 @@ function writeBand(make, label) {
 // ------------------------------------------------------------------------------------------------ page: process
 function buildProcess() {
   const room = $('#p-process'), P = S.params;
-  const pad = h('div', { class: 'xy' }, h('span', { class: 'ax l' }, 'darker'), h('span', { class: 'ax r' }, 'brighter'), h('span', { class: 'ax t' }, 'ringing'), h('span', { class: 'ax b' }, 'dry'), h('i', { class: 'dot' }));
-  const dot = pad.querySelector('.dot');
-  let touching = false;
-  const at = (e) => { const r = pad.getBoundingClientRect(); P.set('fx.xy.x', r3(clamp((e.clientX - r.left) / r.width, 0, 1))); P.set('fx.xy.y', r3(clamp(1 - (e.clientY - r.top) / r.height, 0, 1))); };
-  pad.addEventListener('pointerdown', (e) => { e.preventDefault(); touching = true; pad.setPointerCapture(e.pointerId); at(e); });
-  pad.addEventListener('pointermove', (e) => touching && at(e));
-  const lift = () => { touching = false; }; pad.addEventListener('pointerup', lift); pad.addEventListener('pointercancel', lift);
-  const showDot = () => { dot.style.left = `${P.get('fx.xy.x') * 100}%`; dot.style.top = `${(1 - P.get('fx.xy.y')) * 100}%`; };
-  P.on(({ path }) => path.startsWith('fx.xy') && showDot()); showDot();
-  // hold buttons: act while a finger is on them; toggles: tap on, tap off
+  P.define('pocket.pview', 'field');
+  // ---- the field: the song as it is in the middle, four treatments in the corners
+  const macro = { get x() { return P.get('fx.field.x'); }, get y() { return 1 - P.get('fx.field.y'); }, set: (x, y, by) => { P.set('fx.field.x', x, { by }); P.set('fx.field.y', r3(1 - y), { by }); }, vals: () => standing(P), run: () => S.runField() };
+  const showAuto = () => { autoB.setAttribute('aria-pressed', field.auto); speedB.hidden = !field.auto; const n = field.beats(); speedB.textContent = n >= 4 ? `${n / 4} bar${n > 4 ? 's' : ''}` : `${n} beat${n > 1 ? 's' : ''}`; };
+  const field = morphPad(S, { arms: () => PROC, corners: () => fresh().map((c) => [c.n, c.v]), key: () => 'process', color: () => '#e6b450', onAuto: () => showAuto(), macro });
+  const autoB = h('button', { type: 'button', class: 'chip tog auto', 'aria-pressed': 'false', title: 'The point moves by itself: round the movement you drew last, or in a circle until you draw one', onclick: () => { field.setAuto(!field.auto); buzz(10); } }, h('i'), 'Auto'), speedB = h('button', { type: 'button', class: 'chip tog', title: 'How long once round takes', onclick: () => { field.speed(); buzz(6); } });
+  const cornersB = h('button', { type: 'button', class: 'chip tog', title: 'Four other treatments in the corners (or shake the phone)', onclick: () => { field.shuffle(); buzz(12); } }, 'Corners');
+  // ---- as it is: everything back
+  const dryB = h('button', { type: 'button', class: 'chip', title: 'The song as it is, without any of this', onclick: () => { field.goTo(0.5, 0.5); setTimeout(() => { for (const a of PROC) P.reset(a[0]); for (const p of ['fx.gate.depth', 'fx.crush.mix', 'fx.rep.hold']) P.set(p, 0); }, 320); buzz(12); } }, 'As it is');
+  // ---- controls
+  const tiles = tileField(S, () => PROC, { cols: 3, color: () => '#e6b450' });
+  // ---- hold buttons act while a finger is on them; toggles: tap on, tap off
   const hold = (label, title, down, upFn) => { const b = h('button', { type: 'button', class: 'fxb hold', title }, h('b', {}, label), h('small', {}, 'hold')); b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.classList.add('on'); down(); buzz(8); }); const u = () => { if (!b.classList.contains('on')) return; b.classList.remove('on'); upFn(); }; b.addEventListener('pointerup', u); b.addEventListener('pointercancel', u); b.addEventListener('pointerleave', u); b.addEventListener('contextmenu', (e) => e.preventDefault()); return b; };
   const tog = (label, path, onV, offV) => { const b = h('button', { type: 'button', class: 'fxb', onclick: () => { P.set(path, P.get(path) === onV ? offV : onV); buzz(6); } }, h('b', {}, label), h('small', {}, 'on / off')); const s = () => b.classList.toggle('on', P.get(path) === onV); P.on(({ path: p }) => p === path && s()); s(); return b; };
-  // Look: the camera's picture behind the pad, and its light and colour moving the dot
-  const L = S.look, lookB = h('button', { type: 'button', class: 'sw', title: 'The song takes the colour of what the camera sees', onclick: () => { L.set(!L.on); buzz(8); } }, h('i'), 'Look'), lcv = h('canvas', { class: 'look' }), lg = lcv.getContext('2d'); lcv.width = L.W; lcv.height = L.H; pad.prepend(lcv); lcv.hidden = true;
-  L.addEventListener('change', () => { lookB.setAttribute('aria-pressed', L.on); lcv.hidden = !L.on; if (L.on) toast('Point the phone at something'); }); lookB.setAttribute('aria-pressed', false);
+  // ---- Look: the camera's picture behind the field, its light and colour moving the point
+  const L = S.look, lookB = h('button', { type: 'button', class: 'sw', title: 'The song takes the colour of what the camera sees', onclick: () => { if (!L.on && field.auto) field.setAuto(false); L.set(!L.on); buzz(8); } }, h('i'), 'Look'), lcv = h('canvas', { class: 'look' }), lg = lcv.getContext('2d'); lcv.width = L.W; lcv.height = L.H; field.prepend(lcv); lcv.hidden = true;
+  L.addEventListener('change', () => { lookB.setAttribute('aria-pressed', L.on); lcv.hidden = !L.on; }); lookB.setAttribute('aria-pressed', false);
   let echoWas = null;
-  const throwOn = () => { echoWas = [P.get('fx.echo.mix'), P.get('fx.echo.fb')]; P.set('fx.echo.mix', 0.9); P.set('fx.echo.fb', 0.78); };
+  const throwOn = () => { echoWas ??= [P.get('fx.echo.mix'), P.get('fx.echo.fb')]; P.set('fx.echo.mix', 0.9); P.set('fx.echo.fb', 0.78); };
   const throwOff = () => { if (!echoWas) return; P.set('fx.echo.mix', echoWas[0]); P.set('fx.echo.fb', echoWas[1]); echoWas = null; };
+  let frozeWas = null; const freezeOn = () => { frozeWas ??= P.get('fx.shim.mix'); P.set('fx.shim.mix', Math.max(0.75, frozeWas)); P.set('fx.shim.freeze', true); }, freezeOff = () => { if (frozeWas === null) return; P.set('fx.shim.freeze', false); P.set('fx.shim.mix', frozeWas); frozeWas = null; };
+  // ---- the windows
+  const tabs = h('div', { class: 'seg views' }, ...[['field', 'Field'], ['controls', 'Controls']].map(([k, l]) => { const b = h('button', { type: 'button', onclick: () => { P.set('pocket.pview', k, { by: 'ui' }); buzz(6); } }, l); b.dataset.v = k; return b; }));
+  const V = { field: h('div', { class: 'deck' }, field, h('div', { class: 'row ins-row' }, autoB, speedB, cornersB, h('span', { class: 'sp' }), lookB)), controls: h('div', { class: 'deck' }, tiles) };
+  const view = () => (P.get('pocket.pview') === 'controls' ? 'controls' : 'field'), showView = () => { const v = view(); for (const k in V) V[k].hidden = k !== v; tabs.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === v)); };
+  P.on(({ path }) => path === 'pocket.pview' && showView());
   room.append(
-    h('div', { class: 'head row' }, h('h2', {}, 'Process'), h('span', { class: 'sp' }), lookB),
-    pad,
+    h('div', { class: 'head row' }, h('h2', {}, 'Process'), h('span', { class: 'sp' }), dryB), tabs, V.field, V.controls,
     h('div', { class: 'fxgrid' },
-      hold('Echo throw', 'Everything into the echo while held', throwOn, throwOff),
+      hold('Throw', 'Everything into the echo while held', throwOn, throwOff),
       hold('Repeat ⅛', 'Repeat the last eighth note while held', () => P.set('fx.rep.hold', 0.5), () => P.set('fx.rep.hold', 0)),
       hold('Repeat 1/16', 'Repeat the last sixteenth while held', () => P.set('fx.rep.hold', 0.25), () => P.set('fx.rep.hold', 0)),
-      tog('Gate', 'fx.gate.depth', 0.9, 0), tog('Crush', 'fx.crush.mix', 0.7, 0), tog('Ensemble', 'fx.ens.mix', 0.75, 0)));
+      hold('Freeze', 'What sounds now is held, for as long as a finger is on it', freezeOn, freezeOff), tog('Gate', 'fx.gate.depth', 0.9, 0), tog('Crush', 'fx.crush.mix', 0.7, 0)));
+  showView(); showAuto();
   S.rooms.process = {
-    draw: () => { if (L.on && L.img) lg.drawImage(L.img, 0, 0); }, hide: () => L.set(false),
-    tilt: (x, y) => { if (touching || L.on) return; tiltSet('fx.xy.x', clamp(0.5 + x * 0.5, 0, 1), 0.01); tiltSet('fx.xy.y', clamp(0.5 + y * 0.5, 0, 1), 0.01); },
-    shake: () => { throwOn(); setTimeout(throwOff, S.player.beatDur * 1000 * 2); toast('Thrown into the echo'); },
+    draw: () => { if (L.on && L.img) lg.drawImage(L.img, 0, 0); field.tick(); if (view() === 'field') field.draw(); else tiles.draw(); }, bg: () => field.tick(), hide: () => L.set(false), show: () => { showView(); showAuto(); },
+    tilt: (x, y) => { if (field.held || field.auto || L.on) return; tiltSet('fx.field.x', clamp(0.5 + x * 0.5, 0, 1), 0.01); tiltSet('fx.field.y', clamp(0.5 + y * 0.5, 0, 1), 0.01); },
+    shake: () => { field.shuffle(); buzz([10, 40, 20]); },
   };
+  S.procField = field;
 }
 
 // ------------------------------------------------------------------------------------------------ page: move (walk, turn)

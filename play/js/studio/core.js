@@ -227,9 +227,9 @@ export function buildTextures(studio) {
   P.define('fx.rep.decay', 0.85, (v) => rep.port.postMessage({ p: { decay: 0.55 + v * 0.45 } }));
   P.define('fx.rep.steps', '0000000000000000');
   P.define('fx.rep.len', 0.25);
-  P.define('fx.crush.mix', 0, (v) => crush.parameters.get('mix').setValueAtTime(v, t()));
-  P.define('fx.crush.bits', 0.5, (v) => crush.parameters.get('bits').setValueAtTime(16 - v * 13, t()));
-  P.define('fx.crush.down', 0.3, (v) => crush.parameters.get('down').setValueAtTime(1 + v * 30, t()));
+  P.define('fx.crush.mix', 0, (v) => crush.parameters.get('mix').setTargetAtTime(v, t(), 0.02));
+  P.define('fx.crush.bits', 0.5, (v) => crush.parameters.get('bits').setTargetAtTime(16 - v * 13, t(), 0.02));
+  P.define('fx.crush.down', 0.3, (v) => crush.parameters.get('down').setTargetAtTime(1 + v * 30, t(), 0.02));
   P.define('fx.width', 1, (v) => { const a = (1 + v) / 2, b = (1 - v) / 2; for (const [n, x] of [[wLL, a], [wRR, a], [wRL, b], [wLR, b]]) n.gain.setTargetAtTime(x, t(), 0.05); });
   let thrown = null;
   return {

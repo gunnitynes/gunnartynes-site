@@ -1,5 +1,6 @@
 // The Textures room: a gesture pad (or a four-corner morph between stored settings) and eight effect modules on
 // everything — each with something to look at, something to play, and a dice to throw.
+import { defineField, fresh } from './process-field.js';
 import { $, h } from '../lib/util.js';
 import { knob } from './ui.js';
 import { CHORDS } from './core.js';
@@ -16,7 +17,7 @@ export function buildTexturesRoom(S, { seg, sw, recBtn }) {
   // ---------------------------------------------------------------- the pad: gesture or morph
   P.define('fx.xy.mode', 'gesture');
   S.morph ??= [null, null, null, null];
-  const fxPaths = () => Object.keys(P.def).filter((p) => p.startsWith('fx.') && !p.startsWith('fx.xy') && p !== 'fx.gate.steps' && p !== 'fx.rep.steps');
+  const fxPaths = () => Object.keys(P.def).filter((p) => p.startsWith('fx.') && !p.startsWith('fx.xy') && !p.startsWith('fx.field') && p !== 'fx.gate.steps' && p !== 'fx.rep.steps');
   const applyXY = () => {
     const x = P.get('fx.xy.x'), y = P.get('fx.xy.y');
     if (x === undefined || y === undefined) return;
@@ -33,6 +34,7 @@ export function buildTexturesRoom(S, { seg, sw, recBtn }) {
     P.set('fx.filter.lp', x < 0.5 ? 0.35 + x * 1.3 : 1, { by: 'macro' }); P.set('fx.filter.hp', x > 0.5 ? (x - 0.5) * 1.3 : 0, { by: 'macro' });
     P.set('fx.res.mix', Math.max(0, y - 0.2) * 0.9, { by: 'macro' }); P.set('fx.shim.mix', y * 0.75, { by: 'macro' }); P.set('fx.tape.mix', Math.min(1, y * 1.4), { by: 'macro' });
   };
+  defineField(P, () => S.carried?.mem?.['morph.process'] || fresh());   // what was moved on a phone's Process page is heard here too
   P.define('fx.xy.x', 0.5, applyXY); P.define('fx.xy.y', 0, applyXY);
   const axes = { gesture: ['darker', 'brighter', 'ringing', 'dry'], morph: ['', '', '', ''] };
   const ax = ['l', 'r', 't', 'b'].map((k) => h('span', { class: 'ax ' + k }));
