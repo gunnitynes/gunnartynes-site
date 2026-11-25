@@ -1,11 +1,12 @@
 // Cloud: a stretch of sound broken into grains. One finger on the wave plays it (across: where; up and down: what you
 // choose). The strip under the wave is the whole sound: drag its two handles, or what lies between them, to choose the
-// buffer the wave shows; pinching the wave does the same. Under that eight characters, far apart from one another, and
-// sixteen faders to draw across.
+// buffer the wave shows; pinching the wave does the same. Under that either eight characters,
+// far apart from one another, or all sixteen controls.
 import { h, $ } from '../lib/util.js';
-import { clamp, r3, buzz, surface, gestures, faderField, memories, zoomPeaks } from './phone-kit.js';
+import { clamp, r3, buzz, surface, gestures, tileField, memories, zoomPeaks } from './phone-kit.js';
 import { loudestCells, loadSource } from './core.js';
 import { recButton } from './voice.js';
+import { pickStem } from './phone-pick.js';
 
 const pct = (v) => `${Math.round(v * 100)}`, ms = (s) => (s < 0.1 ? `${(s * 1000).toFixed(s < 0.01 ? 1 : 0)}ms` : s < 10 ? `${s.toFixed(2)}s` : `${s.toFixed(0)}s`), st = (v) => `${v > 0 ? '+' : ''}${v}`;
 const DIV = [0.5, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24];
@@ -64,16 +65,18 @@ export function buildCloudPage(S, U) {
   // ---- characters, faders, the rest
   let glide = 0; const become = (name) => { cancelAnimationFrame(glide); const to = CHARS[name], from = ARMS.map(([p]) => P.get(p) ?? 0), t0 = performance.now(); let lt = 0; const step = (now) => { const k = Math.min(1, (now - t0) / 650), e = k * k * (3 - 2 * k); if (k === 1 || now - lt > 40) { lt = now; ARMS.forEach(([p, , , , , sp], i) => { const v = from[i] + (to[i] - from[i]) * e; P.set(p, sp ? Math.round(v) : r3(v)); }); } if (k < 1) glide = requestAnimationFrame(step); }; glide = requestAnimationFrame(step); now = name; showChars(); buzz(10); };
   let now = ''; const charB = Object.keys(CHARS).map((n) => h('button', { type: 'button', class: 'chip sm', onclick: () => become(n) }, n)), showChars = () => charB.forEach((x) => x.setAttribute('aria-pressed', x.textContent === now));
-  const faders = faderField(S, () => ARMS, { rows: 2 }), mems = memories(S, 'cloud2', () => [...ARMS.map((x) => x[0]), 'cloud.va', 'cloud.vb', 'cloud.pos'], { say: toast }); S.memRows = [...(S.memRows || []), mems];
-  const name = h('span', { class: 'src' }), stems = S.song.stems.filter((s) => s.cells.filter(Boolean).length > 2);
-  const next = async (d) => { const i = stems.findIndex((s) => s.id === S.cloudSrc?.stemId), t = stems[(i + d + stems.length) % stems.length]; name.textContent = '…'; const [x, y] = loudestCells(t, 2); view(0, 1, 'ui'); await S.setCloudSource(t.id, x, y); buzz(6); };
-  S.cloud.changed = () => { name.textContent = S.cloudSrc?.rec ? (S.cloudSrc.name || 'your recording') : S.song.stems.find((s) => s.id === S.cloudSrc?.stemId)?.name || ''; pkKey = ''; showBars(); };
+  P.define('pocket.cview', 'chars'); const tiles = tileField(S, () => ARMS, { cols: 4 }), mems = memories(S, 'cloud2', () => [...ARMS.map((x) => x[0]), 'cloud.va', 'cloud.vb', 'cloud.pos'], { say: toast }); S.memRows = [...(S.memRows || []), mems];
+  const name = h('button', { type: 'button', class: 'srcpick', title: 'Choose the stem it is made from', onclick: () => choose() }), stems = S.song.stems.filter((s) => s.cells.filter(Boolean).length > 2);
+  const hear = () => { const id = 'aud' + Math.random(); voice.noteOn(id, 60, 0.8); setTimeout(() => voice.noteOff(id), 700); }, use = async (t) => { const [x, y] = loudestCells(t, 2); view(0, 1, 'ui'); await S.setCloudSource(t.id, x, y); };
+  const choose = () => { buzz(6); pickStem(S, { title: 'Cloud: made from', current: () => S.cloudSrc?.stemId, pick: use, hear, surprise: () => use(stems[Math.floor(Math.random() * stems.length)]) }); };
+  S.cloud.changed = () => { name.replaceChildren(h('span', {}, S.cloudSrc?.rec ? (S.cloudSrc.name || 'your recording') : S.song.stems.find((s) => s.id === S.cloudSrc?.stemId)?.name || ''), h('i', {}, '▾')); pkKey = ''; showBars(); };
   const micB = recButton(S, { onDone: (src) => { view(0, 1, 'ui'); S.useCloudSource(src, { rec: src.rec }); }, say: toast, label: 'Rec', cls: 'chip sm' });
   const sw = (path, label) => { const x = h('button', { type: 'button', class: 'chip sm', onclick: () => { P.set(path, !P.get(path)); buzz(6); } }, label), s = () => x.setAttribute('aria-pressed', !!P.get(path)); P.on(({ path: p }) => p === path && s()); s(); return x; };
   const upB = h('button', { type: 'button', class: 'chip sm', title: 'What up and down on the wave changes', onclick: () => { const k = Object.keys(UP); P.set('cloud.up', k[(k.indexOf(P.get('cloud.up')) + 1) % k.length], { by: 'ui' }); showUp(); buzz(6); } }), showUp = () => { upB.textContent = `↕ ${(UP[P.get('cloud.up')] || UP.pitch)[0]}`; }; P.on(({ path }) => path === 'cloud.up' && showUp()); showUp();
-  room.append(
-    h('div', { class: 'head row' }, h('h2', {}, 'Cloud'), h('span', { class: 'sp' }), h('button', { type: 'button', class: 'chip sq', 'aria-label': 'Previous stem', onclick: () => next(-1) }, '‹'), name, h('button', { type: 'button', class: 'chip sq', 'aria-label': 'Next stem', onclick: () => next(1) }, '›'), micB),
-    surf, over, h('div', { class: 'chars' }, ...charB), faders, h('div', { class: 'row' }, mems, h('span', { class: 'sp' }), sw('cloud.drone', 'Drone'), sw('cloud.freeze', 'Freeze')));
+  const tabs = h('div', { class: 'seg views' }, ...[['chars', 'Characters'], ['controls', 'Controls']].map(([k, l]) => { const b = h('button', { type: 'button', onclick: () => { P.set('pocket.cview', k, { by: 'ui' }); buzz(6); } }, l); b.dataset.v = k; return b; }));
+  const one1 = h('div', { class: 'cdeck' }, h('div', { class: 'chars' }, ...charB), h('div', { class: 'row' }, mems, h('span', { class: 'sp' }), sw('cloud.drone', 'Drone'), sw('cloud.freeze', 'Freeze'))), two2 = h('div', { class: 'cdeck big' }, tiles);
+  const showView = () => { const c2 = P.get('pocket.cview') === 'controls'; one1.hidden = c2; two2.hidden = !c2; tabs.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', (b.dataset.v === 'controls') === c2)); }; P.on(({ path }) => path === 'pocket.cview' && showView());
+  room.append(h('div', { class: 'head row' }, h('h2', {}, 'Cloud'), h('span', { class: 'sp' }), name, micB), surf, over, tabs, one1, two2); showView();
   const tags = h('div', { class: 'wtags' }, barB, upB); for (const t of ['pointerdown', 'pointermove', 'pointerup']) tags.addEventListener(t, (e) => e.stopPropagation()); surf.append(tags);
 
   let peaks = null, whole = null, pkKey = '', wKey = '', scatterT = 0;
@@ -82,7 +85,7 @@ export function buildCloudPage(S, U) {
     tilt: (x, y) => { tiltSet('cloud.scan', Math.abs(x) < 0.25 ? 0 : (x - Math.sign(x) * 0.25) * 0.7, 0.04); void y; },
     shake: () => { const k = Object.keys(CHARS).filter((n) => n !== now); become(k[Math.floor(Math.random() * k.length)]); toast(now); void scatterT; },
     draw: () => {
-      faders.draw(); const { W, H } = C, src = S.cloud.src, A = a(), s = span(); if (!W) return; g.clearRect(0, 0, W, H);
+      if (!two2.hidden) tiles.draw(); const { W, H } = C, src = S.cloud.src, A = a(), s = span(); if (!W) return; g.clearRect(0, 0, W, H);
       const key = `${A}:${s}:${W}:${src?.stemId}:${src?.fromCell}:${src?.dur}`; if (src && key !== pkKey) { pkKey = key; peaks = zoomPeaks(src, A, A + s, Math.floor(W / 1.5)); }
       if (peaks) wave(peaks, g, W, H, H * 0.44, '#ece8dc2c', '#ece8dc55');
       const v = voice.view || {}, X = (p) => ((p - A) / s) * W, pos = v.pos ?? P.get('cloud.pos'), sp = P.get('cloud.spread') / s; g.fillStyle = '#e6b4501c'; g.fillRect(X(pos) - sp * W, 0, Math.max(2, sp * 2 * W), H); g.fillStyle = '#e6b450'; g.fillRect(X(pos) - 1, 0, 2, H);

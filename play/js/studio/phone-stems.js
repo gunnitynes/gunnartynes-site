@@ -25,7 +25,7 @@ export function buildStems(S, U) {
   // ---- the table
   const box = h('div', { class: 'table', 'aria-label': 'The instruments on a table' }), T = surface(box), g = T.g, PH = 84;
   const E = 25;   // how wide the edges are
-  let discs = [], R = 25, roll = false, orbit = false, edgeNow = null, grav = [0, 0], touched = false, tiltAt = 0, stir = 0;
+  let discs = [], R = 25, roll = false, orbit = false, edgeNow = null, grav = [0, 0], quietAt = 0, tiltAt = 0, stir = 0;
   const TH = () => T.H - PH, rad = (d) => R * d.z, poolOf = (d) => (d.y > TH() + 2 ? clamp(Math.floor((d.x / T.W) * POOLS.length), 0, POOLS.length - 1) : -1);
   const words = (n) => { const w = n.split(' '); return (w.length > 1 ? [w[0], w.slice(1).join(' ')] : [n]).map((x) => (x.length > 8 ? x.slice(0, 7) + '…' : x)); };
   const zOf = (gain) => clamp((gain / 0.85) ** (1 / 2.4), 0.42, 1.34), gainOf = (z) => (z <= 0.43 ? 0 : +(0.85 * z ** 2.4).toFixed(3));
@@ -89,7 +89,7 @@ export function buildStems(S, U) {
     if (ei >= 0 && ![...fingers.values()].some((k) => k.d)) { edgeNow = { i: ei, id: e.pointerId, x, y, moved: false }; buzz(5); return; }
     if (!d) { const o = [...fingers.values()].find((k) => k.d && !k.pin && Math.hypot(k.x - x, k.y - y) < 190); if (o) { o.pin = { id: e.pointerId, d0: Math.max(26, Math.hypot(o.x - x, o.y - y)), z0: o.d.z, x, y }; o.d.pinch = true; clearTimeout(o.timer); o.moved = true; buzz(8); return; } }
     const f = { d, x, y, x0: x, y0: y, t0: performance.now(), path: [[performance.now(), x, y]], moved: false };
-    touched = true; fingers.set(e.pointerId, f);
+    fingers.set(e.pointerId, f);
     if (d) { d.held = 1; d.vx = d.vy = 0; d.ml.clear(); d.ml.start(x, y); d.seen = performance.now(); f.ox = d.x - x; f.oy = d.y - y; f.timer = setTimeout(() => { if (f.moved) return; f.long = true; const p = `band.${d.st.id}.solo`; P.set(p, !P.get(p)); buzz(25); }, 450); buzz(5); }
   });
   box.addEventListener('pointermove', (e) => {
@@ -192,22 +192,23 @@ export function buildStems(S, U) {
       g.fillStyle = inside.length ? '#e6b450' : '#a3a6ad'; g.font = '10px "IBM Plex Mono", monospace'; g.fillText(nm.toUpperCase(), cx, th + PH - 14);
     });
     // discs
+    // who plays at this point of the song; the others are drawn as waiting
+    if (now - quietAt > 200) { quietAt = now; const B = S.player.playing ? S.player.barNow() : S.player.pausedBar; for (const d of discs) { const w = S.player.resolve(S.session.state.tracks[d.st.id], B), c = w && d.st.cells[w.cell]; d.quiet = !c || c.rms < -45; } }
     const solo = discs.some((d) => P.get(`band.${d.st.id}.solo`));
     for (const d of discs) {
       const ch = S.engine.channels.get(d.st.id); d.lv = ch ? Math.min(1, ch.readLevel() * 3.4) : 0;
       const off = P.get(`band.${d.st.id}.mute`) || (solo && !P.get(`band.${d.st.id}.solo`)), so = P.get(`band.${d.st.id}.solo`), col = d.st.color || '#ece8dc', far = 0, nb = near(d), rd = rad(d) * (d.held ? 1.08 : 1);
       if (!off && d.lv > 0.02) { const gl = g.createRadialGradient(d.x, d.y, rd * 0.6, d.x, d.y, rd + 8 + d.lv * 20); gl.addColorStop(0, col); gl.addColorStop(1, 'transparent'); g.globalAlpha = 0.14 + d.lv * 0.5; g.fillStyle = gl; g.beginPath(); g.arc(d.x, d.y, rd + 8 + d.lv * 20, 0, 7); g.fill(); g.globalAlpha = 1; }
       g.fillStyle = '#12161f'; g.beginPath(); g.arc(d.x, d.y, rd, 0, 7); g.fill();
-      g.globalAlpha = off ? 0.05 : (0.3 + d.lv * 0.55) * (1 - far * 0.45); g.fillStyle = col; g.fill(); g.globalAlpha = off ? 0.3 : 1; g.strokeStyle = so ? '#fff' : col; g.lineWidth = so ? 3 : d.held ? 2.5 : 1.4; g.stroke();
+      const wait = !off && d.quiet && d.lv < 0.02; g.globalAlpha = off ? 0.05 : wait ? 0.1 : (0.3 + d.lv * 0.55) * (1 - far * 0.45); g.fillStyle = col; g.fill(); g.globalAlpha = off ? 0.3 : wait ? 0.45 : 1; g.strokeStyle = so ? '#fff' : col; g.lineWidth = so ? 3 : d.held ? 2.5 : 1.4; g.stroke();
       nb.forEach((v, i) => { if (v < 0.02) return; const a = [Math.PI, 0, -Math.PI / 2, Math.PI / 2][i], w = 0.25 + v * 0.75; g.globalAlpha = 1; g.strokeStyle = FX[edgeFx(i)][1]; g.lineWidth = 4; g.beginPath(); g.arc(d.x, d.y, rd + 4, a - w, a + w); g.stroke(); });
       if (d.ml.pts) { g.globalAlpha = 0.5; g.strokeStyle = col; g.lineWidth = 1.2; g.setLineDash([3, 4]); g.beginPath(); d.ml.pts.forEach(([, x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.stroke(); g.setLineDash([]); }
-      g.globalAlpha = off ? 0.3 : 1; g.fillStyle = off ? '#a3a6ad' : '#fff'; g.font = `${clamp(8.6 * d.z, 6.5, 11)}px "Instrument Sans", sans-serif`; d.name.forEach((w, i) => g.fillText(w, d.x, d.y + (i - (d.name.length - 1) / 2) * 10)); g.globalAlpha = 1;
+      g.globalAlpha = off ? 0.3 : wait ? 0.6 : 1; g.fillStyle = off ? '#a3a6ad' : '#fff'; g.font = `${clamp(8.6 * d.z, 6.5, 11)}px "Instrument Sans", sans-serif`; d.name.forEach((w, i) => g.fillText(w, d.x, d.y + (i - (d.name.length - 1) / 2) * 10)); g.globalAlpha = 1;
     }
     for (const f of fingers.values()) if (!f.d && f.moved) { g.strokeStyle = '#ffffff55'; g.beginPath(); g.arc(f.x, f.y, 24, 0, 7); g.stroke(); }
     // what the disc in hand is getting, in words
     const hot = discs.filter((d) => (d.held || now - (d.seen || -1e6) < 900) && !d.ml.pts).sort((a, b) => b.held - a.held || (b.seen || 0) - (a.seen || 0))[0];
     if (hot) { const nb = near(hot), bits = hot.pool >= 0 ? [POOLS[hot.pool][0]] : nb.map((v, i) => [v, FX[edgeFx(i)][0]]).filter(([v]) => v > 0.02).map(([v, n]) => `${n} ${Math.round(v * 100)}`), lev = Math.round((gainOf(hot.z) / 0.85) * 100), t = `${hot.st.name}  ·  ${hot.pinch ? `level ${lev}` : bits.length ? bits.join('  +  ') : 'as it is'}`; g.font = '600 11.5px "IBM Plex Mono", monospace'; const w = g.measureText(t).width + 24; g.fillStyle = '#11141bee'; rr(W / 2 - w / 2, 32, w, 27, 13); g.fill(); g.strokeStyle = hot.st.color || '#ece8dc'; g.lineWidth = 1.2; g.stroke(); g.fillStyle = '#fff'; g.fillText(t, W / 2, 46); }
-    if (!touched) { g.fillStyle = '#d6d2c6'; g.font = 'italic 16px Newsreader, serif'; g.fillText('drag one to an edge · pinch one for its level', W / 2, th * 0.835); g.font = 'italic 14px Newsreader, serif'; g.fillStyle = '#a3a6ad'; g.fillText('tap an edge to choose what it does', W / 2, th * 0.835 + 19); }
     drawMap();
   }
   function drawMap() {
@@ -219,7 +220,7 @@ export function buildStems(S, U) {
   }
   S.rooms.stems = {
     tilt: (x, y) => { grav = [x, -y]; },
-    shake: () => { touched = true; for (const d of discs) { if (d.held) continue; const a = Math.random() * 7, v = 500 + Math.random() * 900; d.vx += Math.cos(a) * v; d.vy += Math.sin(a) * v * 0.7; } toast('Shaken'); },
+    shake: () => { for (const d of discs) { if (d.held) continue; const a = Math.random() * 7, v = 500 + Math.random() * 900; d.vx += Math.cos(a) * v; d.vy += Math.sin(a) * v * 0.7; } toast('Shaken'); },
     draw, show: () => { if (T.W && !discs.length) populate(); }, bg: () => { if (discs.some((d) => d.ml.pts)) step(performance.now()); }, hide: () => { if (roll) { roll = false; rollB.setAttribute('aria-pressed', false); } },
   };
   S.table = { near, edgeFx, choose, get discs() { return discs; }, TH, get T() { return T; }, get R() { return R; } };

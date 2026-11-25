@@ -23,14 +23,14 @@ import { buildPlay } from './phone-inst.js';
 import { buildTape } from './phone-tape.js';
 import { Look } from './phone-look.js';
 import { EdgeFx } from './phone-fx.js';
+import { COLORS, NAMES } from './phone-kit.js';
 import { Versions, ago } from './versions.js';
 import { Work, loadParams, carry, saveFile, fileField, lastSaved } from './project.js';
 
 const query = new URLSearchParams(location.search);
 const S = { slots: [], rooms: {}, phone: true };
 window.studio = S;
-const COLORS = ['#e6b450', '#9cc2f4', '#8fd3c5'];
-const NAMES = ['Cloud', 'Sound 1', 'Sound 2'];
+const MAX_SOUNDS = 4;
 const NOTE = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const r3 = (v) => Math.round(v * 1000) / 1000;
@@ -45,7 +45,6 @@ async function boot() {
   document.title = `${song.title} · Playground`;
   $('#title').textContent = song.title; $('#gate-title').textContent = song.title;
   $('#gate-meta').textContent = `${song.artist} · ${song.stems.length - 1} stems · ${song.bpm} bpm`;
-  $('#full').href = `play.html?song=${song.id}&desktop=1`;
 
   const engine = new AudioEngine({ latency: 'balanced' }); await engine.ready;   // a little more time to make the sound: no gaps when a lot happens
   await engine.ctx.audioWorklet.addModule(new URL('./dsp.js', import.meta.url));
@@ -91,7 +90,7 @@ async function boot() {
   S.heard = []; let retuneT = 0;
   S.noteSeen = (note, on) => { if (!on) return; S.heard = [note, ...S.heard.filter((n) => n !== note)].slice(0, 6); if (P.get('fx.res.follow') && !retuneT) retuneT = setTimeout(() => { retuneT = 0; tex.retune(); }, 60); };
 
-  buildCloud(); buildSound(1, 'sampler'); buildSound(2, 'strings');
+  buildCloud(); buildSound(1, 'sampler'); buildSound(2, 'strings'); for (let n = 3; n <= MAX_SOUNDS && kept?.forges?.[n - 1]; n++) buildSound(n, 'sampler');
   const U = { toast, tiltSet, askSensors, Motion, srcAt, barNow, nextBar, bpb }; S.look = new Look(S); S.edge = new EdgeFx(S);
   buildTop(); buildStems(S, U); buildCloudPage(S, U); buildPlay(S, U); buildProcess(); buildTape(S, U); buildMove(); buildTabs();
   try { restore(kept); } catch (e) { console.error(e); work.aside(kept); }
@@ -101,7 +100,7 @@ async function boot() {
   if (!q.arr.bars) q.fillFromSong();
   q.mode = 'jam'; q.setMode('song');
   S.cloudInit(); S.sounds.forEach((s) => s.init());
-  showPage(query.get('page') || 'stems');
+  showPage(query.get('page') || 'stems'); tips();
 
   const first = ids.map((id) => player.resolve(session.state.tracks[id], 0)).filter(Boolean).map((w) => w.url);
   let n = 0; await Promise.all(first.map((u) => loader.load(u).catch(() => {}).finally(() => { $('#gate-bar').style.width = `${(++n / first.length) * 100}%`; })));
@@ -210,7 +209,9 @@ function buildSound(n, engine) {
   const P = S.params, k = `f${n}`, out = S.ctx.createGain(), breath = S.ctx.createGain(); out.connect(breath).connect(S.addStrip(n).input);
   const voices = { sampler: new SamplerVoice(S, out), strings: new StringsVoice(S, out), grains: new CloudVoice(S, out) };
   const slot = { name: NAMES[n], voices, get voice() { return voices[P.get(`${k}.engine`)]; } };
-  S.slots[n] = slot;
+  S.slots[n] = slot; P.set(`mix.${k}.mute`, false, { by: 'load' });
+  P.define(`${k}.tune`, 0, (v) => { voices.sampler.root = voices.grains.root = 60 - v; voices.strings.tune = v; });
+  Object.assign(P.range ??= {}, { [`${k}.tune`]: [-24, 24, 'Pitch'] });
   let src = null;
   const reslice = () => { if (!src) return; let [a, b] = P.get(`${k}.sel`).split(':').map(Number); if (!isFinite(a) || !isFinite(b)) [a, b] = [0.2, 0.3]; const sl = sliceOf(src, a, b); voices.sampler.setSlice(sl); voices.strings.setSlice(sl); voices.grains.setSource(sl); };
   P.define(`${k}.sel`, '0.2:0.3', reslice);
@@ -229,7 +230,7 @@ function buildSound(n, engine) {
   P.define(`${k}.g.size`, 0.6, gp('size', (v) => 20 + 980 * v * v)); P.define(`${k}.g.spread`, 0.25, gp('spread', (v) => v * 0.5));
   P.define(`${k}.g.density`, 0.55, gp('density', (v) => 2 + 100 * v * v)); P.define(`${k}.g.jitter`, 0.05, gp('jitter', (v) => v * 7));
   P.define(`${k}.g.attack`, 0.35, gp('attack', (v) => 0.005 + v * v * 4)); P.define(`${k}.g.release`, 0.5, gp('release', (v) => 0.05 + v * v * 9));
-  const load = async (stemId, a, b, fresh) => { slot.src = { stemId, a, b }; src = await loadSource(S, stemId, a, b); if (fresh) { const x = loudestWindow(src, 0.06); P.set(`${k}.sel`, `${x.toFixed(4)}:${(x + 0.06).toFixed(4)}`, { by: 'load' }); } reslice(); S.soundChanged?.(); };
+  let asked = 0; const load = async (stemId, a, b, fresh) => { const t = ++asked, s0 = await loadSource(S, stemId, a, b); if (t !== asked) return; slot.src = { stemId, a, b }; src = s0; if (fresh) { const x = loudestWindow(src, 0.06); P.set(`${k}.sel`, `${x.toFixed(4)}:${(x + 0.06).toFixed(4)}`, { by: 'load' }); } reslice(); S.soundChanged?.(); };
   const def = S.song.stems[(n * 5) % S.song.stems.length];
   const sound = {
     n, k, slot, breath, get src() { return src; },
@@ -238,7 +239,10 @@ function buildSound(n, engine) {
       const c = slot.src || { stemId: def.id, ...(([a, b]) => ({ a, b }))(loudestCells(def, 1)) }; load(c.stemId, c.a, c.b, !slot.src);
     },
     /** A sound you recorded becomes this instrument's source. */
-    useRec(s0, fresh = true) { slot.src = { rec: s0.rec }; src = s0; if (fresh) { const x = loudestWindow(s0, 0.08); P.set(`${k}.sel`, `${x.toFixed(4)}:${Math.min(1, x + Math.max(0.08, Math.min(0.5, 0.6 / s0.dur))).toFixed(4)}`, { by: 'load' }); } reslice(); S.soundChanged?.(); },
+    useRec(s0, fresh = true) { asked++; slot.src = { rec: s0.rec }; src = s0; if (fresh) { const x = loudestWindow(s0, 0.08); P.set(`${k}.sel`, `${x.toFixed(4)}:${Math.min(1, x + Math.max(0.08, Math.min(0.5, 0.6 / s0.dur))).toFixed(4)}`, { by: 'load' }); } reslice(); S.soundChanged?.(); },
+    /** Made from this stem: its loudest four bars, or those from cell `a` on. */
+    async use(stemId, a) { const st = S.song.stems.find((x) => x.id === stemId), c = a ?? loudestCells(st, 1)[0]; await load(stemId, c, c + 1, true); },
+    drop() { for (const v of Object.values(voices)) v.panic?.(); for (const v of [voices.strings, voices.grains]) v.node.disconnect(); out.disconnect(); breath.disconnect(); },
     /** A new sound: a random stem, a random loud-ish moment of it, a short slice of that. */
     async surprise() {
       const st = S.song.stems.filter((x) => x.cells.filter(Boolean).length > 3)[Math.floor(Math.random() * S.song.stems.length)] || def;
@@ -249,8 +253,16 @@ function buildSound(n, engine) {
     },
     get srcName() { return slot.src?.rec ? 'your recording' : S.song.stems.find((x) => x.id === slot.src?.stemId)?.name || '…'; },
   };
-  S.sounds.push(sound);
+  S.sounds.push(sound); return sound;
 }
+/** One more instrument (its stem is chosen next), and the last one away again. */
+S.canAdd = () => S.sounds.length < MAX_SOUNDS;
+S.addSound = () => { if (!S.canAdd()) return null; const s = buildSound(S.sounds.length + 1, 'sampler'); S.moreForges = (S.moreForges || []).slice(1); s.init(); S.soundsChanged?.(); return s; };
+S.removeSound = () => {
+  const n = S.sounds.length; if (n <= 2 || !confirm(`Remove ${NAMES[n]}? What it plays leaves the timeline too (undo brings that back).`)) return false;
+  S.seq.snapshot(); S.seq.arr.clips = S.seq.arr.clips.filter((c) => c.lane !== n); S.seq.changed();
+  S.sounds.pop().drop(); S.slots.length = n; S.params.set(`mix.f${n}.mute`, true, { by: 'load' }); S.params.set('pocket.slot', n - 1, { by: 'ui' }); S.soundsChanged?.(); return true;
+};
 
 // ------------------------------------------------------------------------------------------------ top bar
 function buildTop() {
@@ -274,8 +286,8 @@ function buildTop() {
 // The pages carry as little text as they can; how each one works is here, one tap away.
 const HELP = {
   stems: ['Every disc is an instrument. In the middle the song is as it is. Each edge is an effect: the nearer a disc lies to it, the more it takes on, and between two edges it takes on both. The line on top says what the disc in your hand is getting.', 'Tap an edge to choose its effect. Slide the handle along it to change the effect’s character.', 'Pinch a disc: bigger is louder. Tap it: off and on. Hold it: alone. Two fingers on the bare table gather, spread or turn everyone.', 'Drop one into a pool and it is held, reversed, halved, stuttered or sent wandering for as long as it lies there.', 'Orbit: a disc keeps making the movement you made with it, in time. Roll: tilt the phone and they roll. Shake: they scatter. Line up puts everything back.'],
-  cloud: ['One finger on the wave plays it: across is where in the sound, up and down is what the ↕ button says.', 'The strip under it is the whole sound. Drag its two handles, or what lies between them, to choose the buffer; pinching the wave does the same. “8 bars” makes the sound longer or shorter.', 'Eight characters, far apart: tap one and the cloud glides there. Then the sixteen faders: set one, or draw across them. Double tap resets one.', 'Harmony sends grains a fifth or an octave away; Rhythm locks them to the beat.', 'A to D keep a cloud and glide back to it. With motion on, tilt moves through the sound, a shake picks another character.'],
-  play: ['The strip is the slice the sound is made of: drag it, pinch it. The name above it picks another sound from the song.', 'The field: four sounds in its corners, your finger between them. Hold a corner to keep the sound as it is there; Corners (or a shake) makes four others. Auto moves the point by itself, round the last movement you made (a circle until you make one); the button next to it is how long once round takes. A finger takes over.', 'The eight faders are what the sound is made of: set one, draw across, double tap to reset.', 'Breath: hold a pad and blow into the microphone. Knock: knock on the phone and the last note plays. While a pad is held, tilt bends its tone and adds echo. On its side, the pads fill the screen.'],
+  cloud: ['One finger on the wave plays it: across is where in the sound, up and down is what the ↕ button says.', 'The strip under it is the whole sound. Drag its two handles, or what lies between them, to choose the buffer; pinching the wave does the same. “8 bars” makes the sound longer or shorter.', 'Eight characters, far apart: tap one and the cloud glides there. Controls has all sixteen settings: put a finger on one and slide. Two taps put it back. The name on top chooses another stem.', 'Harmony sends grains a fifth or an octave away; Rhythm locks them to the beat.', 'A to D keep a cloud and glide back to it. With motion on, tilt moves through the sound, a shake picks another character.'],
+  play: ['Cloud, 1 and 2 are your instruments; + makes another. The pads at the bottom always play the one you are on, in all three windows.', 'Source: tap the name to choose which stem it is made from. The line of bars is that stem through the song: slide along it for another place. The wave is the slice itself: drag it, drag its ends, or pinch.', 'Field: four sounds in its corners, your finger between them. Hold a corner to keep the sound as it is there; Corners (or a shake) makes four others. Auto moves the point by itself, round the last movement you made; the button next to it is how long once round takes.', 'Controls: put a finger anywhere on one and slide, across or up and down. Two taps put it back.', 'Breath: hold a pad and blow into the microphone. Knock: knock on the phone and the last note plays. While a pad is held, tilt bends its tone and adds echo. On its side, the pads fill the screen.'],
   process: ['One gesture moves the filter, tape, resonators and shimmer together.', 'Look: the song takes the colour of what the camera sees. Light brightens it, colour makes it ring. The picture stays on the phone.', 'Hold the buttons for an echo throw or a repeat; the others switch on and off.', 'With motion on: tilt moves the dot, a shake throws everything into the echo. On any page: lay the phone face down and everything freezes.'],
   tape: ['Timeline is the tape itself. Press ● anywhere and what you do is written here, where the playhead is: notes join those already there, moves replace only their own kind, pools write what each stem played.', 'Drag on the numbers to move the playhead. Pinch to zoom, drag a lane to look around. Tap a lane’s name to switch it off and on.', 'Tap a part, then drag it, drag its ends, or use the row below: split, again, loop, backwards, delete. ↶ undoes.', 'Pieces: the phone always listens to itself. The strip is the last half minute: swipe across a part to keep it, or press 1, 2, 4 or 8 for the last bars. Paint tools over its slices; ½ and ×2 change its length, ÷ how fine it is cut, Mix finds a new order. → Timeline puts it on the tape.', 'Mic records the microphone onto the timeline.'],
   move: ['Walk: press it and walk. Your pace becomes the tempo; the stems stretch to it and keep their pitch. Stand still and they sink back while the Cloud holds a drone. No sensors? Tap your steps on the pad.', 'Turn: headphones on, stand up. The stems are in a circle around you; turn and the band turns. The one you face comes forward; keep facing it and you hear it almost alone. Or drag the circle.'],
@@ -319,6 +331,26 @@ function versionSheet() {
 }
 function closeMenu() { const sh = $('#sheet'); sh.classList.remove('on'); setTimeout(() => { sh.hidden = true; }, 220); }
 function buildTabs() { document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => { showPage(b.dataset.p); buzz(5); }; }); }
+/** The first time on a page, one line says where to begin; it is gone for good once that place has been touched. */
+function tips() {
+  const key = 'playground.tips', seen = new Set(), mark = (k) => { if (seen.has(k)) return; seen.add(k); try { localStorage.setItem(key, JSON.stringify([...seen])); } catch { /* private browsing: shown again next time */ } };
+  try { for (const k of JSON.parse(localStorage.getItem(key)) || []) seen.add(k); } catch { /* none yet */ }
+  for (const [k, where, text] of [
+    ['stems', '#p-stems .table', 'Press ▶\uFE0E, then drag one to an edge'],
+    ['cloud', '#p-cloud .surface', 'Touch the wave and hold'],
+    ['play', '#p-play .slice', 'Tap the name to choose a stem'],
+    ['process', '#p-process .xy', 'Drag the dot: the whole song follows'],
+    ['tape', '#p-tape .tline', 'Press ● and what you do is written here'],
+  ]) {
+    const box = document.querySelector(where); if (!box || seen.has(k)) continue;
+    const t = h('p', { class: 'tip', 'aria-hidden': 'true' }, ...text.split('●').flatMap((x, i) => (i ? [h('i', {}, '●'), x] : [x]))); box.append(t);
+    const gone = () => { t.classList.add('gone'); setTimeout(() => t.remove(), 500); mark(k); box.removeEventListener('pointerdown', gone); };
+    box.addEventListener('pointerdown', gone);
+    if (k === 'tape') S.seq.addEventListener('change', () => { if (S.seq.rec && t.isConnected) gone(); });
+  }
+  // until the song has been played once, the play button draws the eye
+  if (!seen.has('played')) { const b = $('#play'); b.classList.add('first'); S.player.on('transport', ({ playing }) => { if (playing) { b.classList.remove('first'); mark('played'); } }); }
+}
 function showPage(id) {
   if (!S.rooms[id]) id = 'stems';
   if (S.page !== id) S.rooms[S.page]?.hide?.();

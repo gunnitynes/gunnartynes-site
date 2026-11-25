@@ -109,7 +109,7 @@ export class StringsVoice {
   constructor(studio, out) { this.node = new AudioWorkletNode(studio.ctx, 'strings', { numberOfInputs: 0, outputChannelCount: [2] }); this.node.connect(out); }
   setSlice(sl) { const n = Math.min(sl.L.length, sl.sr * 1.5), ex = new Float32Array(n); for (let i = 0; i < n; i++) ex[i] = (sl.L[i] + sl.R[i]) * 0.5; let pk = 0; for (const x of ex) pk = Math.max(pk, Math.abs(x)); if (pk > 1e-4) for (let i = 0; i < n; i++) ex[i] /= pk; this.node.port.postMessage({ ex }); }
   set(p) { this.node.port.postMessage({ p }); }
-  noteOn(id, note, vel, at) { this.node.port.postMessage({ on: id, freq: midiHz(note), vel, at }); }
+  noteOn(id, note, vel, at) { this.node.port.postMessage({ on: id, freq: midiHz(note + (this.tune || 0)), vel, at }); }
   noteOff(id, at) { this.node.port.postMessage({ off: id, at }); }
   panic() { this.node.port.postMessage({ panic: true }); }
 }

@@ -111,7 +111,7 @@ body.recording #tabs{box-shadow:inset 0 1px 0 var(--rec)}
 
 /* the gate */
 #gate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:24px;background:radial-gradient(120% 70% at 50% 0%,#1d2232,#11141b 65%);transition:opacity .5s,visibility .5s}
-#gate.gone{opacity:0;visibility:hidden}
+#gate.gone{opacity:0;visibility:hidden;pointer-events:none}
 .gate-in{width:min(420px,100%);display:flex;flex-direction:column;gap:12px}
 .eyebrow{margin:0;font:500 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--p)}
 #gate h1{margin:0;font:italic 400 44px/1 var(--serif);color:#fff}
@@ -313,3 +313,30 @@ body.recording::after{content:"";position:fixed;inset:0;z-index:40;pointer-event
 .mkept{font:13px/1.45 var(--sans);color:var(--dim);margin:18px 0 6px}
 .mitem.ver{display:flex;flex-direction:column;gap:2px;justify-content:center}
 .mitem.ver b{font-weight:500}.mitem.ver small{font:11px var(--mono,monospace);color:var(--dim)}
+/* the first minute */
+.tip{position:absolute;left:12px;right:12px;bottom:14%;margin:0;text-align:center;font:italic 400 18px/1.3 var(--serif);color:#ece8dc;text-shadow:0 0 10px #0b0d12,0 0 4px #0b0d12;pointer-events:none;transition:opacity .4s;z-index:2}
+.tip.gone{opacity:0}
+.morph .tip{bottom:auto;top:50%;transform:translateY(-50%)}.xy .tip{bottom:34%}.surface .tip{bottom:12%}.table .tip{bottom:112px;font-size:17px}.tline .tip{left:74px;bottom:auto;top:46%;font-size:17px}.tip i{font-style:normal;color:var(--rec)}
+#play.first{animation:first 1.8s ease-in-out infinite}
+@keyframes first{0%,100%{box-shadow:0 0 0 0 #ece8dc00}50%{box-shadow:0 0 0 7px #ece8dc2e}}
+@media (prefers-reduced-motion:reduce){#play.first{animation:none;box-shadow:0 0 0 5px #ece8dc2e}}
+/* instruments: three windows over the pads; controls the size of a thumb; choosing a stem */
+.seg.views{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;width:100%;flex:none}.seg.views button{min-height:38px;font-size:11px}
+.deck{flex:1 1 0;min-height:0;display:flex;flex-direction:column;gap:8px}.deck[hidden],.cdeck[hidden]{display:none}.page>.deck{flex-shrink:1}
+.tiles{position:relative;flex:1 1 0;min-height:176px;touch-action:none}.tiles canvas{position:absolute;inset:0}
+.stemline{position:relative;height:54px;flex:none;border:1px solid var(--rule);border-radius:10px;background:#0b0d12;overflow:hidden;touch-action:none}.stemline canvas{position:absolute;inset:0}.stemline[hidden]{display:none}
+#p-play .deck .slice{height:auto;flex:1 1 0;min-height:64px}#p-play .deck .morph{min-height:120px}
+.ins-src{display:flex;gap:8px;align-items:center}.ins-src .seg button{min-height:38px;padding:0 10px;font-size:10.5px}
+.srcpick{flex:1;min-width:0;min-height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--rule2);border-radius:20px;background:#ffffff08;font:italic 400 18px var(--serif)}.srcpick span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.srcpick i{font:12px var(--sans);color:var(--dim);margin-left:auto}
+#p-cloud .srcpick{flex:0 1 auto;max-width:52%}
+.ins-top .chip.who{min-height:38px}.ins-top .chip.add{min-width:42px;justify-content:center;font-size:18px;padding:0 12px}
+.cdeck{display:flex;flex-direction:column;gap:8px;flex:none}.cdeck.big{height:clamp(212px,40dvh,360px)}.page>.cdeck{flex-shrink:0}
+#p-cloud .surface{min-height:120px}
+.pick{position:fixed;inset:0;z-index:55;background:#05060acc;opacity:0;transition:opacity .2s}.pick.on{opacity:1}
+.pick-in{position:absolute;left:0;right:0;bottom:0;max-height:82dvh;display:flex;flex-direction:column;background:#161a24;border-radius:18px 18px 0 0;border-top:1px solid var(--rule2);padding:12px 14px calc(14px + var(--sab));transform:translateY(24px);transition:transform .22s}.pick.on .pick-in{transform:none}
+.pick .mhead{gap:8px;margin-bottom:10px}.pick .mhead .sp{flex:1}.pick .done{background:var(--paper);color:var(--ground)}
+.picks{display:grid;grid-template-columns:1fr 1fr;gap:7px;overflow:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.pickb{min-height:58px;border:1px solid var(--rule);border-left:3px solid var(--s);border-radius:10px;background:#ffffff07;padding:7px 10px;text-align:left;display:flex;flex-direction:column;gap:5px;justify-content:center;min-width:0}
+.pickb span{font:500 14px var(--sans);color:#fff;text-transform:none;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pickb canvas{width:100%;height:18px;opacity:.6}
+.pickb[aria-pressed=true]{background:color-mix(in srgb,var(--c) 26%,transparent);border-color:var(--c)}.pickb[aria-pressed=true] canvas{opacity:1}.pickb.busy{opacity:.55}
+@media (max-height:720px){.seg.views button{min-height:32px}.stemline{height:42px}.ins-src .seg button,.srcpick{min-height:34px}#p-play .pads{height:112px}.tiles{min-height:160px}.ins-top .chip.who{min-height:32px}.cdeck.big{height:210px}#p-cloud .surface{min-height:100px}}

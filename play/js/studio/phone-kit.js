@@ -3,8 +3,8 @@ import { h } from '../lib/util.js';
 export const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const r3 = (v) => Math.round(v * 1000) / 1000;
 export const buzz = (ms = 8) => { try { navigator.vibrate?.(ms); } catch { /* none */ } };
-export const COLORS = ['#e6b450', '#9cc2f4', '#8fd3c5'];
-export const NAMES = ['Cloud', 'Sound 1', 'Sound 2'];
+export const COLORS = ['#e6b450', '#9cc2f4', '#8fd3c5', '#f0a8c0', '#b9a8f2'];
+export const NAMES = ['Cloud', 'Sound 1', 'Sound 2', 'Sound 3', 'Sound 4'];
 export const NOTE = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 
 /** A canvas filling a box, sharp on any screen. → { cv, g, W, H } (W and H follow the box). */
@@ -103,20 +103,35 @@ export class MotionLoop {
     // the last tenth leads back to the beginning, so it goes round without a jump
     if (u > 0.9) { const e = (u - 0.9) / 0.1, s = e * e * (3 - 2 * e); x += (p[0][1] - x) * s; y += (p[0][2] - y) * s; } return [x, y]; }
 }
-// ------------------------------------------------------------------------------------------------ faders you draw across
-/** arms() → [[path, name, say(v), min, max]]. One finger on a fader moves it; slid sideways it draws across them all. */
-export function faderField(S, arms, { rows = 1, color = () => '#e6b450' } = {}) {
-  const P = S.params, el = h('div', { class: 'faders', style: { '--rows': rows } }), C = surface(el), g = C.g, f = new Map(); let word = null, wt = 0, tap = [0, -1];
-  const geo = () => { const n = Math.ceil(arms().length / rows); return { n, cw: C.W / n, rh: C.H / rows }; };
+// ------------------------------------------------------------------------------------------------ controls the size of a thumb
+/** arms() → [[path, name, say(v), min, max, step]]. Each control is a tile: put a finger anywhere on it and slide, across or
+ *  up and down; the finger may leave the tile. Nothing jumps to where you touched. Two taps put it back. */
+export function tileField(S, arms, { cols = 3, color = () => '#e6b450' } = {}) {
+  const P = S.params, el = h('div', { class: 'tiles' }), C = surface(el), g = C.g, f = new Map(), GAP = 6; let tap = [0, -1];
+  const geo = () => { const n = arms().length, rows = Math.ceil(n / cols); return { rows, w: (C.W - GAP * (cols - 1)) / cols, hh: (C.H - GAP * (rows - 1)) / rows }; };
   const val = ([p, , , a = 0, b = 1]) => clamp(((P.get(p) ?? a) - a) / (b - a), 0, 1);
-  const put = (i, u) => { const A = arms()[i]; if (!A) return; const [p, nm, say, a = 0, b = 1, step] = A; let v = a + clamp(u, 0, 1) * (b - a); if (a < 0 && Math.abs(v) < (b - a) * 0.025) v = 0; v = step ? Math.round(v / step) * step : r3(v); if (P.get(p) !== v) P.set(p, v); word = [nm, say(v), i]; wt = performance.now(); };
-  const at = (e) => { const r = el.getBoundingClientRect(), { n, cw, rh } = geo(), x = e.clientX - r.left, y = e.clientY - r.top, row = clamp(Math.floor(y / rh), 0, rows - 1); return { x, y, i: clamp(Math.floor(x / cw), 0, n - 1) + row * n, row, u: 1 - (y - row * rh - 13) / (rh - 30) }; };
-  el.addEventListener('pointerdown', (e) => { if (!C.W) return; e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch { /* fine */ } const q = at(e), n = performance.now(); if (q.i === tap[1] && n - tap[0] < 280) { const A = arms()[q.i]; if (A) { P.reset(A[0]); word = [A[1], A[2](P.get(A[0])), q.i]; wt = n; buzz(14); } tap = [0, -1]; return; } tap = [n, q.i]; f.set(e.pointerId, { ...q }); put(q.i, q.u); buzz(4); });
-  el.addEventListener('pointermove', (e) => { const l = f.get(e.pointerId); if (!l) return; const r = el.getBoundingClientRect(), { n, rh } = geo(), x = e.clientX - r.left, y = clamp(e.clientY - r.top, l.row * rh, (l.row + 1) * rh), i = clamp(Math.floor(x / geo().cw), 0, n - 1) + l.row * n, u = 1 - (y - l.row * rh - 13) / (rh - 30); if (Math.abs(u - l.u) > 0.04 || i !== l.i) tap[1] = -1; const s = Math.sign(i - l.i); for (let k = l.i + s; s && k !== i; k += s) put(k, l.u + ((u - l.u) * (k - l.i)) / (i - l.i)); put(i, u); l.i = i; l.u = u; });
-  for (const t of ['pointerup', 'pointercancel']) el.addEventListener(t, (e) => f.delete(e.pointerId)); el.addEventListener('contextmenu', (e) => e.preventDefault());
+  const put = (A, u) => { const [p, , , a = 0, b = 1, step] = A; let v = a + clamp(u, 0, 1) * (b - a); if (a < 0 && !step && Math.abs(v) < (b - a) * 0.02) v = 0; v = step ? Math.round(v / step) * step : r3(v); if (P.get(p) !== v) { P.set(p, v); if (step) buzz(3); } };
+  const at = (e) => { const r = el.getBoundingClientRect(), { rows, w, hh } = geo(), c = Math.floor((e.clientX - r.left) / (w + GAP)), k = Math.floor((e.clientY - r.top) / (hh + GAP)); return c < 0 || c >= cols || k < 0 || k >= rows ? -1 : k * cols + c; };
+  el.addEventListener('pointerdown', (e) => {
+    const i = at(e), A = arms()[i]; if (!C.W || !A) return; e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch { /* fine */ }
+    const n = performance.now(); if (i === tap[1] && n - tap[0] < 300) { P.reset(A[0]); buzz(14); tap = [0, -1]; return; } tap = [n, i];
+    f.set(e.pointerId, { A, i, x: e.clientX, y: e.clientY, u: val(A), way: 0 }); buzz(4);
+  });
+  el.addEventListener('pointermove', (e) => {
+    const l = f.get(e.pointerId); if (!l) return; const dx = e.clientX - l.x, dy = l.y - e.clientY;
+    if (!l.way) { if (Math.hypot(dx, dy) < 5) return; l.way = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y'; l.x = e.clientX; l.y = e.clientY; tap = [0, -1]; return; }   // whichever way it starts out, it keeps to
+    put(l.A, l.u + (l.way === 'x' ? dx : dy) / 210);
+  });
+  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) el.addEventListener(t, (e) => f.delete(e.pointerId)); el.addEventListener('contextmenu', (e) => e.preventDefault());
   el.draw = () => {
-    if (!C.W) return; const { n, cw, rh } = geo(), A = arms(), now = performance.now(), col = color(), live = word && now - wt < 900; g.clearRect(0, 0, C.W, C.H); g.textAlign = 'center'; g.textBaseline = 'middle';
-    A.forEach((a, i) => { const x = (i % n) * cw, y = Math.floor(i / n) * rh, h0 = rh - 30, v = val(a), on = live && word[2] === i, bi = (a[3] ?? 0) < 0; g.fillStyle = '#ffffff0b'; g.beginPath(); g.roundRect(x + 2.5, y + 13, cw - 5, h0, 5); g.fill(); g.fillStyle = on ? col : col + '99'; const top = y + 13 + (1 - v) * h0, mid = y + 13 + h0 / 2; g.beginPath(); if (bi) g.roundRect(x + 2.5, Math.min(top, mid), cw - 5, Math.max(2, Math.abs(top - mid)), 3); else g.roundRect(x + 2.5, top, cw - 5, Math.max(2, v * h0), 5); g.fill(); g.fillStyle = '#fff'; g.fillRect(x + 4, clamp(top - 1, y + 13, y + 11 + h0), cw - 8, 2); g.font = '500 8.6px "IBM Plex Mono", monospace'; g.fillStyle = on ? '#fff' : '#a9adb6'; g.fillText(a[1].toUpperCase(), x + cw / 2, y + rh - 8, cw - 2); if (on) { g.font = '9.5px "IBM Plex Mono", monospace'; g.fillText(word[1], clamp(x + cw / 2, 22, C.W - 22), y + 6); } });
+    if (!C.W) return; const { w, hh } = geo(), A = arms(), col = color(), small = hh < 58 || w < 96; g.clearRect(0, 0, C.W, C.H); g.textBaseline = 'middle'; g.textAlign = 'left';
+    A.forEach((a, i) => {
+      const x = (i % cols) * (w + GAP), y = Math.floor(i / cols) * (hh + GAP), v = val(a), on = [...f.values()].some((l) => l.i === i), bi = (a[3] ?? 0) < 0, px = small ? 8 : 12;
+      g.save(); g.beginPath(); g.roundRect(x, y, w, hh, 12); g.fillStyle = on ? '#ffffff16' : '#ffffff0a'; g.fill(); g.clip();
+      const m = x + w / 2, x0 = bi ? Math.min(m, x + v * w) : x, x1 = bi ? Math.max(m, x + v * w) : x + v * w, bh = Math.max(9, hh * 0.16); g.fillStyle = col + (on ? '40' : '22'); g.fillRect(x0, y, x1 - x0, hh); g.fillStyle = '#ffffff10'; g.fillRect(x, y + hh - bh, w, bh); g.fillStyle = on ? '#fff' : col; g.fillRect(x0, y + hh - bh, Math.max(3, x1 - x0), bh); g.restore();
+      g.strokeStyle = on ? col : '#ffffff1c'; g.lineWidth = 1; g.beginPath(); g.roundRect(x + 0.5, y + 0.5, w - 1, hh - 1, 12); g.stroke();
+      const t = y + (hh - Math.max(9, hh * 0.16)) / 2; g.fillStyle = on ? '#fff' : '#d6d2c6'; g.font = `500 ${small ? 9.5 : 11}px "IBM Plex Mono", monospace`; g.fillText(a[1].toUpperCase(), x + px, t - (small ? 8 : 12), w - 2 * px); g.fillStyle = '#fff'; g.font = `${small ? 13 : 18}px "IBM Plex Mono", monospace`; g.fillText(String(a[2](P.get(a[0]) ?? 0)), x + px, t + (small ? 8 : 10), w - 2 * px);
+    });
   };
   return el;
 }
@@ -163,7 +178,7 @@ export function morphPad(S, { arms, corners, key, color, onAuto, say }) {
     g.textBaseline = 'middle'; for (let c = 0; c < 4; c++) { const r = c % 2, b = c > 1, k = flash[1] === c ? clamp(1 - (now - flash[0]) / 700, 0, 1) : 0; g.textAlign = r ? 'right' : 'left'; g.font = `italic ${16 + k * 5}px Newsreader, serif`; g.fillStyle = k ? '#fff' : hue[c]; g.fillText(cs[c].n, r ? W - 12 : 12, b ? H - 16 : 17); // the corner's sound, as a little profile
       const vs = cs[c].v, bw = 4; vs.forEach((v, i) => { g.globalAlpha = 0.5; g.fillStyle = hue[c]; const bx = r ? W - 12 - (vs.length - i) * bw : 12 + i * bw, hh = 2 + v * 15; g.fillRect(bx, b ? H - 30 - hh : 30, bw - 1, hh); }); g.globalAlpha = 1; }
     if (st.ml.pts && st.auto) { g.strokeStyle = col; g.globalAlpha = 0.65; g.lineWidth = 1.5; g.setLineDash([4, 4]); g.beginPath(); st.ml.pts.forEach(([, u, v], i) => (i ? g.lineTo(px(u), py(v)) : g.moveTo(px(u), py(v)))); g.stroke(); g.setLineDash([]); g.globalAlpha = 1; }
-    if (st.p) { g.fillStyle = '#fff'; g.shadowColor = col; g.shadowBlur = 22; g.beginPath(); g.arc(px(x), py(y), down ? 15 : 11, 0, 7); g.fill(); g.shadowBlur = 0; } else { g.textAlign = 'center'; g.font = 'italic 16px Newsreader, serif'; g.fillStyle = '#d6d2c6'; g.fillText('slide between four sounds', W / 2, H / 2); }
+    if (st.p) { g.fillStyle = '#fff'; g.shadowColor = col; g.shadowBlur = 22; g.beginPath(); g.arc(px(x), py(y), down ? 15 : 11, 0, 7); g.fill(); g.shadowBlur = 0; }
   };
   return el;
 }

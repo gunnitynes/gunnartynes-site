@@ -452,6 +452,7 @@ function makeForge(n) {
   const P = S.params, k = `f${n}`, out = S.ctx.createGain(); out.connect(S.addStrip(n).input);
   S.params.set(`mix.${k}.mute`, false, { by: 'load' });
   const voices = { sampler: new SamplerVoice(S, out), strings: new StringsVoice(S, out), grains: new CloudVoice(S, out) };
+  P.define(`${k}.tune`, 0, (v) => { voices.sampler.root = voices.grains.root = 60 - v; voices.strings.tune = v; });   // set on a phone
   const slot = { name: NAMES[n], voices, get voice() { return voices[P.get(`${k}.engine`)]; } };
   S.slots[n] = slot;
   const waveBox = h('div', { class: 'wave' }), wave = new Wave(waveBox, { select: true });

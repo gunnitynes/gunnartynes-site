@@ -3,12 +3,13 @@
 //   ruler: drag to go there · a lane: drag to look around, tap to go there · its name: on and off · two fingers: zoom
 //   a part: tap it, then drag it, drag its ends, or use the row below (what a part can do depends on what it is)
 import { h } from '../lib/util.js';
-import { clamp, buzz, surface, gestures, COLORS } from './phone-kit.js';
+import { clamp, buzz, surface, gestures, COLORS, NAMES } from './phone-kit.js';
 import { srcBar, shiftSrc } from './core.js';
 
 export function buildTimeline(S, U, { openPiece }) {
   const q = S.seq, { song, params: P, player } = S, { bpb, srcAt } = U, cb = song.barsPerCell, LW = 58, TOP = 24;
-  const LANES = [['band', 'Song', '#ece8dc'], ['own', 'Stems', '#a3a6ad'], ['cap', 'Pieces', '#e6b450'], ['audio', 'Mic', '#df8a74'], [0, 'Cloud', COLORS[0]], [1, 'Sound 1', COLORS[1]], [2, 'Sound 2', COLORS[2]], ['m', 'Moves', '#c9b6ff']];
+  const LANES = [], lanes = () => LANES.splice(0, LANES.length, ['band', 'Song', '#ece8dc'], ['own', 'Stems', '#a3a6ad'], ['cap', 'Pieces', '#e6b450'], ['audio', 'Mic', '#df8a74'], [0, 'Cloud', COLORS[0]], ...S.sounds.map((s) => [s.n, NAMES[s.n], COLORS[s.n]]), ['m', 'Moves', '#c9b6ff']); lanes();
+  const sc = S.soundsChanged; S.soundsChanged = () => { sc?.(); lanes(); };
   const el = h('div', { class: 'tline' }), C = surface(el), g = C.g; let a = 0, b = null, sel = null, d = null, lastTouch = 0;
   const B = () => b ?? q.arr.bars, rowH = () => (C.H - TOP) / LANES.length, ppb = () => (C.W - LW) / Math.max(1, B() - a), X = (bar) => LW + (bar - a) * ppb(), barAt = (x) => a + (x - LW) / ppb(), rowOf = (c) => (String(c.lane).startsWith('stem:') ? 1 : LANES.findIndex((l) => l[0] === c.lane));
   const look = (x, w) => { const n = q.arr.bars; w = clamp(w, 2, n); x = clamp(x, 0, n - w); if (w >= n - 0.01) { a = 0; b = null; } else { a = x; b = x + w; } };
