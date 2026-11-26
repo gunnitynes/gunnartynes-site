@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Ottó Tynes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f2ee;
+    --ink: #2a2826;
+    --muted: #8b857d;
+    --faint: #b9b3aa;
+    --line: #dcd7cf;
+    --hover: #ece9e3;
+    --mark: #6b6860;
+    --bad: #9a5a4c;
+    --serif: "EB Garamond", "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1918; --ink: #e8e4dd; --muted: #948e85; --faint: #6c675f;
+      --line: #36332f; --hover: #22211f; --mark: #b5afa5; --bad: #c98b7c;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 17px/1.5 var(--serif);
+    display: flex; justify-content: center;
+    padding: clamp(56px, 14vh, 140px) 20px 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { width: 100%; max-width: 560px; animation: fade 1.2s ease both; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+  header { text-align: center; margin-bottom: 48px; }
+  .kicker {
+    font: 500 11px/1 var(--sans); letter-spacing: .28em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 18px; text-wrap: balance;
+  }
+  @media (max-width: 360px) { .kicker { letter-spacing: .16em; } }
+  h1 { font-weight: 400; font-size: clamp(40px, 9vw, 56px); line-height: 1.05; margin: 0; letter-spacing: .01em; }
+  .rule { width: 36px; height: 1px; background: var(--faint); margin: 30px auto 0; border: 0; }
+
+  #drop {
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    min-height: 210px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; text-align: center; padding: 36px 24px;
+    cursor: pointer; transition: background .4s, border-color .4s;
+    user-select: none;
+  }
+  #drop:hover, #drop.over { background: var(--hover); border-color: var(--faint); }
+  #drop:focus-visible { outline: 1px solid var(--mark); outline-offset: 4px; }
+  #drop svg { width: 22px; height: 22px; color: var(--muted); margin-bottom: 14px; }
+  #drop .big { font-size: 21px; font-style: italic; text-wrap: balance; }
+  #drop .small { color: var(--muted); font-size: 16px; }
+
+  #status { margin-top: 36px; display: none; }
+  #status.on { display: block; }
+  .summary { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+  #headline { font-size: 19px; }
+  .count { font: 12px/1 var(--sans); letter-spacing: .08em; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bar { height: 2px; background: var(--line); overflow: hidden; border-radius: 2px; }
+  .bar > i { display: block; position: relative; height: 100%; width: 0; background: var(--mark); transition: width .35s linear; overflow: hidden; }
+  .bar.run > i::after {
+    content: ""; position: absolute; inset: 0; width: 40%;
+    background: linear-gradient(90deg, transparent, var(--bg), transparent); opacity: .55;
+    animation: sheen 2.4s ease-in-out infinite;
+  }
+  @keyframes sheen { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+
+  ul { list-style: none; padding: 0; margin: 14px 0 0; max-height: 46vh; overflow: auto; position: relative; }
+  li {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid var(--line);
+    font: 13px/1.4 var(--sans);
+  }
+  li .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+  li .st { flex: none; color: var(--faint); font-size: 12px; }
+  li.ok .name { color: var(--ink); }
+  li.ok .st { color: var(--muted); }
+  li.bad .st { color: var(--bad); }
+  li.busy .st { color: var(--muted); animation: breathe 1.6s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .35; } }
+  .note { color: var(--muted); font: 13px/1.5 var(--sans); margin: 12px 0 0; min-height: 1.5em; }
+  input[type=file] { display: none; }
+  @media (prefers-reduced-motion: reduce) { main, li.busy .st, .bar.run > i::after { animation: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="kicker">Myndir og tónlist tengd</p>
+    <h1>Ottó Tynes</h1>
+    <hr class="rule">
+  </header>
+
+  <div id="drop" tabindex="0" role="button" aria-label="Veldu myndir eða tónlist til að hlaða upp">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
+    </svg>
+    <div class="big">Dragðu myndir, tónlist eða möppur hingað</div>
+    <div class="small">eða smelltu til að velja</div>
+  </div>
+
+  <input type="file" id="pickFiles" multiple accept="image/*,audio/*,.mp3,.m4a,.wav,.aif,.aiff,.flac,.ogg,.aac,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.raf,.orf,.rw2,.tif,.tiff">
+
+  <section id="status" aria-live="polite">
+    <div class="summary"><span id="headline">Hleð upp…</span><span class="count" id="count"></span></div>
+    <div class="bar" id="bar"><i></i></div>
+    <p class="note" id="note"></p>
+    <ul id="list"></ul>
+  </section>
+</main>
+
+<script>
+// The Apps Script web app URL (ends in /exec).
+const API = "https://script.google.com/macros/s/AKfycbyTuR0xoFTD3sFmkqfRcNg34-znVrCOiyJQjUrx29rQlb9eYOLwv_k2klQUX8SOoQp1/exec";
+
+const MAX_BYTES = 35 * 1024 * 1024;   // Apps Script takes about 50 MB per request; base64 adds a third
+const PARALLEL = 4;
+const IMAGE_EXT = /\.(jpe?g|png|gif|webp|heic|heif|avif|bmp|tiff?|dng|cr2|cr3|nef|arw|raf|orf|rw2|mp3|m4a|wav|aiff?|flac|ogg|oga|opus|aac)$/i;
+
+const drop = document.getElementById('drop');
+const pickFiles = document.getElementById('pickFiles');
+const list = document.getElementById('list');
+const bar = document.getElementById('bar');
+
+const queue = [];
+let total = 0, finished = 0, failed = 0, skipped = 0, running = 0;
+
+// ---- progress -----------------------------------------------------------
+// The browser can't report upload progress for this kind of request (asking for it
+// would break the connection to Google), so progress is counted in bytes: files that
+// are finished count fully, and files on their way are estimated from the speed
+// measured on the files that already arrived. The bar never jumps backwards.
+const ENC = 1.37;                 // base64 + JSON makes each file ~37% larger on the wire
+let bytesTotal = 0, bytesDone = 0, shown = 0, startedAt = 0, ticker = 0;
+let rate = 0;                     // bytes per second for one request, measured
+let overhead = 2.5;               // seconds Google spends per file regardless of size
+const inflight = new Set();
+
+function expected(it) {
+  const r = rate || 400 * 1024;   // first guess until a file has arrived
+  return overhead + it.file.size * ENC / r;
+}
+function learn(it) {
+  const secs = (performance.now() - it.t0) / 1000;
+  const obs = it.file.size * ENC / Math.max(0.4, secs - overhead * 0.8);
+  rate = rate ? rate * 0.6 + obs * 0.4 : obs;
+}
+function estimate() {
+  let b = bytesDone;
+  const now = performance.now();
+  for (const it of inflight) {
+    const t = (now - it.t0) / 1000;
+    b += it.file.size * 0.93 * (1 - Math.exp(-1.7 * t / expected(it)));
+  }
+  return bytesTotal ? Math.min(1, b / bytesTotal) : 0;
+}
+function tick() {
+  const target = estimate();
+  if (target > shown) shown = target;
+  draw();
+  if (finished >= total) { clearInterval(ticker); ticker = 0; }
+}
+
+// ---- choosing ---------------------------------------------------------
+drop.addEventListener('click', () => pickFiles.click());
+drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickFiles.click(); } });
+
+pickFiles.addEventListener('change', () => { add([...pickFiles.files].map(f => ({ file: f, path: '' }))); pickFiles.value = ''; });
+
+// Drag anywhere on the page works, not only on the box.
+let depth = 0;
+addEventListener('dragenter', e => { e.preventDefault(); depth++; drop.classList.add('over'); });
+addEventListener('dragleave', e => { if (--depth <= 0) { depth = 0; drop.classList.remove('over'); } });
+addEventListener('dragover', e => e.preventDefault());
+addEventListener('drop', async e => {
+  e.preventDefault(); depth = 0; drop.classList.remove('over');
+  const items = [...(e.dataTransfer.items || [])];
+  // Entries must be taken synchronously, before any await.
+  const entries = items.map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  if (entries.length) {
+    const found = [];
+    for (const entry of entries) await walk(entry, '', found);
+    add(found);
+  } else {
+    add([...e.dataTransfer.files].map(f => ({ file: f, path: '' })));
+  }
+});
+
+async function walk(entry, dir, out) {
+  if (entry.isFile) {
+    const file = await new Promise((res, rej) => entry.file(res, rej)).catch(() => null);
+    if (file) out.push({ file, path: dir });
+  } else if (entry.isDirectory) {
+    const reader = entry.createReader();
+    const sub = dir ? dir + '/' + entry.name : entry.name;
+    // readEntries returns at most ~100 at a time; keep reading until empty.
+    for (;;) {
+      const batch = await new Promise((res, rej) => reader.readEntries(res, rej)).catch(() => []);
+      if (!batch.length) break;
+      for (const child of batch) await walk(child, sub, out);
+    }
+  }
+}
+
+function dirOf(rel) { const i = rel.lastIndexOf('/'); return i > 0 ? rel.slice(0, i) : ''; }
+function isImage(f) { return (f.type && /^(image|audio)\//.test(f.type)) || IMAGE_EXT.test(f.name); }
+
+// ---- queue ------------------------------------------------------------
+function add(items) {
+  for (const it of items) {
+    if (it.file.name.startsWith('.') || !isImage(it.file)) { skipped++; continue; }
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="name"></span><span class="st">Í biðröð</span>';
+    li.querySelector('.name').textContent = (it.path ? it.path + '/' : '') + it.file.name;
+    list.append(li);
+    it.li = li;
+    if (it.file.size > MAX_BYTES) { mark(it, 'bad', 'Of stór (yfir 35 MB)'); total++; finished++; failed++; continue; }
+    queue.push(it); total++; bytesTotal += it.file.size;
+  }
+  if (!ticker && queue.length) { startedAt = performance.now(); ticker = setInterval(tick, 250); }
+  shown = Math.min(shown, estimate());   // more files were added, so the share already sent is smaller
+  document.getElementById('status').classList.add('on');
+  update();
+  pump();
+}
+
+function pump() {
+  while (running < PARALLEL && queue.length) {
+    const it = queue.shift();
+    running++;
+    it.t0 = performance.now(); inflight.add(it);
+    send(it).finally(() => {
+      inflight.delete(it); bytesDone += it.file.size;
+      running--; finished++; tick(); update(); pump();
+    });
+  }
+}
+
+async function send(it) {
+  mark(it, 'busy', 'Hleð upp');
+  const data = await base64(it.file);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const r = await fetch(API, {
+        method: 'POST',
+        body: JSON.stringify({ name: it.file.name, type: it.file.type, path: it.path, data })
+      });
+      const j = await r.json();
+      if (j.ok) { learn(it); mark(it, 'ok', 'Komin'); return; }
+      throw new Error(j.error || 'failed');
+    } catch (err) {
+      if (attempt === 3) { failed++; mark(it, 'bad', 'Mistókst'); return; }
+      await new Promise(r => setTimeout(r, 1500 * attempt));
+    }
+  }
+}
+
+function base64(file) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(String(fr.result).split(',')[1] || '');
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+
+function mark(it, cls, text) {
+  it.li.className = cls; it.li.querySelector('.st').textContent = text;
+  // Keep the files that are on their way in view, with the finished ones just above them.
+  if (cls === 'busy') {
+    const first = list.querySelector('li.busy');
+    if (first) list.scrollTo({ top: Math.max(0, first.offsetTop - list.offsetTop - 2 * first.offsetHeight), behavior: 'smooth' });
+  }
+}
+
+function minutes(n) { return n % 10 === 1 && n % 100 !== 11 ? 'mínúta' : 'mínútur'; }
+
+function remaining() {
+  // Overall speed so far; only once something has arrived and a few seconds have passed.
+  const secs = (performance.now() - startedAt) / 1000;
+  if (finished - failed < 1 || secs < 4 || shown <= 0) return '';
+  const left = secs * (1 - shown) / shown;
+  if (left < 8) return '';
+  if (left < 50) return 'Innan við mínúta eftir.';
+  const m = Math.round(left / 60);
+  return `Um það bil ${m} ${minutes(m)} eftir.`;
+}
+
+function draw() {
+  const done = finished >= total && total > 0;
+  const p = done ? 1 : shown;
+  bar.firstElementChild.style.width = (p * 100).toFixed(2) + '%';
+  bar.classList.toggle('run', !done && total > 0);
+  document.getElementById('count').textContent =
+    !total ? '' : done ? `${finished - failed} af ${total} komnar` : `${finished - failed} af ${total} · ${Math.floor(p * 100)}%`;
+  const notes = [];
+  if (skipped) notes.push(`${skipped} ${skipped % 10 === 1 && skipped % 100 !== 11 ? 'skrá' : 'skrám'} sleppt (hvorki myndir né tónlist).`);
+  if (!done && total) { const r = remaining(); if (r) notes.push(r); notes.push('Ekki loka síðunni fyrr en allt er komið.'); }
+  document.getElementById('note').textContent = notes.join(' ');
+}
+
+function update() {
+  const done = finished >= total && total > 0;
+  draw();
+  document.getElementById('headline').textContent =
+    !total ? 'Engar myndir eða tónlist fundust' :
+    !done ? 'Hleð upp…' :
+    failed ? `Búið — ekki tókst að hlaða upp ${failed}` : 'Móttekið, takk fyrir!';
+}
+
+addEventListener('beforeunload', e => { if (finished < total) { e.preventDefault(); e.returnValue = ''; } });
+</script>
+</body>
+</html>
