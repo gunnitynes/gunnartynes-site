@@ -9,8 +9,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="theme-color" content="#f4f2ee" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1a1918" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#1a1918">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://gunnartynes.com/otto/">
 <meta property="og:title" content="Ottó Tynes">
@@ -132,6 +131,16 @@
   li .st { font-size: 14px; color: var(--muted); }
   li.ok .st { color: var(--muted); }
   .note { font-size: 15px; }
+  .view { margin-top: 44px; }
+
+  /* Dark for everyone, whatever the device is set to. */
+  :root {
+    color-scheme: dark;
+    --bg: #1a1918; --ink: #e8e4dd; --muted: #aaa49a; --faint: #7c766d;
+    --line: #36332f; --hover: #22211f; --mark: #b5afa5; --bad: #c98b7c; --box: #262523; --tile: #242220;
+  }
+  /* On computers everything is a little larger. */
+  @media (min-width: 900px) and (hover: hover) { main { zoom: 1.15; } }
 </style>
 </head>
 <body>
