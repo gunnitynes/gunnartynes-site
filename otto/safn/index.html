@@ -139,6 +139,21 @@
   #vfoot a { color: #b5afa5; text-underline-offset: 3px; }
   @media (max-width: 600px) { #vprev, #vnext { display: none; } }
   @media (prefers-reduced-motion: reduce) { main { animation: none; } .grid img { transition: none; } }
+
+  /* Clearer, larger text (variation B): the name stays in the book face, other text in a plain face. */
+  :root { --muted: #6f6a62; --faint: #a39d94; }
+  @media (prefers-color-scheme: dark) { :root { --muted: #aaa49a; --faint: #7c766d; } }
+  body { font-size: 19px; }
+  .kicker { font-size: 13px; letter-spacing: .24em; }
+  h1 { font-size: clamp(46px, 10vw, 66px); }
+  .add { font: 16px/1.4 var(--sans); font-style: normal; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; text-decoration-color: var(--faint); }
+  .add:hover { text-decoration-color: var(--ink); }
+  h2 { font-size: 13px; letter-spacing: .24em; }
+  h3 { font: 500 17px/1.3 var(--sans); font-style: normal; color: var(--muted); }
+  #state { font: 17px/1.5 var(--sans); font-style: normal; }
+  .tname { font: 17px/1.35 var(--sans); }
+  .ttime { font-size: 13px; }
+  .vname { font-size: 13px; }
 </style>
 </head>
 <body>
@@ -148,7 +163,7 @@
     <h1>Ottó Tynes</h1>
     <hr class="rule">
   </header>
-  <a class="add" href="../">Bæta við myndum eða tónlist</a>
+  <a class="add" href="../">Bæta við myndum, myndböndum eða tónlist</a>
 
   <p id="state">Sæki…</p>
 

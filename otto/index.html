@@ -111,6 +111,27 @@
   .view { display: block; text-align: center; margin: 22px 0 0; color: var(--muted); font-style: italic; text-decoration: none; }
   .view:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
   @media (prefers-reduced-motion: reduce) { main, li.busy .st, .bar.run > i::after { animation: none; } }
+
+  /* Clearer, larger text (variation B): the name stays in the book face, other text in a plain face. */
+  :root { --muted: #6f6a62; --faint: #a39d94; }
+  @media (prefers-color-scheme: dark) { :root { --muted: #aaa49a; --faint: #7c766d; } }
+  body { font-size: 19px; }
+  .kicker { font-size: 13px; letter-spacing: .24em; }
+  h1 { font-size: clamp(46px, 10vw, 66px); }
+  :root { --box: #fbfaf8; }
+  @media (prefers-color-scheme: dark) { :root { --box: #262523; } }
+  #drop { background: var(--box); min-height: 230px; }
+  #drop:hover, #drop.over { background: var(--box); border-color: var(--mark); }
+  #drop svg { width: 26px; height: 26px; color: var(--muted); }
+  #drop .big { font: 500 21px/1.35 var(--sans); }
+  #drop .small { font: 16px/1.4 var(--sans); color: var(--muted); }
+  .view { font: 16px/1.4 var(--sans); color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; text-decoration-color: var(--faint); }
+  #headline { font: 500 18px/1.3 var(--sans); }
+  .count { font-size: 14px; }
+  li { font-size: 15px; padding: 11px 0; }
+  li .st { font-size: 14px; color: var(--muted); }
+  li.ok .st { color: var(--muted); }
+  .note { font-size: 15px; }
 </style>
 </head>
 <body>
