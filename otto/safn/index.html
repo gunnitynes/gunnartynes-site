@@ -251,6 +251,8 @@ const ICON_PAUSE = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.
 function renderTracks(tracks) {
   trackList = tracks;
   $('music').hidden = false;
+  // Have the first song ready by the time anyone presses play.
+  setTimeout(() => { if (tracks[0].size <= BIG_AUDIO) fetchTrack(tracks[0]); }, 1200);
   const ul = $('tracks');
   tracks.forEach((f, i) => {
     const li = document.createElement('li');
@@ -259,6 +261,11 @@ function renderTracks(tracks) {
       <span class="tname"></span><span class="ttime"></span><div class="tbar"><i></i></div>`;
     li.querySelector('.tname').textContent = f.name.replace(/\.[^.]+$/, '');
     li.querySelector('.play').onclick = () => toggle(i);
+    // Songs take several seconds to prepare, so start fetching as soon as someone reaches for one.
+    const early = () => { if (f.size <= BIG_AUDIO) fetchTrack(f); };
+    li.addEventListener('pointerenter', early);
+    li.addEventListener('touchstart', early, { passive: true });
+    li.addEventListener('focusin', early);
     li.querySelector('.tbar').onclick = e => {
       if (i !== current || !audio.duration) return;
       const r = e.currentTarget.getBoundingClientRect();
