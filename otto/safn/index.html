@@ -192,7 +192,9 @@ async function load() {
 }
 
 function render(files) {
-  const tracks = files.filter(isAudio);
+  // Music in alphabetical order (Icelandic: Á after A, Ð after D, Þ Æ Ö at the end; 2 before 10).
+  const title = f => f.name.replace(/\.[^.]+$/, '');
+  const tracks = files.filter(isAudio).sort((a, b) => title(a).localeCompare(title(b), 'is', { numeric: true, sensitivity: 'base' }));
   const photos = files.filter(isImage);
   $('state').hidden = !!(tracks.length || photos.length);
   $('state').textContent = 'Ekkert hefur borist enn.';
