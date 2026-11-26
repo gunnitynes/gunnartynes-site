@@ -92,6 +92,8 @@
   @keyframes breathe { 50% { opacity: .35; } }
   .note { color: var(--muted); font: 13px/1.5 var(--sans); margin: 12px 0 0; min-height: 1.5em; }
   input[type=file] { display: none; }
+  .view { display: block; text-align: center; margin: 22px 0 0; color: var(--muted); font-style: italic; text-decoration: none; }
+  .view:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
   @media (prefers-reduced-motion: reduce) { main, li.busy .st, .bar.run > i::after { animation: none; } }
 </style>
 </head>
@@ -110,6 +112,8 @@
     <div class="big">Dragðu myndir, tónlist eða möppur hingað</div>
     <div class="small">eða smelltu til að velja</div>
   </div>
+
+  <a class="view" href="safn/">Skoða myndir og hlusta á tónlist</a>
 
   <input type="file" id="pickFiles" multiple accept="image/*,audio/*,.mp3,.m4a,.wav,.aif,.aiff,.flac,.ogg,.aac,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.raf,.orf,.rw2,.tif,.tiff">
 
