@@ -252,7 +252,7 @@ function renderTracks(tracks) {
   trackList = tracks;
   $('music').hidden = false;
   // Have the first song ready by the time anyone presses play.
-  setTimeout(() => { if (tracks[0].size <= BIG_AUDIO) fetchTrack(tracks[0]); }, 1200);
+  setTimeout(() => { if (location.hostname !== 'gunnartynes.com' && tracks[0].size <= BIG_AUDIO) fetchTrack(tracks[0]); }, 1200);
   const ul = $('tracks');
   tracks.forEach((f, i) => {
     const li = document.createElement('li');
@@ -262,7 +262,7 @@ function renderTracks(tracks) {
     li.querySelector('.tname').textContent = f.name.replace(/\.[^.]+$/, '');
     li.querySelector('.play').onclick = () => toggle(i);
     // Songs take several seconds to prepare, so start fetching as soon as someone reaches for one.
-    const early = () => { if (f.size <= BIG_AUDIO) fetchTrack(f); };
+    const early = () => { if (location.hostname !== 'gunnartynes.com' && f.size <= BIG_AUDIO) fetchTrack(f); };
     li.addEventListener('pointerenter', early);
     li.addEventListener('touchstart', early, { passive: true });
     li.addEventListener('focusin', early);
@@ -278,9 +278,10 @@ function renderTracks(tracks) {
 function rows() { return [...$('tracks').children]; }
 
 const BIG_AUDIO = 30 * 1024 * 1024;
+const DRIVE_KEY = 'AIzaSyC1GhUhViCnbU2HXdPchNMWYszlQQfuXi4';
 
 function toggle(i) {
-  if (trackList[i].size > BIG_AUDIO) { window.open(`https://drive.google.com/file/d/${trackList[i].id}/view`, '_blank', 'noopener'); return; }
+  if (location.hostname !== 'gunnartynes.com' && trackList[i].size > BIG_AUDIO) { window.open(`https://drive.google.com/file/d/${trackList[i].id}/view`, '_blank', 'noopener'); return; }
   if (i === current && audio.src && !audio.src.startsWith('data:')) { audio.paused ? audio.play() : audio.pause(); return; }
   // Phones only allow sound that starts from a tap; playing a moment of silence now keeps
   // the player allowed to start the song once it has arrived.
@@ -289,6 +290,13 @@ function toggle(i) {
   rows().forEach((li, k) => li.classList.toggle('on', k === i));
   setTime(i, 'Hleð…');
   const f = trackList[i];
+  // Stream straight from Drive (starts at once, can skip around). The key only reads Drive
+  // and only works on gunnartynes.com; elsewhere fall back to the slower script route.
+  if (location.hostname === 'gunnartynes.com') {
+    audio.src = `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media&key=${DRIVE_KEY}`;
+    audio.play().catch(() => paint());
+    return;
+  }
   fetchTrack(f).then(url => {
     if (current !== i) return;
     audio.src = url;
