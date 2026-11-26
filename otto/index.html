@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Ottó Tynes</title>
-<meta name="description" content="Sendu inn myndir og tónlist tengda Ottó Tynes.">
+<meta name="description" content="Sendu inn myndir, myndbönd og tónlist tengd Ottó Tynes.">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -14,11 +14,11 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://gunnartynes.com/otto/">
 <meta property="og:title" content="Ottó Tynes">
-<meta property="og:description" content="Sendu inn myndir og tónlist tengda Ottó Tynes.">
+<meta property="og:description" content="Sendu inn myndir, myndbönd og tónlist tengd Ottó Tynes.">
 <meta property="og:image" content="https://gunnartynes.com/otto/share.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Myndir og tónlist tengd Ottó Tynes">
+<meta property="og:image:alt" content="Myndir, myndbönd og tónlist tengd Ottó Tynes">
 <meta property="og:locale" content="is_IS">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -116,22 +116,22 @@
 <body>
 <main>
   <header>
-    <p class="kicker">Myndir og tónlist tengd</p>
+    <p class="kicker">Myndir, myndbönd og tónlist tengd</p>
     <h1>Ottó Tynes</h1>
     <hr class="rule">
   </header>
 
-  <div id="drop" tabindex="0" role="button" aria-label="Veldu myndir eða tónlist til að hlaða upp">
+  <div id="drop" tabindex="0" role="button" aria-label="Veldu myndir, myndbönd eða tónlist til að hlaða upp">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
     </svg>
-    <div class="big">Dragðu myndir, tónlist eða möppur hingað</div>
+    <div class="big">Dragðu myndir, myndbönd, tónlist eða möppur hingað</div>
     <div class="small">eða smelltu til að velja</div>
   </div>
 
-  <a class="view" href="safn/">Skoða myndir og hlusta á tónlist</a>
+  <a class="view" href="safn/">Skoða myndir og myndbönd og hlusta á tónlist</a>
 
-  <input type="file" id="pickFiles" multiple accept="image/*,audio/*,.mp3,.m4a,.wav,.aif,.aiff,.flac,.ogg,.aac,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.raf,.orf,.rw2,.tif,.tiff">
+  <input type="file" id="pickFiles" multiple accept="image/*,audio/*,video/*,.mp4,.mov,.m4v,.3gp,.avi,.mkv,.webm,.mts,.m2ts,.mp3,.m4a,.wav,.aif,.aiff,.flac,.ogg,.aac,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.raf,.orf,.rw2,.tif,.tiff">
 
   <section id="status" aria-live="polite">
     <div class="summary"><span id="headline">Hleð upp…</span><span class="count" id="count"></span></div>
@@ -145,9 +145,11 @@
 // The Apps Script web app URL (ends in /exec).
 const API = "https://script.google.com/macros/s/AKfycbyTuR0xoFTD3sFmkqfRcNg34-znVrCOiyJQjUrx29rQlb9eYOLwv_k2klQUX8SOoQp1/exec";
 
-const MAX_BYTES = 35 * 1024 * 1024;   // Apps Script takes about 50 MB per request; base64 adds a third
+const SINGLE = 2 * 1024 * 1024;         // small files go in one request through the otto script
+const PIECE = 16 * 1024 * 1024;         // bigger ones go straight to Google Drive in pieces of this size
+const MAX_BYTES = 5 * 1024 * 1024 * 1024;
 const PARALLEL = 4;
-const IMAGE_EXT = /\.(jpe?g|png|gif|webp|heic|heif|avif|bmp|tiff?|dng|cr2|cr3|nef|arw|raf|orf|rw2|mp3|m4a|wav|aiff?|flac|ogg|oga|opus|aac)$/i;
+const IMAGE_EXT = /\.(jpe?g|png|gif|webp|heic|heif|avif|bmp|tiff?|dng|cr2|cr3|nef|arw|raf|orf|rw2|mp3|m4a|wav|aiff?|flac|ogg|oga|opus|aac|mp4|mov|m4v|3gp|avi|mkv|webm|mts|m2ts)$/i;
 
 const drop = document.getElementById('drop');
 const pickFiles = document.getElementById('pickFiles');
@@ -170,11 +172,11 @@ const inflight = new Set();
 
 function expected(it) {
   const r = rate || 400 * 1024;   // first guess until a file has arrived
-  return overhead + it.file.size * ENC / r;
+  return overhead + it.cur * ENC / r;
 }
 function learn(it) {
   const secs = (performance.now() - it.t0) / 1000;
-  const obs = it.file.size * ENC / Math.max(0.4, secs - overhead * 0.8);
+  const obs = it.cur * ENC / Math.max(0.4, secs - overhead * 0.8);
   rate = rate ? rate * 0.6 + obs * 0.4 : obs;
 }
 function estimate() {
@@ -182,7 +184,8 @@ function estimate() {
   const now = performance.now();
   for (const it of inflight) {
     const t = (now - it.t0) / 1000;
-    b += it.file.size * 0.93 * (1 - Math.exp(-1.7 * t / expected(it)));
+    // Straight-to-Drive pieces report real progress; the others are estimated.
+    b += it.live != null ? it.live : it.cur * 0.93 * (1 - Math.exp(-1.7 * t / expected(it)));
   }
   return bytesTotal ? Math.min(1, b / bytesTotal) : 0;
 }
@@ -235,7 +238,7 @@ async function walk(entry, dir, out) {
 }
 
 function dirOf(rel) { const i = rel.lastIndexOf('/'); return i > 0 ? rel.slice(0, i) : ''; }
-function isImage(f) { return (f.type && /^(image|audio)\//.test(f.type)) || IMAGE_EXT.test(f.name); }
+function isImage(f) { return (f.type && /^(image|audio|video)\//.test(f.type)) || IMAGE_EXT.test(f.name); }
 
 // ---- queue ------------------------------------------------------------
 function add(items) {
@@ -246,7 +249,7 @@ function add(items) {
     li.querySelector('.name').textContent = (it.path ? it.path + '/' : '') + it.file.name;
     list.append(li);
     it.li = li;
-    if (it.file.size > MAX_BYTES) { mark(it, 'bad', 'Of stór (yfir 35 MB)'); total++; finished++; failed++; continue; }
+    if (it.file.size > MAX_BYTES) { mark(it, 'bad', 'Of stór (yfir 5 GB)'); total++; finished++; failed++; continue; }
     queue.push(it); total++; bytesTotal += it.file.size;
   }
   if (!ticker && queue.length) { startedAt = performance.now(); ticker = setInterval(tick, 250); }
@@ -260,9 +263,10 @@ function pump() {
   while (running < PARALLEL && queue.length) {
     const it = queue.shift();
     running++;
-    it.t0 = performance.now(); inflight.add(it);
+    it.t0 = performance.now(); it.sent = 0; it.cur = Math.min(it.file.size, it.file.size > SINGLE ? PIECE : SINGLE);
+    inflight.add(it);
     send(it).finally(() => {
-      inflight.delete(it); bytesDone += it.file.size;
+      inflight.delete(it); bytesDone += it.file.size - it.sent;
       running--; finished++; tick(); update(); pump();
     });
   }
@@ -270,6 +274,7 @@ function pump() {
 
 async function send(it) {
   mark(it, 'busy', 'Hleð upp');
+  if (it.file.size > SINGLE) return sendPieces(it);
   const data = await base64(it.file);
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -285,6 +290,74 @@ async function send(it) {
       await new Promise(r => setTimeout(r, 1500 * attempt));
     }
   }
+}
+
+const post = body => fetch(API, { method: 'POST', body: JSON.stringify(body) }).then(r => r.json());
+
+async function retry(fn, tries = 4) {
+  for (let attempt = 1; ; attempt++) {
+    try { const j = await fn(); if (j.ok) return j; throw new Error(j.error || 'failed'); }
+    catch (err) { if (attempt >= tries || /not a photo|bad size|expired/.test(err.message)) throw err; await new Promise(r => setTimeout(r, 2000 * attempt)); }
+  }
+}
+
+// Bigger files (videos, large photos and songs) go in pieces. The otto script opens the upload;
+// the page then sends each piece straight to Google Drive, which is many times faster than
+// passing the bytes through the script. If Drive refuses that, the pieces go through the script.
+async function sendPieces(it) {
+  const f = it.file, size = f.size;
+  const pct = n => mark(it, 'busy', `Hleð upp ${Math.floor(n / size * 100)}%`);
+  try {
+    const head = await base64(f.slice(0, 512));
+    const s = await retry(() => post({ op: 'start', name: f.name, type: f.type, path: it.path, size, head, origin: location.origin }));
+    let direct = !!s.url, misses = 0, offset = 0, shared = false;
+    while (offset < size) {
+      const end = Math.min(size, offset + PIECE);
+      it.cur = end - offset; it.t0 = performance.now();
+      let next = null, done = false;
+      if (direct) {
+        it.live = 0;
+        const r = await putPiece(s.url, f.slice(offset, end), offset, size, n => { it.live = n; });
+        it.live = null;
+        if (r.status === 200 || r.status === 201) { done = true; next = size; }
+        else if (r.status === 308) next = r.range ? Number(r.range.split('-')[1]) + 1 : 0;
+        else if (++misses >= 3 && offset === 0) direct = false;   // never got through: use the script
+      } else {
+        try {
+          const data = await base64(f.slice(offset, end));
+          const j = await retry(() => post({ op: 'piece', key: s.key, offset, data }), 3);
+          done = !!j.done; next = done ? size : j.next; shared = done;
+        } catch (err) { if (/expired/.test(err.message)) throw err; }
+      }
+      if (next === null) {                                  // a piece failed: ask Drive what it has
+        await new Promise(r => setTimeout(r, 1500));
+        const j = await retry(() => post({ op: 'status', key: s.key }));
+        done = !!j.done; next = done ? size : j.next; shared = done;
+        if (next <= offset && ++misses > 8) throw new Error('stuck');
+      }
+      if (next > offset) { learn(it); bytesDone += next - offset; it.sent += next - offset; offset = next; }
+      if (done) break;
+      pct(offset);
+    }
+    // Drive has the whole file; the script shares it for the gallery (unless it already did).
+    if (!shared) await retry(() => post({ op: 'status', key: s.key }));
+    mark(it, 'ok', 'Komin');
+  } catch (err) {
+    failed++; mark(it, 'bad', 'Mistókst');
+  }
+}
+
+function putPiece(url, blob, offset, size, onProgress) {
+  return new Promise(resolve => {
+    const x = new XMLHttpRequest();
+    x.open('PUT', url);
+    x.setRequestHeader('Content-Range', `bytes ${offset}-${offset + blob.size - 1}/${size}`);
+    x.upload.onprogress = e => onProgress(e.loaded);
+    x.onload = () => resolve({ status: x.status, range: x.getResponseHeader('Range') });
+    x.onerror = x.ontimeout = () => resolve({ status: 0 });
+    x.timeout = 10 * 60 * 1000;
+    x.send(blob);
+  });
 }
 
 function base64(file) {
@@ -326,7 +399,7 @@ function draw() {
   document.getElementById('count').textContent =
     !total ? '' : done ? `${finished - failed} af ${total} komnar` : `${finished - failed} af ${total} · ${Math.floor(p * 100)}%`;
   const notes = [];
-  if (skipped) notes.push(`${skipped} ${skipped % 10 === 1 && skipped % 100 !== 11 ? 'skrá' : 'skrám'} sleppt (hvorki myndir né tónlist).`);
+  if (skipped) notes.push(`${skipped} ${skipped % 10 === 1 && skipped % 100 !== 11 ? 'skrá' : 'skrám'} sleppt (hvorki myndir, myndbönd né tónlist).`);
   if (!done && total) { const r = remaining(); if (r) notes.push(r); notes.push('Ekki loka síðunni fyrr en allt er komið.'); }
   document.getElementById('note').textContent = notes.join(' ');
 }
@@ -335,7 +408,7 @@ function update() {
   const done = finished >= total && total > 0;
   draw();
   document.getElementById('headline').textContent =
-    !total ? 'Engar myndir eða tónlist fundust' :
+    !total ? 'Engar myndir, myndbönd eða tónlist fundust' :
     !done ? 'Hleð upp…' :
     failed ? `Búið — ekki tókst að hlaða upp ${failed}` : 'Móttekið, takk fyrir!';
 }
