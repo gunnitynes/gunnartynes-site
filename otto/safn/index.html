@@ -138,6 +138,33 @@
   }
   #vfoot a { color: #b5afa5; text-underline-offset: 3px; }
   @media (max-width: 600px) { #vprev, #vnext { display: none; } }
+  #viewer { touch-action: none; user-select: none; -webkit-user-select: none; }
+  #viewer img { cursor: zoom-in; will-change: transform; -webkit-user-drag: none; }
+  #viewer.zoomed img { cursor: grab; }
+  #viewer.zoomed #vprev, #viewer.zoomed #vnext { opacity: .25; }
+
+  /* slideshow */
+  .showbtn, .alllink {
+    display: block; margin: -6px auto 30px; background: none; border: 0; padding: 6px 10px; cursor: pointer;
+    font: 16px/1.4 var(--sans); color: var(--ink); text-decoration: underline; text-underline-offset: 4px;
+    text-decoration-thickness: 1px; text-decoration-color: var(--faint);
+  }
+  .showbtn:hover, .alllink:hover { text-decoration-color: var(--ink); }
+  .alllink:disabled { cursor: progress; color: var(--muted); }
+  #show { position: fixed; inset: 0; z-index: 20; background: #0c0b0a; display: none; cursor: none; }
+  #show.on { display: block; }
+  #show.awake { cursor: default; }
+  #show .slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 2.5s ease; }
+  #show .slide.in { opacity: 1; }
+  #sbar { position: absolute; left: 0; right: 0; bottom: 24px; display: flex; justify-content: center; gap: 10px; opacity: 0; transition: opacity .6s; pointer-events: none; }
+  #show.awake #sbar { opacity: 1; pointer-events: auto; }
+  #sbar button { font: 15px/1 var(--sans); color: #d8d2c9; background: rgba(22,21,20,.78); border: 1px solid #3d3a36; padding: 12px 18px; border-radius: 3px; cursor: pointer; }
+  #sbar button:hover { border-color: #6c675f; }
+
+  /* everything in one file */
+  #all { text-align: center; margin-top: -24px; }
+  #all .alllink { margin: 0 auto; }
+  #allnote { font: 14px/1.4 var(--sans); color: var(--muted); margin: 6px 0 0; min-height: 1.4em; }
   @media (prefers-reduced-motion: reduce) { main { animation: none; } .grid img { transition: none; } }
 
   /* Clearer, larger text (variation B): the name stays in the book face, other text in a plain face. */
@@ -178,6 +205,7 @@
 
   <section id="photos" hidden>
     <h2 id="photosHead">Myndir</h2>
+    <button class="showbtn" id="showbtn" type="button">Sýna sem myndasýningu</button>
     <div id="groups"></div>
   </section>
 
@@ -190,6 +218,11 @@
     <h2>Tónlist</h2>
     <ul class="tracks" id="tracks"></ul>
   </section>
+
+  <section id="all" hidden>
+    <button class="alllink" id="allbtn" type="button">Sækja allt safnið</button>
+    <p id="allnote"></p>
+  </section>
 </main>
 
 <div id="viewer" role="dialog" aria-modal="true" aria-label="Skoða">
@@ -200,6 +233,15 @@
   <div id="vfoot"><span id="vcount"></span><a id="vdl" href="#" download>Sækja frumrit</a></div>
 </div>
 
+<div id="show" role="dialog" aria-modal="true" aria-label="Myndasýning">
+  <img class="slide" alt=""><img class="slide" alt="">
+  <div id="sbar">
+    <button id="spause" type="button">Hlé</button>
+    <button id="smusic" type="button">Tónlist: á</button>
+    <button id="sclose" type="button">Loka</button>
+  </div>
+</div>
+
 <script>
 const API = "https://script.google.com/macros/s/AKfycbyTuR0xoFTD3sFmkqfRcNg34-znVrCOiyJQjUrx29rQlb9eYOLwv_k2klQUX8SOoQp1/exec";
 
@@ -208,6 +250,16 @@ const API = "https://script.google.com/macros/s/AKfycbyTuR0xoFTD3sFmkqfRcNg34-zn
 // script, because Drive refuses direct audio requests from other websites.
 const thumb = (id, w) => `https://lh3.googleusercontent.com/d/${id}=w${w}`;
 const original = id => `https://drive.usercontent.google.com/download?id=${id}&export=download`;
+// Grid pictures are asked for at the size they are shown (sharp on retina, never more), as WebP.
+let GRID_W = 900;
+function gridWidth() {
+  const W = Math.min(document.querySelector('main').clientWidth || innerWidth - 40, 1080);
+  const n = Math.max(1, Math.min(3, Math.floor((W + 14) / (260 + 14))));
+  const z = matchMedia('(min-width: 900px) and (hover: hover)').matches ? 1.15 : 1;
+  const w = Math.ceil(((W - (n - 1) * 14) / n) * z * Math.min(2, devicePixelRatio || 1) / 100) * 100;
+  return w >= 300 ? Math.min(1200, w) : 900;   // no width to go by (a hidden window): the old size
+}
+const gridSrc = id => thumb(id, GRID_W) + '-rw';
 
 const IMG = /\.(jpe?g|png|gif|webp|heic|heif|avif|bmp|tiff?|dng|cr2|cr3|nef|arw|raf|orf|rw2)$/i;
 const AUD = /\.(mp3|m4a|wav|aiff?|flac|ogg|oga|opus|aac)$/i;
@@ -239,11 +291,17 @@ function render(files) {
   const tracks = files.filter(isAudio).sort((a, b) => title(a).localeCompare(title(b), 'is', { numeric: true, sensitivity: 'base' }));
   const photos = files.filter(isImage).sort((a, b) => (b.t || 0) - (a.t || 0));   // newest first
   const videos = files.filter(isVideo);
+  GRID_W = gridWidth();
+  allFiles = files;
   $('state').hidden = !!(tracks.length || photos.length || videos.length);
   $('state').textContent = 'Ekkert hefur borist enn.';
   if (tracks.length) renderTracks(tracks);
   if (photos.length) renderPhotos(photos);
   if (videos.length) renderVideos(videos);
+  if (files.length && location.hostname === 'gunnartynes.com') {
+    $('all').hidden = false;
+    $('allbtn').textContent = `Sækja allt safnið (${files.length} skrár, ${mb(files.reduce((a, f) => a + (f.size || 0), 0))})`;
+  }
 }
 
 // ---- music --------------------------------------------------------------
@@ -346,7 +404,9 @@ function paint() {
 ['play', 'pause', 'timeupdate', 'loadedmetadata'].forEach(ev => audio.addEventListener(ev, paint));
 audio.addEventListener('ended', () => {
   if (audio.src.startsWith('data:')) return;
-  if (current + 1 < trackList.length) toggle(current + 1); else paint();
+  if (current + 1 < trackList.length) toggle(current + 1);
+  else if (sOn && sMusic) toggle(0);   // the slideshow keeps the music going
+  else paint();
 });
 audio.addEventListener('error', () => { if (audio.src && !audio.src.startsWith('data:')) setTime(current, 'Ekki hægt að spila'); });
 
@@ -391,13 +451,13 @@ function tile(f, i, list, video) {
   const img = new Image();
   img.loading = 'lazy';
   img.alt = '';
-  img.src = thumb(f.id, 900);
+  img.src = gridSrc(f.id);
   img.onload = () => img.classList.add('ready');
   // A brand-new upload may not have a preview yet; try once more a little later.
   img.onerror = () => {
     if (img.dataset.retry) { b.classList.add('noimg'); img.remove(); return; }
     img.dataset.retry = 1;
-    setTimeout(() => { img.src = thumb(f.id, 900) + '-rj'; }, 4000);
+    setTimeout(() => { img.src = thumb(f.id, GRID_W) + '-rj'; }, 4000);
   };
   b.prepend(img);
   b.onclick = () => openViewer(list, i);
@@ -419,6 +479,7 @@ function closeViewer() {
 function dropFrame() { const fr = $('viewer').querySelector('iframe'); if (fr) fr.remove(); }
 function show(i) {
   at = (i + viewList.length) % viewList.length;
+  resetZ(); hiRes = '';
   const f = viewList[at], v = $('vimg');
   dropFrame();
   if (isVideo(f)) {
@@ -444,23 +505,252 @@ function show(i) {
 $('vclose').onclick = closeViewer;
 $('vprev').onclick = e => { e.stopPropagation(); show(at - 1); };
 $('vnext').onclick = e => { e.stopPropagation(); show(at + 1); };
-$('viewer').addEventListener('click', e => { if (e.target.id === 'viewer') closeViewer(); });
 addEventListener('keydown', e => {
   if (!$('viewer').classList.contains('on')) return;
   if (e.key === 'Escape') closeViewer();
   if (e.key === 'ArrowLeft') show(at - 1);
   if (e.key === 'ArrowRight') show(at + 1);
 });
-// A one-finger swipe steps to the next photo. Pinching to zoom, or moving around a zoomed-in photo, never does.
-let sx = null;
-const zoomed = () => (window.visualViewport?.scale || 1) > 1.02;
-$('viewer').addEventListener('touchstart', e => { sx = e.touches.length === 1 && !zoomed() ? e.touches[0].clientX : null; }, { passive: true });
-$('viewer').addEventListener('touchmove', e => { if (e.touches.length > 1) sx = null; }, { passive: true });
-$('viewer').addEventListener('touchend', e => {
-  if (sx === null || e.touches.length || zoomed()) { sx = null; return; }
-  const dx = e.changedTouches[0].clientX - sx; sx = null;
-  if (Math.abs(dx) > 50) show(at + (dx < 0 ? 1 : -1));
+
+// ---- zoom inside the photo ---------------------------------------------
+// Pinch (or the mouse wheel, or a double tap / double click) zooms the photo itself; the buttons stay
+// where they are. A zoomed photo is moved with one finger or the mouse. Only a one-finger swipe on a
+// photo that is not zoomed steps to the next one. A tap on the dark background closes.
+const Z = { s: 1, x: 0, y: 0 }, pts = new Map();
+const vimg = $('vimg'), VW = $('viewer');
+let g = null, moved = false, lastTap = 0, hiRes = '';
+vimg.draggable = false;
+const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+const centre = () => ({ x: vimg.offsetLeft + vimg.offsetWidth / 2, y: vimg.offsetTop + vimg.offsetHeight / 2 });
+
+function applyZ(anim) {
+  vimg.style.transition = anim ? 'transform .25s ease, opacity .4s' : 'opacity .4s';
+  vimg.style.transform = Z.s === 1 ? '' : `translate(${Z.x}px, ${Z.y}px) scale(${Z.s})`;
+  VW.classList.toggle('zoomed', Z.s > 1);
+  // Zoomed in far: swap in a sharper copy once it has arrived.
+  const f = viewList[at];
+  if (Z.s > 1.6 && f && !isVideo(f) && hiRes !== f.id) {
+    hiRes = f.id;
+    const big = new Image();
+    big.onload = () => { if (viewList[at] === f && VW.classList.contains('on')) vimg.src = big.src; };
+    big.src = thumb(f.id, 4096);
+  }
+}
+function clampZ() {
+  const c = centre(), W = VW.clientWidth, H = VW.clientHeight;
+  const w = vimg.offsetWidth * Z.s, h = vimg.offsetHeight * Z.s;
+  // the photo's edges may come in as far as the screen's edges, no further
+  Z.x = w > W ? clampN(Z.x, W - c.x - w / 2, w / 2 - c.x) : 0;
+  Z.y = h > H ? clampN(Z.y, H - c.y - h / 2, h / 2 - c.y) : 0;
+}
+function resetZ(anim) { Z.s = 1; Z.x = Z.y = 0; applyZ(anim); }
+function zoomAt(px, py, s, anim) {
+  s = clampN(s, 1, 5);
+  if (s < 1.03) { resetZ(anim); return; }
+  const c = centre(), qx = (px - c.x - Z.x) / Z.s, qy = (py - c.y - Z.y) / Z.s;
+  Z.s = s; Z.x = px - c.x - s * qx; Z.y = py - c.y - s * qy;
+  clampZ(); applyZ(anim);
+}
+
+VW.addEventListener('pointerdown', e => {
+  if (e.target.closest('.vbtn, a, iframe')) return;
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pts.size === 1) {
+    g = { mode: 'one', x0: e.clientX, y0: e.clientY, tx: Z.x, ty: Z.y, onBg: e.target === VW, multi: false };
+    moved = false;
+  } else if (pts.size === 2 && g && !isVideo(viewList[at])) {
+    const [a, b] = [...pts.values()];
+    Object.assign(g, { mode: 'pinch', multi: true, d0: dist(a, b) || 1, s0: Z.s, m0: mid(a, b), tx: Z.x, ty: Z.y });
+  }
 });
+VW.addEventListener('pointermove', e => {
+  if (!pts.has(e.pointerId) || !g) return;
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (g.mode === 'pinch' && pts.size >= 2) {
+    const [a, b] = [...pts.values()], m = mid(a, b), s = clampN(g.s0 * dist(a, b) / g.d0, 1, 5);
+    // the spot that was between the fingers stays between them
+    const c = centre(), qx = (g.m0.x - c.x - g.tx) / g.s0, qy = (g.m0.y - c.y - g.ty) / g.s0;
+    Z.s = s; Z.x = m.x - c.x - s * qx; Z.y = m.y - c.y - s * qy;
+    clampZ(); applyZ(); moved = true;
+  } else if (g.mode === 'one') {
+    const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+    if (Math.hypot(dx, dy) > 8) moved = true;
+    if (Z.s > 1) { Z.x = g.tx + dx; Z.y = g.ty + dy; clampZ(); applyZ(); }
+  }
+});
+function pointerUp(e) {
+  if (!pts.has(e.pointerId)) return;
+  pts.delete(e.pointerId);
+  if (!g) return;
+  if (g.mode === 'pinch') {
+    if (pts.size === 1) { const [p] = [...pts.values()]; g = { mode: 'one', x0: p.x, y0: p.y, tx: Z.x, ty: Z.y, multi: true }; }
+    else if (!pts.size) g = null;
+    if (Z.s < 1.05) resetZ(true);
+    return;
+  }
+  const gg = g; g = null;
+  if (e.type === 'pointercancel' || gg.multi) return;
+  const dx = e.clientX - gg.x0, dy = e.clientY - gg.y0;
+  if (Z.s === 1 && e.pointerType !== 'mouse' && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { show(at + (dx < 0 ? 1 : -1)); return; }
+  if (moved) return;
+  // a tap
+  if (gg.onBg && Z.s === 1) { closeViewer(); return; }
+  if (isVideo(viewList[at])) return;
+  if (e.timeStamp - lastTap < 320) {
+    lastTap = 0;
+    if (Z.s > 1) resetZ(true); else zoomAt(e.clientX, e.clientY, 2.5, true);
+  } else lastTap = e.timeStamp;
+}
+VW.addEventListener('pointerup', pointerUp);
+VW.addEventListener('pointercancel', pointerUp);
+VW.addEventListener('wheel', e => {
+  if (isVideo(viewList[at] || {})) return;
+  e.preventDefault();
+  zoomAt(e.clientX, e.clientY, Z.s * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)));
+}, { passive: false });
+addEventListener('resize', () => { if (Z.s > 1) { clampZ(); applyZ(); } });
+
+// ---- slideshow ------------------------------------------------------------
+// The photos one after another, full screen, fading slowly, with the music underneath — for a
+// screen at the gathering. Moving the mouse or tapping shows the buttons for a few seconds.
+const SHOW_MS = 8000;
+let sOn = false, sAt = -1, sTimer = 0, sPaused = false, sMusic = true, sLayer = 0, sLock = null, sIdle = 0, sTok = 0, sFull = false, sFails = 0;
+const SH = $('show');
+const slideSrc = f => thumb(f.id, Math.min(2400, Math.ceil(Math.max(screen.width, screen.height) * Math.min(2, devicePixelRatio || 1) / 100) * 100));
+
+function startShow() {
+  if (!photoList.length) return;
+  sOn = true; sAt = -1; sPaused = false; sFails = 0; sFull = false;
+  SH.classList.add('on'); document.body.style.overflow = 'hidden';
+  SH.requestFullscreen?.().then(() => { sFull = true; }).catch(() => {});
+  keepAwake();
+  $('smusic').hidden = !trackList.length;
+  if (sMusic && trackList.length && (current < 0 || audio.paused)) toggle(current < 0 ? 0 : current);
+  paintShow(); sStep(1); wake();
+}
+function stopShow() {
+  if (!sOn) return;
+  sOn = false; clearTimeout(sTimer); clearTimeout(sIdle); sTok++;
+  SH.classList.remove('on', 'awake'); document.body.style.overflow = '';
+  SH.querySelectorAll('.slide').forEach(im => { im.classList.remove('in'); im.removeAttribute('src'); });
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  sLock?.release?.().catch(() => {}); sLock = null;
+  if (!audio.paused) audio.pause();
+  $('showbtn').focus();
+}
+function keepAwake() { navigator.wakeLock?.request('screen').then(l => { sLock = l; }).catch(() => {}); }
+function sStep(d) {
+  clearTimeout(sTimer);
+  sAt = (sAt + d + photoList.length) % photoList.length;
+  const f = photoList[sAt], tok = ++sTok, im = new Image();
+  im.onload = () => {
+    if (tok !== sTok || !sOn) return;
+    sFails = 0;
+    const L = SH.querySelectorAll('.slide'); sLayer ^= 1;
+    L[sLayer].src = im.src; L[sLayer].classList.add('in'); L[sLayer ^ 1].classList.remove('in');
+    if (photoList.length > 1) new Image().src = slideSrc(photoList[(sAt + 1) % photoList.length]);   // the next one, ready
+    if (!sPaused) sTimer = setTimeout(() => sStep(1), SHOW_MS);
+  };
+  im.onerror = () => { if (tok === sTok && sOn && ++sFails < photoList.length) sStep(d < 0 ? -1 : 1); };
+  im.src = slideSrc(f);
+}
+function paintShow() {
+  $('spause').textContent = sPaused ? 'Áfram' : 'Hlé';
+  $('smusic').textContent = sMusic ? 'Tónlist: á' : 'Tónlist: af';
+}
+function wake() {
+  SH.classList.add('awake'); clearTimeout(sIdle);
+  sIdle = setTimeout(() => SH.classList.remove('awake'), 3000);
+}
+$('showbtn').onclick = startShow;
+$('sclose').onclick = e => { e.stopPropagation(); stopShow(); };
+$('spause').onclick = e => {
+  e.stopPropagation(); sPaused = !sPaused; paintShow(); wake();
+  if (sPaused) { clearTimeout(sTimer); if (!audio.paused) audio.pause(); }
+  else { sTimer = setTimeout(() => sStep(1), 1500); if (sMusic && trackList.length) toggle(current < 0 ? 0 : current); }
+};
+$('smusic').onclick = e => {
+  e.stopPropagation(); sMusic = !sMusic; paintShow(); wake();
+  if (!sMusic) { if (!audio.paused) audio.pause(); }
+  else if (!sPaused && trackList.length && (current < 0 || audio.paused)) toggle(current < 0 ? 0 : current);
+};
+SH.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); });
+SH.addEventListener('pointerdown', e => { if (!e.target.closest('button')) wake(); });
+addEventListener('keydown', e => {
+  if (!sOn) return;
+  if (e.key === 'Escape') stopShow();
+  else if (e.key === 'ArrowRight') { sStep(1); wake(); }
+  else if (e.key === 'ArrowLeft') { sStep(-1); wake(); }
+  else if (e.key === ' ') { e.preventDefault(); $('spause').click(); }
+});
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && sOn && sFull) stopShow(); });
+document.addEventListener('visibilitychange', () => { if (sOn && document.visibilityState === 'visible') keepAwake(); });
+
+// ---- everything in one file -----------------------------------------------
+// Every photo, video and song in one .zip, folders kept. Files are stored as they are (no
+// recompression), so nothing is lost. Works on gunnartynes.com, where the Drive key is allowed.
+let allFiles = [];
+const mb = n => n >= 1e9 ? (n / 1e9).toFixed(1).replace('.', ',') + ' GB' : Math.max(1, Math.round(n / 1e6)) + ' MB';
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function dosTime(t) {
+  const d = new Date(t || Date.now());
+  return { time: (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), date: ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate() };
+}
+async function zipAll(files, progress) {
+  const enc = new TextEncoder(), parts = [], central = [], used = new Set();
+  let off = 0, got = 0;
+  const total = files.reduce((a, f) => a + (f.size || 0), 0);
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    let name = (f.path ? f.path + '/' : '') + f.name;
+    for (let k = 2; used.has(name.toLowerCase()); k++) name = ((f.path ? f.path + '/' : '') + f.name).replace(/(\.[^./]+)?$/, ` (${k})$1`);
+    used.add(name.toLowerCase());
+    progress(i, got, total);
+    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media&key=${DRIVE_KEY}`);
+    if (!r.ok) throw new Error('file ' + r.status);
+    const buf = new Uint8Array(await r.arrayBuffer());
+    got += buf.length;
+    const crc = crc32(buf), nb = enc.encode(name), { time, date } = dosTime(f.t);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, time, true); lh.setUint16(12, date, true); lh.setUint32(14, crc, true);
+    lh.setUint32(18, buf.length, true); lh.setUint32(22, buf.length, true); lh.setUint16(26, nb.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Blob([lh, nb, buf]));
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint16(12, time, true); ch.setUint16(14, date, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, buf.length, true); ch.setUint32(24, buf.length, true); ch.setUint16(28, nb.length, true);
+    ch.setUint32(42, off, true);
+    central.push(new Blob([ch, nb]));
+    off += 30 + nb.length + buf.length;
+  }
+  const cd = new Blob(central), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cd.size, true); end.setUint32(16, off, true);
+  progress(files.length, got, total);
+  return new Blob([...parts, cd, end], { type: 'application/zip' });
+}
+$('allbtn').onclick = async () => {
+  const b = $('allbtn'), note = $('allnote');
+  if (b.disabled) return;
+  const total = allFiles.reduce((a, f) => a + (f.size || 0), 0);
+  if (total > 3.9e9) { note.textContent = 'Safnið er orðið of stórt í eina skrá.'; return; }
+  b.disabled = true;
+  try {
+    const blob = await zipAll(allFiles, (i, got, tot) => { note.textContent = i < allFiles.length ? `Sæki ${i + 1} af ${allFiles.length} · ${Math.floor(got / tot * 100)}%` : 'Tilbúið'; });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'Ottó Tynes.zip';
+    document.body.append(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 60000);
+    note.textContent = 'Skráin „Ottó Tynes.zip“ er komin í niðurhalið.';
+  } catch (e) {
+    note.textContent = 'Ekki tókst að sækja allt. Reyndu aftur eftir smástund.';
+  }
+  b.disabled = false;
+};
 </script>
 </body>
 </html>
