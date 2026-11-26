@@ -169,7 +169,7 @@ body.band-off .mix{opacity:.45}
 #gate-go{margin-top:18px;padding:12px 28px;border-radius:24px;background:var(--paper);color:var(--ground);font-weight:500;font-size:15px}
 #gate-go:disabled{opacity:.3;cursor:default}
 
-@media (max-width:1280px){#bar{grid-template-columns:auto auto 1fr;}.mixhead{grid-column:1/-1;order:5}#deck{grid-template-columns:170px 1fr 1.2fr}.mods{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1520px){#bar{grid-template-columns:auto auto 1fr;}.mixhead{grid-column:1/-1;order:5}}@media (max-width:1280px){#deck{grid-template-columns:170px 1fr 1.2fr}.mods{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:900px){html,body{overflow:auto}body{display:block;height:auto}main{overflow:visible}.room{height:auto}.forge,.tex{grid-template-columns:1fr}#deck{grid-template-columns:1fr}.arr{height:70vh}.wave.big{height:40vh}}
 /* knob groups share the room's full width */
 .room > .knobs .grp{flex:1 1 auto}.room > .knobs .gk{justify-content:space-around}
@@ -464,3 +464,17 @@ button,select,.addinst{text-transform:uppercase;letter-spacing:.02em}
 .keep-float i{font-style:normal;font-size:10px}
 .keep-float kbd{font:500 10px var(--mono);padding:1px 5px;border:1px solid #11141b55;border-radius:4px}
 @keyframes keepglow{50%{box-shadow:0 10px 30px #000a,0 0 0 6px #e6b45033}}
+
+/* Stems: the phone's table on the computer */
+#room-stems .songmap{position:relative;height:52px;flex:none;border-radius:10px;background:#0b0d12;border:1px solid var(--rule);overflow:hidden;touch-action:none;cursor:pointer}
+#room-stems .songmap canvas,#room-stems .table canvas{position:absolute;inset:0}
+#room-stems .table{position:relative;flex:1;min-height:320px;border:1px solid var(--rule);border-radius:14px;background:#0b0d12;overflow:hidden;touch-action:none;cursor:grab}
+#room-stems .table:active{cursor:grabbing}
+#room-stems .stems-bar .cap{text-transform:none;letter-spacing:0;font:11.5px var(--mono);color:var(--dim);flex:1 1 auto;min-width:0}
+#room-stems .chip{font:11.5px var(--mono);padding:5px 12px;border:1px solid var(--rule);border-radius:14px;color:var(--dim)}
+#room-stems .chip:hover{color:var(--paper);border-color:#ffffff50}#room-stems .chip[aria-pressed=true]{background:var(--paper);color:var(--ground);border-color:var(--paper)}
+#room-stems .edgepick{position:absolute;inset:0;z-index:5;background:#05060ad0;display:grid;place-items:center;padding:14px}
+#room-stems .edgepick-in{width:min(560px,100%)}#room-stems .edgepick p{margin:0 0 12px;font:italic 400 24px var(--serif);color:#fff;text-align:center}
+#room-stems .edgegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#room-stems .edgegrid button{min-height:58px;border:1px solid color-mix(in srgb,var(--c) 55%,transparent);border-radius:14px;background:color-mix(in srgb,var(--c) 14%,#0b0d12);color:#fff;font:12px var(--mono);display:grid;place-items:center;align-content:center;gap:6px;cursor:pointer}
+#room-stems .edgegrid i{width:10px;height:10px;border-radius:50%;background:var(--c)}#room-stems .edgegrid .on{background:var(--c);color:#11141b}#room-stems .edgegrid .on i{background:#11141b}

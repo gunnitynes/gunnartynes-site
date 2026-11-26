@@ -21,6 +21,7 @@ import { Conduct } from './conduct.js';
 import { Versions } from './versions.js';
 import { buildMore } from './more.js';
 import { EdgeFx } from './phone-fx.js';
+import { buildStems } from './phone-stems.js';
 import { pieceStore, pieceSound } from './pieces.js';
 import { Work, loadParams, carry, saveFile, fileField } from './project.js';
 import { openAtlas } from './atlas.js';
@@ -82,6 +83,9 @@ async function boot() {
   const work = (S.work = new Work(S, KEY())), kept = await work.read(), savedN = Math.max(3, Math.min(MAX_FORGE, kept?.forges?.length || 3));
   S.pieces = []; pieceSound(S, () => S.pieces); pieceStore(song.id).all().then((x) => { S.pieces = x; });   // pieces kept on a phone play here too
   buildDeck(); buildHeader(); buildArrange(); buildCloud(); buildForge(savedN);
+  // Stems: the phone's table, every stem a disc (phone-stems.js)
+  S.seek ??= (bar) => session.dispatch({ t: 'seek', bar }); S.edge = new EdgeFx(S);
+  buildStems(S, { toast: flash, bpb: () => song.beatsPerBar, srcAt: (bar) => { const cl = S.seq.arr.clips.find((c) => c.lane === 'band' && bar >= c.start && bar < c.start + c.len); return cl ? srcBar(cl, bar - cl.start, song.numBars).bar : bar % song.numBars; } }, { room: $('#room-stems') });
   buildTexturesRoom(S, { seg, sw, recBtn }); buildMixRoom(S, { recBtn }); buildSong(S, { COLORS, NAMES });
   // key: the whole song, and each stem on top (the player shifts the warped copies)
   S.params.define('song.key', 0, (v) => player.setKey(v));
@@ -603,19 +607,17 @@ function frame() {
   $('#master-meter').style.transform = `scaleX(${Math.min(1, S.masterLevel)})`;
   if (S.room === 'arrange') for (const [id, m] of S.meters) { const ch = S.engine.channels.get(id); m.style.transform = `scaleX(${ch ? Math.min(1, ch.readLevel() * 3) : 0})`; }
   S.growHolds?.();
-  S.rooms[S.room]?.draw(); S.rooms.deck.draw();
+  S.rooms[S.room]?.draw(); S.rooms.deck.draw(); if (S.room !== 'stems') S.rooms.stems?.bg?.();
   requestAnimationFrame(frame);
 }
 
 // ------------------------------------------------------------------------------------------------ keeping your work
 const KEY = () => `playground.studio.${S.song.id}`;
-S.projectData = () => ({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.forges.map((f) => f.slot.src || null), band: S.session.state, morph: S.morph, mixMem: S.mixMem, snaps: S.snaps, ...S.carried });
-const OWN = ['v', 'song', 'params', 'seq', 'cloud', 'forges', 'band', 'morph', 'mixMem', 'snaps'];
+S.projectData = () => ({ v: 2, song: S.song.id, params: S.params.dump(), seq: S.seq.dump(), cloud: S.cloudSrc, forges: S.forges.map((f) => f.slot.src || null), band: S.session.state, morph: S.morph, mixMem: S.mixMem, snaps: S.snaps, ...S.carried, table: S.tableDump?.() });
+const OWN = ['v', 'song', 'params', 'seq', 'cloud', 'forges', 'band', 'morph', 'mixMem', 'snaps', 'table'];
 function applyProject(d) {
   if (!d || (d.v !== 1 && d.v !== 2)) return false;
-  S.carried = carry(d, OWN);
-  // a project from the phone: what its table's edges do to the stems is heard here too
-  if (!S.edge && (Object.entries(d.params || {}).some(([k, x]) => /^band\..+\.fx\./.test(k) && x > 0 && !/\.(echo|space)$/.test(k)) || /band\.[^."]+\.fx\./.test(JSON.stringify(d.seq?.vars || {})))) S.edge = new EdgeFx(S);
+  S.carried = carry(d, OWN); if (d.table) S.tablePos = d.table;
   loadParams(S.params, d.params); S.seq.load(d.seq);
   if (d.cloud) S.cloudSrc = d.cloud;
   d.forges?.forEach((src, i) => { if (src) S.forges[i].slot.src = src; });

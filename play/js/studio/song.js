@@ -41,10 +41,6 @@ export function buildSong(S, { COLORS, NAMES }) {
   const zoom = (f, at) => { const ph = seq.tl(seq.nowBeat()) / bpb, ox = at ?? (xOf(ph) >= 0 && xOf(ph) <= W ? xOf(ph) : 0), bar = x0 + ox / pxb; fit = false; pxb = clamp(pxb * f, 2, 160); x0 = Math.max(0, bar - ox / pxb); };
   const undo = btn('Undo', 'Undo (⌘Z)', () => seq.undo()), redo = btn('Redo', 'Redo (⇧⌘Z)', () => seq.redo());
   const bounceB = btn('Bounce', 'Play the whole arrangement (or the loop) once and save it as a sound file', () => bounce());
-  // a project from the phone can bring the effects its table's edges put on the stems
-  const edgeOff = btn('Phone effects off', 'The stems still have the effects they were given on the phone: take them all off', () => { for (const k of edgeOn()) P.set(k, 0); });
-  const edgeOn = () => (S.edge ? Object.keys(P.v).filter((k) => /^band\.[^.]+\.fx\./.test(k) && P.get(k) > 0) : []);
-  const showEdge = () => { edgeOff.hidden = !edgeOn().length; }; P.on(({ path }) => { if (path.includes('.fx.')) showEdge(); }); seq.addEventListener('change', showEdge); showEdge();
   // Mutate: the song keeps evolving (mutate.js); Keep (Q) holds on to what is changing now
   // Record audio onto the arrangement: the lane "Audio" (voice.js), from the input chosen here
   const V = S.voice, eng = S.engine;
@@ -79,7 +75,7 @@ export function buildSong(S, { COLORS, NAMES }) {
     h('span', { class: 'sp' }), undo, redo,
     btn('Save', 'Save the whole project as one file, with everything you recorded; it opens on a phone too', () => S.saveProject()),
     btn('Open', 'Open a project file, from this computer or from a phone', () => S.openField.click()),
-    edgeOff, btn('New', 'Start again from nothing', () => { if (confirm('Start again from the song? What is here now stays under More, Versions.')) S.reset(); }), bounceB));
+    btn('New', 'Start again from nothing', () => { if (confirm('Start again from the song? What is here now stays under More, Versions.')) S.reset(); }), bounceB));
 
   // ---------------------------------------------------------------- palette (drag onto the timeline)
   const pats = h('div', { class: 'pal' });

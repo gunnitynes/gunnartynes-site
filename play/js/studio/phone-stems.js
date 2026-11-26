@@ -9,8 +9,8 @@ import { clamp, buzz, surface, POOLS, songBar, MotionLoop } from './phone-kit.js
 import { FX } from './phone-fx.js';
 
 const ORDER = ['rhythm', 'bass', 'keys', 'guitar', 'synth', 'strings', 'voice', 'other'];
-export function buildStems(S, U) {
-  const room = $('#p-stems'), { song, params: P, player, seq: q } = S, cb = song.barsPerCell, { toast, askSensors, Motion, srcAt, bpb } = U;
+export function buildStems(S, U, { room: el = null } = {}) {
+  const room = el || $('#p-stems'), desk = !!el, { song, params: P, player, seq: q } = S, cb = song.barsPerCell, { toast, askSensors, Motion, srcAt, bpb } = U;
   ['dark', 'echo', 'space', 'pulse'].forEach((n, i) => P.define(`edge.${i}`, n));   // 0 left · 1 right · 2 top · 3 bottom
   const edgeFx = (i) => (FX[P.get(`edge.${i}`)] ? P.get(`edge.${i}`) : 'echo');
   player.over ??= new Map();
@@ -38,14 +38,20 @@ export function buildStems(S, U) {
   }
   function populate() {
     const want = song.stems.filter((st) => !st.voice || st.cells.some(Boolean)), saved = S.tablePos || {};
-    R = clamp(T.W / 15, 20, 30);
+    R = clamp(T.W / 15, 20, desk ? 40 : 30);
     for (const st of want) if (!discs.some((d) => d.st === st)) discs.push({ st, x: 0, y: 0, vx: 0, vy: 0, pool: -1, held: 0, z: zOf(P.get(`band.${st.id}.gain`) ?? 0.85), name: words(st.name), fresh: true, lv: 0, ml: new MotionLoop(S) });
     for (const d of discs.filter((x) => !want.includes(x.st))) setPool(d, -1);
     discs = discs.filter((d) => want.includes(d.st)); home();
     for (const d of discs) if (d.fresh) { d.fresh = false; const s = saved[d.st.id]; d.x = s ? s[0] * T.W : d.hx; d.y = s ? s[1] * T.H : d.hy; setPool(d, poolOf(d), true); }
+    untangle(); seenR = R;
   }
-  let lastW = 0, lastH = 0;
-  T.on = () => { if (discs.length && lastW && (Math.abs(lastW - T.W) > 1 || Math.abs(lastH - T.H) > 1)) { for (const d of discs) { d.x *= T.W / lastW; d.y *= T.H / lastH; } R = clamp(T.W / 15, 20, 30); home(); stir = performance.now() + 500; } lastW = T.W; lastH = T.H; if (!discs.length) populate(); };
+  /** After the table changes size the discs may lie on each other: push them apart, gently, where they are. */
+  function untangle() {
+    for (let n = 0; n < 40; n++) { let moved = false; for (let i = 0; i < discs.length; i++) for (let j = i + 1; j < discs.length; j++) { const a = discs[i], b = discs[j], dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 0.01, min = rad(a) + rad(b) + 1; if (l >= min || a.pool >= 0 || b.pool >= 0) continue; const o = (min - l) / 2; a.x -= (dx / l) * o; a.y -= (dy / l) * o; b.x += (dx / l) * o; b.y += (dy / l) * o; moved = true; } if (!moved) break; }
+    for (const d of discs) if (d.pool < 0) { const r = rad(d); d.x = clamp(d.x, r, T.W - r); d.y = clamp(d.y, r, TH() - r); }
+  }
+  let lastW = 0, lastH = 0, seenR = 0, handled = !!Object.keys(S.tablePos || {}).length;   // until someone moves a disc, a new size lays them out afresh
+  T.on = () => { if (discs.length && lastW && (Math.abs(lastW - T.W) > 1 || Math.abs(lastH - T.H) > 1)) { for (const d of discs) { d.x *= T.W / lastW; d.y *= T.H / lastH; } R = clamp(T.W / 15, 20, desk ? 40 : 30); home(); if (!handled) for (const d of discs) if (d.pool < 0) { d.x = d.hx; d.y = d.hy; } untangle(); seenR = R; stir = performance.now() + 500; } lastW = T.W; lastH = T.H; if (!discs.length) populate(); };
   S.tableDump = () => (T.W && discs.length ? Object.fromEntries(discs.map((d) => [d.st.id, [+(d.x / T.W).toFixed(3), +(d.y / T.H).toFixed(3)]])) : S.tablePos);
 
   /** What a place on the table means: how much of each edge. Nothing inside the middle; all of it against the edge. */
@@ -88,6 +94,7 @@ export function buildStems(S, U) {
     const ei = d || y > TH() ? -1 : x < E ? 0 : x > T.W - E ? 1 : y < E ? 2 : y > TH() - E ? 3 : -1;
     if (ei >= 0 && ![...fingers.values()].some((k) => k.d)) { edgeNow = { i: ei, id: e.pointerId, x, y, moved: false }; buzz(5); return; }
     if (!d) { const o = [...fingers.values()].find((k) => k.d && !k.pin && Math.hypot(k.x - x, k.y - y) < 190); if (o) { o.pin = { id: e.pointerId, d0: Math.max(26, Math.hypot(o.x - x, o.y - y)), z0: o.d.z, x, y }; o.d.pinch = true; clearTimeout(o.timer); o.moved = true; buzz(8); return; } }
+    if (d) handled = true;
     const f = { d, x, y, x0: x, y0: y, t0: performance.now(), path: [[performance.now(), x, y]], moved: false };
     fingers.set(e.pointerId, f);
     if (d) { d.held = 1; d.vx = d.vy = 0; d.ml.clear(); d.ml.start(x, y); d.seen = performance.now(); f.ox = d.x - x; f.oy = d.y - y; f.timer = setTimeout(() => { if (f.moved) return; f.long = true; const p = `band.${d.st.id}.solo`; P.set(p, !P.get(p)); buzz(25); }, 450); buzz(5); }
@@ -117,6 +124,8 @@ export function buildStems(S, U) {
     if (!f.moved) { if (performance.now() - f.t0 < 420) { const p = `band.${d.st.id}.mute`; P.set(p, !P.get(p)); buzz(8); } return; }
     const n = performance.now(), old = f.path.find((k) => n - k[0] < 90); if (f.pinned) return; if (old && n - old[0] > 8) { const k = 1000 / (n - old[0]); d.vx = clamp((f.x - old[1]) * k, -2200, 2200); d.vy = clamp((f.y - old[2]) * k, -2200, 2200); }
   };
+  // a mouse has no second finger: the wheel over a disc makes it louder or softer
+  box.addEventListener('wheel', (e) => { const [x, y] = at(e), d = hit(x, y); if (!d) return; e.preventDefault(); d.z = clamp(d.z * (e.deltaY < 0 ? 1.06 : 1 / 1.06), 0.42, 1.34); d.seen = performance.now(); d.pinch = true; clearTimeout(d.wt); d.wt = setTimeout(() => { d.pinch = false; }, 600); const gp = `band.${d.st.id}.gain`, gn = gainOf(d.z); if (Math.abs((P.get(gp) ?? 0.85) - gn) > 0.005) P.set(gp, gn); }, { passive: false });
   box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up); box.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // ---- choosing what an edge does
@@ -161,7 +170,8 @@ export function buildStems(S, U) {
   rollB.onclick = async () => { if (!Motion.got) { await askSensors(); Motion.set(true); await new Promise((r) => setTimeout(r, 350)); } if (!Motion.got) { toast('Rolling needs the phone’s motion sensors'); return; } if (!Motion.on) Motion.set(true); Motion.b0 = null; roll = !roll; grav = [0, 0]; rollB.setAttribute('aria-pressed', roll); buzz(12); if (roll) toast('Tilt: they roll · throw one into a pool'); };
   const lineB = h('button', { type: 'button', class: 'chip', title: 'Everyone back to the middle: the song as it is', onclick: () => { roll = false; rollB.setAttribute('aria-pressed', false); home(); for (const d of discs) { d.ml.clear(); d.z = 1; P.set(`band.${d.st.id}.gain`, 0.85); setPool(d, -1, true); d.line = performance.now(); d.vx = d.vy = 0; } for (const st of song.stems) { P.set(`band.${st.id}.mute`, false); P.set(`band.${st.id}.solo`, false); } buzz(15); } }, 'Line up');
   const orbitB = h('button', { type: 'button', class: 'chip', 'aria-pressed': 'false', title: 'A disc you let go of keeps making the movement you made with it', onclick: () => { orbit = !orbit; orbitB.setAttribute('aria-pressed', orbit); buzz(10); if (orbit) toast('Move a disc and let go: it keeps going'); } }, 'Orbit');
-  room.append(h('div', { class: 'head row' }, h('h2', {}, 'Stems'), h('span', { class: 'sp' }), orbitB, rollB, lineB), map, box);
+  if (desk) room.append(h('div', { class: 'bar2 stems-bar' }, h('span', { class: 'cap' }, 'Drag a stem towards an edge and it takes on that effect · wheel: louder or softer · click: off and on · hold: alone · click an edge to choose its effect · drop one in a pool'), h('span', { class: 'sp' }), orbitB, lineB), map, box);
+  else room.append(h('div', { class: 'head row' }, h('h2', {}, 'Stems'), h('span', { class: 'sp' }), orbitB, rollB, lineB), map, box);
 
   // ---- drawing
   const rr = (x, y, w, hh, r) => { g.beginPath(); g.roundRect(x, y, w, hh, r); };
@@ -169,6 +179,7 @@ export function buildStems(S, U) {
   function draw() {
     const now = performance.now(), hasVoice = song.stems.some((x) => x.voice && x.cells.some(Boolean)); if (hasVoice !== voiceHad && T.W) { voiceHad = hasVoice; populate(); }
     for (const d of discs) if (d.line) { const k = Math.min(1, (now - d.line) / 450); d.x += (d.hx - d.x) * (0.1 + k * 0.5); d.y += (d.hy - d.y) * (0.1 + k * 0.5); d.vx = d.vy = 0; d.dirty = true; if (k === 1) { d.x = d.hx; d.y = d.hy; d.line = 0; } }
+    if (seenR && R !== seenR) { seenR = R; home(); if (!handled) for (const d of discs) if (d.pool < 0 && !d.ml.pts) { d.x = d.hx; d.y = d.hy; } untangle(); }
     step(now); if (!T.W) return; const W = T.W, th = TH(), pw = W / POOLS.length; g.clearRect(0, 0, W, T.H);
     // the four edges: their colour reaches in as far as their effect does
     const ix = W * 0.2, iy = th * 0.2, EG = [[0, 0, ix, th, 0, 0, ix, 0], [W - ix, 0, ix, th, W, 0, W - ix, 0], [0, 0, W, iy, 0, 0, 0, iy], [0, th - iy, W, iy, 0, th, 0, th - iy]];
@@ -203,7 +214,7 @@ export function buildStems(S, U) {
       const wait = !off && d.quiet && d.lv < 0.02; g.globalAlpha = off ? 0.05 : wait ? 0.1 : (0.3 + d.lv * 0.55) * (1 - far * 0.45); g.fillStyle = col; g.fill(); g.globalAlpha = off ? 0.3 : wait ? 0.45 : 1; g.strokeStyle = so ? '#fff' : col; g.lineWidth = so ? 3 : d.held ? 2.5 : 1.4; g.stroke();
       nb.forEach((v, i) => { if (v < 0.02) return; const a = [Math.PI, 0, -Math.PI / 2, Math.PI / 2][i], w = 0.25 + v * 0.75; g.globalAlpha = 1; g.strokeStyle = FX[edgeFx(i)][1]; g.lineWidth = 4; g.beginPath(); g.arc(d.x, d.y, rd + 4, a - w, a + w); g.stroke(); });
       if (d.ml.pts) { g.globalAlpha = 0.5; g.strokeStyle = col; g.lineWidth = 1.2; g.setLineDash([3, 4]); g.beginPath(); d.ml.pts.forEach(([, x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.stroke(); g.setLineDash([]); }
-      g.globalAlpha = off ? 0.3 : wait ? 0.6 : 1; g.fillStyle = off ? '#a3a6ad' : '#fff'; g.font = `${clamp(8.6 * d.z, 6.5, 11)}px "Instrument Sans", sans-serif`; d.name.forEach((w, i) => g.fillText(w, d.x, d.y + (i - (d.name.length - 1) / 2) * 10)); g.globalAlpha = 1;
+      g.globalAlpha = off ? 0.3 : wait ? 0.6 : 1; g.fillStyle = off ? '#a3a6ad' : '#fff'; const fs = clamp(8.6 * d.z * Math.max(1, R / 25), 6.5, desk ? 14 : 11); g.font = `${fs}px "Instrument Sans", sans-serif`; d.name.forEach((w, i) => g.fillText(w, d.x, d.y + (i - (d.name.length - 1) / 2) * fs * 1.15)); g.globalAlpha = 1;
     }
     for (const f of fingers.values()) if (!f.d && f.moved) { g.strokeStyle = '#ffffff55'; g.beginPath(); g.arc(f.x, f.y, 24, 0, 7); g.stroke(); }
     // what the disc in hand is getting, in words
