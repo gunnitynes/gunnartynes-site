@@ -451,10 +451,13 @@ addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') show(at - 1);
   if (e.key === 'ArrowRight') show(at + 1);
 });
+// A one-finger swipe steps to the next photo. Pinching to zoom, or moving around a zoomed-in photo, never does.
 let sx = null;
-$('viewer').addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+const zoomed = () => (window.visualViewport?.scale || 1) > 1.02;
+$('viewer').addEventListener('touchstart', e => { sx = e.touches.length === 1 && !zoomed() ? e.touches[0].clientX : null; }, { passive: true });
+$('viewer').addEventListener('touchmove', e => { if (e.touches.length > 1) sx = null; }, { passive: true });
 $('viewer').addEventListener('touchend', e => {
-  if (sx === null) return;
+  if (sx === null || e.touches.length || zoomed()) { sx = null; return; }
   const dx = e.changedTouches[0].clientX - sx; sx = null;
   if (Math.abs(dx) > 50) show(at + (dx < 0 ? 1 : -1));
 });
