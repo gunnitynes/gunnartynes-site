@@ -192,6 +192,7 @@
   @media (min-width: 900px) and (hover: hover) { main { zoom: 1.15; } }
   /* Quick link down to the music. */
   .add:has(+ .tomusic:not([hidden])) { margin-bottom: 14px; }
+  .tomusic[hidden] { display: none; }
   html { scroll-behavior: smooth; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 </style>
