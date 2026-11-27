@@ -190,6 +190,10 @@
   }
   /* On computers everything is a little larger. */
   @media (min-width: 900px) and (hover: hover) { main { zoom: 1.15; } }
+  /* Quick link down to the music. */
+  .add:has(+ .tomusic:not([hidden])) { margin-bottom: 14px; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 </style>
 </head>
 <body>
@@ -200,6 +204,7 @@
     <hr class="rule">
   </header>
   <a class="add" href="../">Til baka</a>
+  <a class="add tomusic" id="tomusic" href="#music" hidden>Tónlist</a>
 
   <p id="state">Sæki…</p>
 
@@ -333,6 +338,7 @@ const ICON_PAUSE = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.
 function renderTracks(tracks) {
   trackList = tracks;
   $('music').hidden = false;
+  $('tomusic').hidden = false;
   // Have the first song ready by the time anyone presses play.
   setTimeout(() => { if (location.hostname !== 'gunnartynes.com' && tracks[0].size <= BIG_AUDIO) fetchTrack(tracks[0]); }, 1200);
   const ul = $('tracks');
